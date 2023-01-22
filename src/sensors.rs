@@ -1,3 +1,6 @@
+pub mod ph;
+
+
 pub trait SensorValue {
     fn read<T>(&self) -> T;
 }
