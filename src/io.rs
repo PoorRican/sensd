@@ -1,5 +1,5 @@
-/// Device IO
-use crate::sensors;
+/// Encapsulate IO for devices
+use crate::device;
 
 /// Defines sensor type. Used to classify data along with `IOData`
 pub enum IOKind {
@@ -52,7 +52,7 @@ impl IOEvent<T> {
     /// ```
     ///
     /// ```
-    pub fn create<T>(&info: &sensors::DeviceInfo<T>, timestamp: i32, value: T) -> Self {
+    pub fn create<T>(&info: &device::DeviceInfo<T>, timestamp: i32, value: T) -> Self {
         let version_id = info.version_id;
         let sensor_id = info.sensor_id;
         let data = IOData {

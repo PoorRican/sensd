@@ -1,8 +1,7 @@
-use crate::sensors;
-use crate::units::Ph;
+use crate::{device, io, units::Ph};
 
 pub struct MockPhSensor  {
-    info: sensors::DeviceInfo<Ph>
+    info: device::DeviceInfo<Ph>
 }
 
 /** Represents a mock pH sensor.
@@ -19,12 +18,12 @@ impl MockPhSensor {
     /// returns: MockPhSensor
     pub fn new(name: String, sensor_id: i32, min_delay: i32) -> Self {
         let version_id = 0;
-        let kind = sensors::IOKind::PH;
+        let kind = io::IOKind::PH;
         let min_value = 0.0;
         let max_value = 14.0;
         let resolution = 0.1;
 
-        let info: sensors::SensorInfo<Ph> = sensors::SensorInfo::new(name, version_id, sensor_id,
+        let info: device::SensorInfo<Ph> = device::SensorInfo::new(name, version_id, sensor_id,
                                                                     kind, min_value, max_value, resolution,
                                                                      min_delay);
 
@@ -36,7 +35,7 @@ impl MockPhSensor {
 
 impl sensor::Readable for MockPhSensor {
     /// Return a mock value
-    fn read<Ph>(&self) -> sensors::SensorEvent<Ph> {
+    fn read<Ph>(&self) -> Ph {
         Ph::new(1.2)
     }
 }
