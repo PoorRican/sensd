@@ -30,7 +30,7 @@ impl Ph {
 
 
 pub struct MockPhSensor  {
-    info: sensors::SensorInfo<Ph>
+    info: sensors::DeviceInfo<Ph>
 }
 
 /** Represents a mock pH sensor.
@@ -47,7 +47,7 @@ impl MockPhSensor {
     /// returns: MockPhSensor
     pub fn new(name: String, sensor_id: i32, min_delay: i32) -> Self {
         let version_id = 0;
-        let kind = sensors::SensorType::PH;
+        let kind = sensors::IOKind::PH;
         let min_value = 0.0;
         let max_value = 14.0;
         let resolution = 0.1;
@@ -62,10 +62,9 @@ impl MockPhSensor {
     }
 }
 
-impl sensor::SensorValue for MockPhSensor {
+impl sensor::Readable for MockPhSensor {
     /// Return a mock value
     fn read<Ph>(&self) -> sensors::SensorEvent<Ph> {
-
         Ph::new(1.2)
     }
 }

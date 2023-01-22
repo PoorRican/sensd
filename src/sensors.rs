@@ -1,15 +1,17 @@
 pub mod ph;
 
 
-pub trait SensorValue {
+pub trait Readable {
     fn read<T>(&self) -> T;
 }
 
-pub trait CalibratedSensor {
+/// Represents a sensor that requires calibration
+pub trait Calibratable {
     fn calibrate(&self);
 }
 
-pub enum SensorType {
+/// Defines sensor type. Used to classify data along with `IOData`
+pub enum IOKind {
     Light,
     Pressure,
     Proximity,
@@ -27,16 +29,21 @@ pub enum SensorType {
     PH,
 }
 
-pub struct SensorData<T> {
-    kind: SensorType,
+// TODO: enum for `IODirection` when implementing control system
+
+/// Encapsulates sensor data. Provides a unified data type for returning data.
+pub struct IOData<T> {
+    kind: IOKind,
     data: T
 }
 
-pub struct SensorInfo<T> {
+/// Encapsulates individual device info
+/// Meant to used as a struct attribute via `new()`
+pub struct DeviceInfo<T> {
     name: String,
     version_id: i32,
     sensor_id: i32,
-    kind: SensorType,
+    kind: IOKind,
 
     min_value: T,   // min value (in SI units)
     max_value: T,   // max value (in SI units)
@@ -45,9 +52,9 @@ pub struct SensorInfo<T> {
     min_delay: i32, // minimum delay between sensing events
 }
 
-impl<T> SensorInfo<T> {
+impl<T> DeviceInfo<T> {
     pub fn new<T>(name: String, version_id: i32, sensor_id: i32,
-                  kind: SensorType, min_value: T, max_value: T, resolution: T, min_delay: i32) -> Self<T> {
+                  kind: IOKind, min_value: T, max_value: T, resolution: T, min_delay: i32) -> Self<T> {
         SensorInfo {
             name, version_id, sensor_id,
             kind, min_value, max_value, resolution, min_delay
@@ -55,14 +62,14 @@ impl<T> SensorInfo<T> {
     }
 }
 
-pub struct SensorEvent<T> {
+pub struct IOEvent<T> {
     version_id: i32,
     sensor_id: i32,
     timestamp: i32,
-    data: SensorData<T>,
+    data: IOData<T>,
 }
 
-impl SensorEvent<T> {
+impl IOEvent<T> {
     /// Generate sensor event.
     ///
     /// # Arguments
@@ -78,14 +85,14 @@ impl SensorEvent<T> {
     /// ```
     ///
     /// ```
-    pub fn create<T>(&info: &SensorInfo<T>, timestamp: i32, value: T) -> Self {
+    pub fn create<T>(&info: &DeviceInfo<T>, timestamp: i32, value: T) -> Self {
         let version_id = info.version_id;
         let sensor_id = info.sensor_id;
-        let data = SensorData {
+        let data = IOData {
             kind: info.kind,
             data: value
         };
-        SensorEvent {
+        IOEvent {
             version_id,
             sensor_id,
             timestamp,
