@@ -1,8 +1,10 @@
-mod sensors;
-mod units;
-mod io;
-mod device;
+extern crate chrono;
+
+mod settings;
+
+use crate::settings::Settings;
+
 
 fn main() {
-    println!("Hello, world!");
+    let settings = Settings::new();
 }

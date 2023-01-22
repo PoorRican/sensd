@@ -1,4 +1,5 @@
 pub mod sensors;
-mod units;
-mod io;
-mod device;
+pub mod units;
+pub mod io;
+pub mod device;
+pub mod settings;
