@@ -1,16 +1,31 @@
 /// Provide Low-level Device Functionality
 
+use chrono::{Duration, Local};
+
 use crate::io;
 
 
-pub trait Readable {
-    fn read<T>(&self) -> T;
+pub trait Device<T> {
+    fn get_info(&self) -> &DeviceInfo<T> {
+        self.info
+    }
+}
+
+
+pub trait Readable<T>: Device<T> {
+    fn read(&self) -> T;
+
+    fn get_event(&self) -> io::IOEvent<T> {
+        io::IOEvent::create(self.get_info(),
+                          Local::now(),
+                          self.read())
+    }
 }
 
 
 /// Represents a sensor that requires calibration
 pub trait Calibratable {
-    fn calibrate(&self) -> Result<T, E>;
+    fn calibrate(&self) -> Result<O, E>;
 }
 
 
@@ -26,13 +41,13 @@ pub struct DeviceInfo<T> {
     max_value: T,   // max value (in SI units)
     resolution: T,  // resolution of sensor (in SI units)
 
-    min_delay: u16, // minimum delay between sensing events
+    min_delay: Duration, // minimum delay between sensing events
 }
 
 
 impl<T> DeviceInfo<T> {
     pub fn new<T>(name: String, version_id: i32, sensor_id: i32,
-                  kind: io::IOKind, min_value: T, max_value: T, resolution: T, min_delay: i32) -> Self<T> {
+                  kind: io::IOKind, min_value: T, max_value: T, resolution: T, min_delay: Duration) -> Self<T> {
         DeviceInfo {
             name, version_id, sensor_id,
             kind, min_value, max_value, resolution, min_delay

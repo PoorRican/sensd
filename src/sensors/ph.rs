@@ -1,3 +1,5 @@
+use chrono::Duration;
+
 use crate::{device, io, units::Ph};
 
 pub struct MockPhSensor  {
@@ -16,7 +18,7 @@ impl MockPhSensor {
     /// * `min_delay`: minimum delay between sensor reads
     ///
     /// returns: MockPhSensor
-    pub fn new(name: String, sensor_id: i32, min_delay: i32) -> Self {
+    pub fn new(name: String, sensor_id: i32, min_delay: Duration) -> Self {
         let version_id = 0;
         let kind = io::IOKind::PH;
         let min_value = 0.0;
@@ -33,9 +35,13 @@ impl MockPhSensor {
     }
 }
 
-impl sensor::Readable for MockPhSensor {
+
+// Implement traits
+impl device::Device<Ph> for MockPhSensor {}
+
+impl device::Readable<Ph> for MockPhSensor {
     /// Return a mock value
-    fn read<Ph>(&self) -> Ph {
+    fn read(&self) -> Ph {
         Ph::new(1.2)
     }
 }
