@@ -13,13 +13,6 @@ impl Ph {
     /// * `val`: a float between 0.0 and 14.0. Method panics if called with invalid values.
     ///
     /// returns: Ph
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// Ph::new(3.3)    // intended behaviour
-    /// Ph::new(-1.0)   // panics
-    /// ```
     pub fn new(val: f64) -> Ph {
         Ph::check_constraints(val);
         Ph(val)

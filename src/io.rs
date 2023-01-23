@@ -3,7 +3,8 @@
 use chrono::{Utc, DateTime};
 use crate::device;
 
-/// Defines sensor type. Used to classify data along with `IOData`
+/// Defines sensor type. Used to classify data along with `IOData`.
+#[derive(Debug, Clone, Copy)]
 pub enum IOKind {
     Light,
     Pressure,
@@ -49,7 +50,7 @@ impl IOEvent<T> {
     ///
     /// # Arguments
     ///
-    /// * `&info`: Sensor info
+    /// * `device`: struct that has implemented the `Device` trait
     /// * `timestamp`: timestamp of event
     /// * `value`: value to include in
     ///
@@ -60,11 +61,12 @@ impl IOEvent<T> {
     /// ```
     ///
     /// ```
-    pub fn create<T>(&info: &device::DeviceInfo<T>, timestamp: DateTime<Local>, value: T) -> Self {
+    pub fn create<T>(&device: &impl device::Device<T>, timestamp: DateTime<Utc>, value: T) -> Self {
+        let info = &device.get_info();
         let version_id = info.version_id;
         let sensor_id = info.sensor_id;
         let data = IOData {
-            kind: info.kind,
+            kind: info.kind.clone(),
             data: value
         };
         IOEvent {
