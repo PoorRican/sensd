@@ -3,7 +3,7 @@ use dotenv::dotenv;
 const VERSION: &str = "0.0.1-alpha";
 
 pub struct Settings {
-    version: String
+    pub version: String
 }
 
 impl Settings {

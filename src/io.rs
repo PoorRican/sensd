@@ -27,25 +27,19 @@ pub enum IOKind {
 
 /// Encapsulates sensor data. Provides a unified data type for returning data.
 pub struct IOData<T> {
-    kind: IOKind,
-    data: T
-}
-
-impl<T> IOData<T> {
-    pub fn new<T>(kind: IOKind, data: T) -> Self {
-        IOData { kind, data }
-    }
+    pub kind: IOKind,
+    pub data: T
 }
 
 /// Encapsulates `IOData` alongside of timestamp and device data
 pub struct IOEvent<T> {
-    version_id: i32,
-    sensor_id: i32,
-    timestamp: DateTime<Utc>,
-    data: IOData<T>,
+    pub version_id: i32,
+    pub sensor_id: i32,
+    pub timestamp: DateTime<Utc>,
+    pub data: IOData<T>,
 }
 
-impl IOEvent<T> {
+impl<T> IOEvent<T> {
     /// Generate sensor event.
     ///
     /// # Arguments
@@ -61,7 +55,7 @@ impl IOEvent<T> {
     /// ```
     ///
     /// ```
-    pub fn create<T>(&device: &impl device::Device<T>, timestamp: DateTime<Utc>, value: T) -> Self {
+    pub fn create( device: &impl device::Device<T>, timestamp: DateTime<Utc>, value: T ) -> Self {
         let info = &device.get_info();
         let version_id = info.version_id;
         let sensor_id = info.sensor_id;

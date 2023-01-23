@@ -21,11 +21,11 @@ impl MockPhSensor {
     pub fn new(name: String, sensor_id: i32, min_delay: Duration) -> Self {
         let version_id = 0;
         let kind = io::IOKind::PH;
-        let min_value = 0.0;
-        let max_value = 14.0;
-        let resolution = 0.1;
+        let min_value = Ph(0.0);
+        let max_value = Ph(14.0);
+        let resolution = Ph(0.1);
 
-        let info: device::SensorInfo<Ph> = device::SensorInfo::new(name, version_id, sensor_id,
+        let info: device::DeviceInfo<Ph> = device::DeviceInfo::new(name, version_id, sensor_id,
                                                                     kind, min_value, max_value, resolution,
                                                                      min_delay);
 
@@ -37,11 +37,15 @@ impl MockPhSensor {
 
 
 // Implement traits
-impl device::Device<Ph> for MockPhSensor {}
+impl device::Device<Ph> for MockPhSensor {
+    fn get_info(&self) -> &device::DeviceInfo<Ph> {
+        &self.info
+    }
+}
 
 impl device::Readable<Ph> for MockPhSensor {
     /// Return a mock value
     fn read(&self) -> Ph {
-        Ph::new(1.2)
+        Ph::new(1.2).unwrap()
     }
 }

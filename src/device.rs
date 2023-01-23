@@ -6,17 +6,15 @@ use crate::io;
 
 
 pub trait Device<T> {
-    fn get_info(&self) -> &DeviceInfo<T> {
-        self.info
-    }
+    fn get_info(&self) -> &DeviceInfo<T>;
 }
 
 
 pub trait Readable<T>: Device<T> {
     fn read(&self) -> T;
 
-    fn get_event(&self) -> io::IOEvent<T> {
-        io::IOEvent::create(self.get_info(),
+    fn get_event(&self) -> io::IOEvent<T> where Self: Sized {
+        io::IOEvent::create(self,
                           Utc::now(),
                           self.read())
     }
@@ -25,7 +23,7 @@ pub trait Readable<T>: Device<T> {
 
 /// Represents a sensor that requires calibration
 pub trait Calibratable {
-    fn calibrate(&self) -> Result<O, E>;
+    fn calibrate(&self) -> bool;
 }
 
 
@@ -46,8 +44,8 @@ pub struct DeviceInfo<T> {
 
 
 impl<T> DeviceInfo<T> {
-    pub fn new<T>(name: String, version_id: i32, sensor_id: i32,
-                  kind: io::IOKind, min_value: T, max_value: T, resolution: T, min_delay: Duration) -> Self<T> {
+    pub fn new(name: String, version_id: i32, sensor_id: i32,
+                  kind: io::IOKind, min_value: T, max_value: T, resolution: T, min_delay: Duration) -> DeviceInfo<T> {
         DeviceInfo {
             name, version_id, sensor_id,
             kind, min_value, max_value, resolution, min_delay
