@@ -1,6 +1,6 @@
 /// Provide Low-level Device Functionality
 
-use chrono::{Duration, Local};
+use chrono::{Duration, Utc};
 
 use crate::io;
 
@@ -17,7 +17,7 @@ pub trait Readable<T>: Device<T> {
 
     fn get_event(&self) -> io::IOEvent<T> {
         io::IOEvent::create(self.get_info(),
-                          Local::now(),
+                          Utc::now(),
                           self.read())
     }
 }

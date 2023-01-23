@@ -1,6 +1,6 @@
 /// Encapsulate IO for devices
 
-use chrono::{Local, DateTime, Date};
+use chrono::{Utc, DateTime};
 use crate::device;
 
 /// Defines sensor type. Used to classify data along with `IOData`
@@ -40,7 +40,7 @@ impl<T> IOData<T> {
 pub struct IOEvent<T> {
     version_id: i32,
     sensor_id: i32,
-    timestamp: DateTime<Local>,
+    timestamp: DateTime<Utc>,
     data: IOData<T>,
 }
 
