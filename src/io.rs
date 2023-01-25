@@ -1,4 +1,6 @@
 /// Encapsulate IO for devices
+use polars::prelude::*;
+use polars::datatypes::DataType::Datetime;
 
 use chrono::{Utc, DateTime};
 use crate::device;
@@ -39,6 +41,8 @@ pub struct IOEvent<T> {
     pub data: IOData<T>,
 }
 
+// TODO: create a function that converts `IOEvent` to DataFrame
+
 impl<T> IOEvent<T> {
     /// Generate sensor event.
     ///
@@ -70,5 +74,13 @@ impl<T> IOEvent<T> {
             data
         }
     }
-}
 
+    pub fn schema() -> Schema {
+        let version_id = Field::new("version_id", DataType::Int32);
+        let sensor_id = Field::new("sensor_id", DataType::Int32);
+        let timestamp = Field::new("timestamp", DataType::Datetime(TimeUnit::Nanoseconds, None));
+        let data = Field::new("data", DataType::Float64);
+
+        Schema::from(vec![version_id, sensor_id, timestamp, data].into_iter())
+    }
+}
