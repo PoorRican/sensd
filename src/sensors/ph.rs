@@ -43,7 +43,7 @@ impl device::Device<Ph> for MockPhSensor {
     }
 }
 
-impl device::Readable<Ph> for MockPhSensor {
+impl device::Sensor<Ph> for MockPhSensor {
     /// Return a mock value
     fn read(&self) -> Ph {
         Ph::new(1.2).unwrap()

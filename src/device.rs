@@ -10,7 +10,7 @@ pub trait Device<T> {
 }
 
 
-pub trait Readable<T>: Device<T> {
+pub trait Sensor<T>: Device<T> {
     fn read(&self) -> T;
 
     fn get_event(&self) -> io::IOEvent<T> where Self: Sized {
