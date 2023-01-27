@@ -41,6 +41,12 @@ impl device::Device<Ph> for MockPhSensor {
     fn get_info(&self) -> &device::DeviceInfo<Ph> {
         &self.info
     }
+    fn name(&self) -> String {
+        self.info.name.clone()
+    }
+    fn id(&self) -> i32 {
+        self.info.sensor_id
+    }
 }
 
 impl device::Sensor<Ph> for MockPhSensor {

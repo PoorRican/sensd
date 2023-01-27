@@ -7,6 +7,8 @@ use crate::io;
 
 pub trait Device<T> {
     fn get_info(&self) -> &DeviceInfo<T>;
+    fn name(&self) -> String;
+    fn id(&self) -> i32;
 }
 
 
