@@ -8,7 +8,7 @@ pub struct Settings {
 
 impl Settings {
     /// Read settings from .env file
-    pub fn new() -> Self {
+    pub fn initialize() -> Self {
         dotenv().ok();
         let version = std::env::var("VERSION").unwrap_or_else(|_| VERSION.to_string());
         Settings { version }
