@@ -1,6 +1,5 @@
 /// Encapsulate IO for devices
-use polars::prelude::*;
-use std::convert::From;
+use std::fmt::Formatter;
 
 use chrono::{Utc, DateTime};
 use crate::device;
@@ -20,9 +19,32 @@ pub enum IOKind {
     TVOC,
     VocIndex,
     NoxIndex,
-    FLOW,
+    Flow,
     EC,
     PH,
+}
+
+impl std::fmt::Display for IOKind {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let name = match self {
+            IOKind::Light => "Light",
+            IOKind::Pressure => "Pressure",
+            IOKind::Proximity => "Proximity",
+            IOKind::RotationVector => "Rotation Vector",
+            IOKind::RelativeHumidity => "Relative Humidity",
+            IOKind::AmbientTemperature => "Ambient Temperature",
+            IOKind::Voltage => "Voltage",
+            IOKind::Current => "Current",
+            IOKind::Color => "Color",
+            IOKind::TVOC => "TVOC",
+            IOKind::VocIndex => "Voc Index",
+            IOKind::NoxIndex => "Nox Index",
+            IOKind::Flow => "Flow (liquid)",
+            IOKind::EC => "Electrical Conductivity (EC)",
+            IOKind::PH => "pH",
+        };
+        write!(f, "{}", name)
+    }
 }
 
 // TODO: enum for `IODirection` when implementing control system
