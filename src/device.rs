@@ -1,6 +1,6 @@
 /// Provide Low-level Device Functionality
 
-use chrono::{Duration, Utc};
+use chrono::{DateTime, Duration, Utc};
 use std::fmt::Formatter;
 
 use crate::io;
@@ -46,9 +46,9 @@ pub trait Device<T> {
 pub trait Sensor<T>: Device<T> {
     fn read(&self) -> T;
 
-    fn get_event(&self) -> io::IOEvent<T> where Self: Sized {
+    fn get_event(&self, dt: DateTime<Utc>) -> io::IOEvent<T> {
         io::IOEvent::create(self,
-                          Utc::now(),
+                          dt,
                           self.read())
     }
 }
