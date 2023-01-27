@@ -1,3 +1,4 @@
+/// Data structures and interfaces to store data
 use std::collections::HashMap;
 
 
@@ -63,45 +64,62 @@ pub trait Containerized<T, K>
 /// Define a basic interface to interact with underlying data.
 /// T is the data type being stored and K is the key type to access stored data.
 pub trait Collection<T, K> {
-    // Add a key-value pair to the collection and return a boolean indicating if the key already existed in the collection.
+    /// Add a key-value pair to the collection and return a boolean indicating if the addition was successful.
+    /// If the key already existed, then `false` is returned.
     fn add(&mut self, key: K, data: T) -> bool;
-    // Get the value associated with the key and return an Option<&T>
+
+    /// Access object by key
+    /// Since key might not exist, an option is returned.
     fn get(&self, key: K) -> Option<&T>;
-    // Remove the key-value pair associated with the key and return an Option<T>
+
+    /// Remove the key-value pair associated with the key.
+    /// The removed data is returned.
     fn remove(&mut self, key: K) -> Option<T>;
-    // Return a boolean indicating if the collection is empty.
+
+    /// Return a boolean indicating if the collection is empty.
     fn is_empty(&self) -> bool;
-    // Return the number of elements in the collection
+
+    /// Return the number of elements in the collection
     fn length(&self) -> usize;
 }
 
-// Define a struct `Container` which takes in two types T and K.
-pub struct Container<T, K> {
+/// Define a struct `Container` which takes in two types T and K.
+/// This container is meant to store any complex type and is stored with an arbitrary key.
+/// The key only needs to be hashable.
+#[derive(Debug)]
+pub struct Container<T, K>
+    where K: Eq + std::hash::Hash
+{
     // The inner field is a HashMap with key type K and value type T
     inner: HashMap<K, T>
 }
 
 impl<T, K> Container<T, K> {
-    // A new DeviceLog struct is created with an empty HashMap
+    // A new Container struct is created with an empty HashMap
     pub fn new() -> Self {
         let inner: HashMap<K, T> = Default::default();
         Container { inner }
     }
+
+    /// Return a readonly reference to stored HashMap
+    pub fn _inner(&self) -> &HashMap<K, T> {
+        &self.inner
+    }
 }
 
-// Implement the Collection trait for the Container struct
-impl<T, K> Collection<T, K> for Container<T, K>
-    where K: Eq + std::hash::Hash {
-    // Add a key-value pair to the collection and return a boolean indicating if the key already existed in the collection.
-    // Using `entry` method on the inner HashMap to check if the key already exists in the HashMap
-    //  If the key already exists, the returned value is `std::collections::hash_map::Entry::Occupied`, which returns true.
-    //  If the key does not exist, the returned value is `std::collections::hash_map::Entry::Vacant`, which inserts the key-value pair into the HashMap and returns false.
+/// Implement the `Collection` interface for `Container`
+impl<T, K> Collection<T, K> for Container<T, K> {
+
+    /// Add a key-value pair to the collection and return a boolean indicating if the value has been added to the collection.
+    /// Using `entry` method on the inner HashMap to check if the key already exists in the HashMap
+    ///  - If the key already exists, the returned value is `std::collections::hash_map::Entry::Occupied`, which returns false.
+    ///  - If the key does not exist, the returned value is `std::collections::hash_map::Entry::Vacant`, which inserts the key-value pair into the HashMap and returns true.
     fn add(&mut self, key: K, data: T) -> bool {
         match self.inner.entry(key) {
-            std::collections::hash_map::Entry::Occupied(_) => true,
+            std::collections::hash_map::Entry::Occupied(_) => false,
             std::collections::hash_map::Entry::Vacant(entry) => {
                 entry.insert(data);
-                false
+                true
             }
         }
     }
