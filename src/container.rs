@@ -1,5 +1,26 @@
 /// Data structures and interfaces to store data
+///
+/// The main workhorses that provide functionality are `Containerized` and `Container`. The `Containerized`
+/// trait is used to define a container type, `Container`, that can store a collection of objects of a specific
+/// type. The trait is implemented for various types, such as `dyn Sensor<T>` and `IOEvent<T>`.
+///
+/// The `Containerized` trait defines a single method, `container()`, which returns a new instance of the
+/// `Container` struct, specific to the type that the trait is implemented for. For example, when the trait is
+/// implemented for `dyn Sensor<T>` (any object that implements `Sensor<T>`), the `container()` method returns a
+/// new instance of `Container<Box<dyn Sensor<T>>, K>`.
+///
+/// The `Container` struct is generic over two types, `T` and `K`. `T` represents the type of the objects that
+/// will be stored within the container, and `K` represents the type of the key used to identify the objects
+/// within the container. In the case of the `dyn Sensor<T>` implementation, `T` is `Box<dyn Sensor<T>>` and `K`
+/// is an arbitrary type.
+///
+/// In summary, the `Containerized` trait allows for the creation of a `Container` which can
+/// store a collection of objects of a specific type `T`, and identified by a specific key type `K`. The relationship
+/// between `Containerized` and `Container` is that `Containerized` defines how the `Container` should be created
+/// and used for a specific type, while `Container` actually holds the collection of objects.
+
 use std::collections::HashMap;
+use std::hash::Hash;
 
 
 /// A trait for creating a specialized `Container` instance
@@ -52,7 +73,7 @@ use std::collections::HashMap;
 /// ```
 
 pub trait Containerized<T, K>
-    where K: Eq + std::hash::Hash
+    where K: Eq + Hash
 {
     // TODO: add type
     /// Returns a new instance of the `Container` struct for storing objects of type T
@@ -88,13 +109,13 @@ pub trait Collection<T, K> {
 /// The key only needs to be hashable.
 #[derive(Debug)]
 pub struct Container<T, K>
-    where K: Eq + std::hash::Hash
+    where K: Eq + Hash
 {
     // The inner field is a HashMap with key type K and value type T
     inner: HashMap<K, T>
 }
 
-impl<T, K> Container<T, K> {
+impl<T, K: Eq + Hash> Container<T, K> {
     // A new Container struct is created with an empty HashMap
     pub fn new() -> Self {
         let inner: HashMap<K, T> = Default::default();
@@ -108,7 +129,7 @@ impl<T, K> Container<T, K> {
 }
 
 /// Implement the `Collection` interface for `Container`
-impl<T, K> Collection<T, K> for Container<T, K> {
+impl<T, K: Hash + Eq> Collection<T, K> for Container<T, K> {
 
     /// Add a key-value pair to the collection and return a boolean indicating if the value has been added to the collection.
     /// Using `entry` method on the inner HashMap to check if the key already exists in the HashMap
