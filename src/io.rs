@@ -1,9 +1,9 @@
 /// Encapsulate IO for devices
+use chrono::{DateTime, Utc};
 use std::fmt::Formatter;
 
-use chrono::{Utc, DateTime};
-use crate::device;
 use crate::container::{Container, Containerized};
+use crate::device;
 
 /// Defines sensor type. Used to classify data along with `IOData`.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -53,7 +53,7 @@ impl std::fmt::Display for IOKind {
 /// Encapsulates sensor data. Provides a unified data type for returning data.
 pub struct IOData<T> {
     pub kind: IOKind,
-    pub data: T
+    pub data: T,
 }
 
 /// Encapsulates `IOData` alongside of timestamp and device data
@@ -81,27 +81,31 @@ impl<T> IOEvent<T> {
     /// ```
     ///
     /// ```
-    pub fn create( device: &(impl device::Device<T> + ?Sized), timestamp: DateTime<Utc>, value: T ) -> Self {
+    pub fn create(
+        device: &(impl device::Device<T> + ?Sized),
+        timestamp: DateTime<Utc>,
+        value: T,
+    ) -> Self {
         let info = device.get_metadata();
         let version_id = info.version_id;
         let sensor_id = info.sensor_id;
         let data = IOData {
             kind: info.kind.clone(),
-            data: value
+            data: value,
         };
         IOEvent {
             version_id,
             sensor_id,
             timestamp,
-            data
+            data,
         }
     }
 }
 
-
 /// Return a new instance of `Container` with for storing `IOEvent<T>` which are accessed by `DateTime<Utc>` as keys
 impl<T> Containerized<IOEvent<T>, DateTime<Utc>> for IOEvent<T>
-    where T: std::fmt::Debug
+where
+    T: std::fmt::Debug,
 {
     fn container() -> Container<IOEvent<T>, DateTime<Utc>> {
         Container::<IOEvent<T>, DateTime<Utc>>::new()

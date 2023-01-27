@@ -38,6 +38,6 @@ impl From<f64> for Ph {
 
 impl From<Ph> for f64 {
     fn from(value: Ph) -> Self {
-       value.0
+        value.0
     }
 }
