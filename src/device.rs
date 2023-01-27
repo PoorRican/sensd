@@ -29,6 +29,7 @@ pub trait Calibratable {
 }
 
 
+#[derive(Debug, Clone)]
 /// Encapsulates individual device info
 /// Meant to used as a struct attribute via `new()`
 pub struct DeviceInfo<T> {

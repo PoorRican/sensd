@@ -2,6 +2,7 @@ use chrono::Duration;
 
 use crate::{device, io, units::Ph};
 
+#[derive(Debug, Clone)]
 pub struct MockPhSensor  {
     info: device::DeviceInfo<Ph>
 }
