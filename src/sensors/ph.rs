@@ -4,7 +4,7 @@ use crate::{device, io, units::Ph};
 
 #[derive(Debug, Clone)]
 pub struct MockPhSensor {
-    info: device::DeviceInfo<Ph>
+    metadata: device::DeviceMetadata<Ph>
 }
 
 /** Represents a mock pH sensor.
@@ -26,12 +26,12 @@ impl MockPhSensor {
         let max_value = Ph(14.0);
         let resolution = Ph(0.1);
 
-        let info: device::DeviceInfo<Ph> = device::DeviceInfo::new(name, version_id, sensor_id,
-                                                                    kind, min_value, max_value, resolution,
-                                                                     min_delay);
+        let metadata: device::DeviceMetadata<Ph> = device::DeviceMetadata::new(name, version_id, sensor_id,
+                                                                               kind, min_value, max_value, resolution,
+                                                                               min_delay);
 
         MockPhSensor {
-            info
+            metadata
         }
     }
 }
@@ -39,14 +39,14 @@ impl MockPhSensor {
 
 // Implement traits
 impl device::Device<Ph> for MockPhSensor {
-    fn get_info(&self) -> &device::DeviceInfo<Ph> {
-        &self.info
+    fn get_metadata(&self) -> &device::DeviceMetadata<Ph> {
+        &self.metadata
     }
     fn name(&self) -> String {
-        self.info.name.clone()
+        self.metadata.name.clone()
     }
     fn id(&self) -> i32 {
-        self.info.sensor_id
+        self.metadata.sensor_id
     }
 }
 

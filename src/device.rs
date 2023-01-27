@@ -9,7 +9,7 @@ use crate::container::{Container, Containerized};
 
 /// Basic interface for GPIO device metadata
 pub trait Device<T> {
-    fn get_info(&self) -> &DeviceInfo<T>;
+    fn get_metadata(&self) -> &DeviceMetadata<T>;
     fn name(&self) -> String;
     fn id(&self) -> i32;
 }
@@ -55,7 +55,7 @@ pub trait Sensor<T>: Device<T> {
 
 impl<T> std::fmt::Debug for dyn Sensor<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Sensor {{ name: {}, id: {}, info: {}", self.name(), self.id(), self.get_info())
+        write!(f, "Sensor {{ name: {}, id: {}, info: {}", self.name(), self.id(), self.get_metadata())
     }
 }
 
@@ -86,8 +86,7 @@ pub trait Calibrated {
 /// let info = crate::DeviceInfo::new(name, version_id, sensor_id, kind, min_value, max_value, resolution, min_delay);
 /// ```
 #[derive(Debug, Clone, PartialEq)]
-// TODO: rename to `DeviceMetadata`
-pub struct DeviceInfo<T> {
+pub struct DeviceMetadata<T> {
     // TODO: what changes should be made? Dedicated struct for number space? Should `min_delay` be moved to `Device`?
     pub name: String,
     pub version_id: i32,
@@ -101,7 +100,7 @@ pub struct DeviceInfo<T> {
     min_delay: Duration,
 }
 
-impl<T> DeviceInfo<T> {
+impl<T> DeviceMetadata<T> {
     /// Creates a new instance of `DeviceInfo`
     ///
     /// # Arguments
@@ -120,7 +119,7 @@ impl<T> DeviceInfo<T> {
     /// A new instance with given specified parameters
     pub fn new(name: String, version_id: i32, sensor_id: i32, kind: io::IOKind,
                min_value: T, max_value: T, resolution: T, min_delay: Duration) -> Self {
-        DeviceInfo {
+        DeviceMetadata {
             name, version_id, sensor_id, kind,
             min_value, max_value, resolution,
             min_delay,
@@ -128,7 +127,7 @@ impl<T> DeviceInfo<T> {
     }
 }
 
-impl<T> std::fmt::Display for DeviceInfo<T> {
+impl<T> std::fmt::Display for DeviceMetadata<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "Device Info {{ Kind: {}, Min. Delay: {} }}", self.kind, self.min_delay.to_string())
     }
@@ -139,7 +138,7 @@ impl<T> std::fmt::Display for DeviceInfo<T> {
 /// Objects are stored as `Box<dyn Sensor<T>>`
 impl<T, K> Containerized<Box<dyn Sensor<T>>, K> for dyn Sensor<T>
     where T: std::fmt::Debug,
-          K: std::hash::Hash
+          K: std::hash::Hash + Eq
 {
     fn container() -> Container<Box<dyn Sensor<T>>, K> {
         Container::<Box<dyn Sensor<T>>, K>::new()
