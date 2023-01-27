@@ -6,6 +6,7 @@ mod io;
 mod settings;
 mod sensors;
 mod units;
+mod polling;
 
 use chrono::Duration;
 

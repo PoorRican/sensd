@@ -81,7 +81,7 @@ impl<T> IOEvent<T> {
     /// ```
     ///
     /// ```
-    pub fn create( device: &impl device::Device<T>, timestamp: DateTime<Utc>, value: T ) -> Self {
+    pub fn create( device: &(impl device::Device<T> + ?Sized), timestamp: DateTime<Utc>, value: T ) -> Self {
         let info = device.get_metadata();
         let version_id = info.version_id;
         let sensor_id = info.sensor_id;

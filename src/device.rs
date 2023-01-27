@@ -97,7 +97,7 @@ pub struct DeviceMetadata<T> {
     max_value: T,
     resolution: T,
 
-    min_delay: Duration,
+    pub min_delay: Duration,
 }
 
 impl<T> DeviceMetadata<T> {
