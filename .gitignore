@@ -1,3 +1,6 @@
 /target
+migrations
 
 .idea/
+
+.env

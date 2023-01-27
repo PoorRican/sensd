@@ -9,6 +9,12 @@ However, it is agnostic to data type.
 
 ## Future Intentions
 
+### Minor Updates
+
+- Implement [dimensioned](https://docs.rs/crate/dimensioned/0.8.0) crate for type checked SI units.
+
+### Major Releases
+
 The following features are planned for the next major releases (in order of priority):
     - A control system for operating switches, motors, and other output devices.
     - 3D (or 2D), location awareness. Nodes can be aware of neighbors.
