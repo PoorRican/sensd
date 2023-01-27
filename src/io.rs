@@ -1,6 +1,6 @@
 /// Encapsulate IO for devices
 use polars::prelude::*;
-use polars::datatypes::DataType::Datetime;
+use std::convert::From;
 
 use chrono::{Utc, DateTime};
 use crate::device;
@@ -41,8 +41,7 @@ pub struct IOEvent<T> {
     pub data: IOData<T>,
 }
 
-// TODO: create a function that converts `IOEvent` to DataFrame
-
+// TODO: add kind to `IOEvent`
 impl<T> IOEvent<T> {
     /// Generate sensor event.
     ///

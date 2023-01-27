@@ -1,37 +1,68 @@
-use polars::error::ArrowError::NotYetImplemented;
-use polars::prelude::*;
+use std::collections::HashMap;
 
 use crate::io;
+use crate::device;
+
 
 // TODO: store and retrieve from storage
 
-/// Store `IOEvent` object in a polars dataframe
-pub struct Container {
-    df: DataFrame,
+pub trait Collection<T> {
+    fn add(&mut self, data: T) -> bool;
+    fn is_empty(&self) -> bool;
+    fn length(&self) -> usize;
 }
 
-impl Container {
-    fn insert<T>(&mut self, event: &io::IOEvent<T>) -> bool {
-        unimplemented!()
-    }
-    fn by_device(&self, device_id: &i32) -> DataFrame {
-        unimplemented!()
-    }
-    fn last(&self, n: i32) -> DataFrame {
-        unimplemented!()
-    }
-    fn is_empty(&self) -> bool {
-        unimplemented!()
-    }
+/// Store `IOEvent` object in a polars dataframe
+pub struct DeviceContainer {
+    inner: HashMap<i32, device::DeviceInfo<f64>>
+}
 
+impl DeviceContainer {
+    fn find(&self, device_id: i32) -> &device::DeviceInfo<f64> {
+        &self.inner[&device_id]
+    }
     fn new() -> Self {
-        let df = DataFrame::from(&io::IOEvent::<f64>::schema());
+        let inner: HashMap<i32, device::DeviceInfo<f64>> = Default::default();
 
-        Container { df }
+        DeviceContainer {inner}
+    }
+}
+
+impl Collection<device::DeviceInfo<f64>> for DeviceContainer {
+    fn add(&mut self, data: device::DeviceInfo<f64>) -> bool {
+        if self.inner.contains_key(&data.sensor_id) {
+            true
+        } else {
+            self.inner.insert(data.sensor_id, data);
+            false
+        }
     }
 
-    // Compare schema of internal `DataFrame` against another
-    fn check_schema(&self, other: &DataFrame) -> bool {
-        self.df.schema() == other.schema()
+    fn is_empty(&self) -> bool {
+        self.inner.is_empty()
+    }
+
+    fn length(&self) -> usize {
+        self.inner.len()
+    }
+}
+
+
+pub struct SensorLog {
+    inner: Vec<io::IOEvent<f64>>
+}
+
+impl Collection<io::IOEvent<f64>> for SensorLog {
+    fn add(&mut self, data: io::IOEvent<f64>) -> bool {
+        self.inner.push(data);
+        true
+    }
+
+    fn is_empty(&self) -> bool {
+        self.inner.is_empty()
+    }
+
+    fn length(&self) -> usize {
+        self.inner.len()
     }
 }
