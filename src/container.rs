@@ -1,7 +1,67 @@
 use std::collections::HashMap;
 
 
-// Define a trait Collection, which takes in two types T and K. T is the data type and K is the key type.
+/// A trait for creating a specialized `Container` instance
+///
+/// # Notes
+/// Any objects that should be stored _shall_ implement `Containerized` where the intention is to reduce boilerplate
+/// code and minimize type definitions.
+///
+/// # See Also
+/// Reference implementations for `io::IOEvent<T>` and `dyn Sensor<T>`
+///
+/// Provide a specialized key-value container for agnostic to type of objects stored or key-value type.
+/// Such stored objects are `Sensor` or `IOEvent` objects. The `Containerized` trait provides a wrapper around a
+/// `HashMap` intended to reduce boilerplate code and minimize type definitions.
+///
+/// # Notes:
+///     - Any objects that will be stored _shall_ implement the `Containerized` trait
+///     - It is important to note that for objects that implement the `Sensor` trait, the objects should be stored as
+///         `dyn Sensor<T>` in order to maintain their dynamic nature. It might also be necessary to use `Box<dyn Sensor<T>`.
+///         This allows for a single container to store multiple types of sensors while still being able to call the trait's
+///         methods on them.
+///
+/// # Type Parameters
+///
+/// * `T`: the type of the objects being stored in the container. This can be any type that implements the `Sensor` trait.
+/// * `K`: the type of the keys used to index the objects in the container. This can be any type that implements the `Eq` and `Hash` traits.
+///
+/// # Examples
+///
+/// ```
+/// struct MySensor {
+///     // fields here
+/// }
+///
+/// impl crate::Sensor for MySensor {
+///     // implementation here
+/// }
+///
+/// // Create a container to store MySensor objects
+/// let container: crate::Container<Box<dyn crate::Sensor<T>>, String> = Containerized::container();
+///
+/// // Insert a MySensor object into the container
+/// let sensor = MySensor { /* fields */ };
+/// container.insert("sensor1", Box::new(sensor));
+///
+/// // Get a reference to the MySensor object in the container
+/// let stored_sensor = container.get("sensor1").unwrap();
+///
+/// // Since Containerized is implemented for Sensor, any derived objects should be stored as `dyn Sensor<T>`
+/// ```
+
+pub trait Containerized<T, K>
+    where K: Eq + std::hash::Hash
+{
+    // TODO: add type
+    /// Returns a new instance of the `Container` struct for storing objects of type T
+    /// which can be accessed by key-values of type K.
+    fn container() -> Container<T, K>;
+}
+
+
+/// Define a basic interface to interact with underlying data.
+/// T is the data type being stored and K is the key type to access stored data.
 pub trait Collection<T, K> {
     // Add a key-value pair to the collection and return a boolean indicating if the key already existed in the collection.
     fn add(&mut self, key: K, data: T) -> bool;
