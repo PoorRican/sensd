@@ -4,6 +4,7 @@ use chrono::{Duration, Utc};
 use std::fmt::Formatter;
 
 use crate::io;
+use crate::container::{Container, Containerized};
 
 
 /// Basic interface for GPIO device metadata
@@ -133,3 +134,14 @@ impl<T> std::fmt::Display for DeviceInfo<T> {
     }
 }
 
+
+/// Returns a new instance of `Container` for storing objects which implement the `Sensor` trait which are accessed ``
+/// Objects are stored as `Box<dyn Sensor<T>>`
+impl<T, K> Containerized<Box<dyn Sensor<T>>, K> for dyn Sensor<T>
+    where T: std::fmt::Debug,
+          K: std::hash::Hash
+{
+    fn container() -> Container<Box<dyn Sensor<T>>, K> {
+        Container::<Box<dyn Sensor<T>>, K>::new()
+    }
+}

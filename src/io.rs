@@ -3,6 +3,7 @@ use std::fmt::Formatter;
 
 use chrono::{Utc, DateTime};
 use crate::device;
+use crate::container::{Container, Containerized};
 
 /// Defines sensor type. Used to classify data along with `IOData`.
 #[derive(Debug, Clone, Copy)]
@@ -94,5 +95,15 @@ impl<T> IOEvent<T> {
             timestamp,
             data
         }
+    }
+}
+
+
+/// Return a new instance of `Container` with for storing `IOEvent<T>` which are accessed by `DateTime<Utc>` as keys
+impl<T> Containerized<IOEvent<T>, DateTime<Utc>> for IOEvent<T>
+    where T: std::fmt::Debug
+{
+    fn container() -> Container<IOEvent<T>, DateTime<Utc>> {
+        Container::<IOEvent<T>, DateTime<Utc>>::new()
     }
 }
