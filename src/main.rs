@@ -18,7 +18,10 @@ use crate::settings::Settings;
 use crate::units::Ph;
 
 fn main() {
+    /// # Load Settings
     let settings: Settings = Settings::initialize();
+
+    /// # Setup Poller
     let mut poller: Poller<Ph, i32> = Poller::new(settings.interval, Utc::now() - settings.interval);
 
     let s0 = MockPhSensor::new("test name".to_string(), 0, Duration::seconds(5));
