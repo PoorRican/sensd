@@ -1,3 +1,4 @@
+use std::collections::hash_map::Iter;
 /// Data structures and interfaces to store data
 ///
 /// The main workhorses that provide functionality are `Containerized` and `Container`. The `Containerized`
@@ -122,8 +123,8 @@ impl<T, K: Eq + Hash> Container<T, K> {
     }
 
     /// Return a readonly reference to stored HashMap
-    pub fn _inner(&self) -> &HashMap<K, T> {
-        &self.inner
+    pub fn _inner(&self) -> Iter<'_, K, T> {
+        self.inner.iter()
     }
 }
 
