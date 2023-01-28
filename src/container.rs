@@ -1,3 +1,4 @@
+use std::collections::hash_map::Iter;
 /// Data structures and interfaces to store data
 ///
 /// The main workhorses that provide functionality are `Containerized` and `Container`. The `Containerized`
@@ -18,10 +19,8 @@
 /// store a collection of objects of a specific type `T`, and identified by a specific key type `K`. The relationship
 /// between `Containerized` and `Container` is that `Containerized` defines how the `Container` should be created
 /// and used for a specific type, while `Container` actually holds the collection of objects.
-
 use std::collections::HashMap;
 use std::hash::Hash;
-
 
 /// A trait for creating a specialized `Container` instance
 ///
@@ -73,14 +72,14 @@ use std::hash::Hash;
 /// ```
 
 pub trait Containerized<T, K>
-    where K: Eq + Hash
+where
+    K: Eq + Hash,
 {
     // TODO: add type
     /// Returns a new instance of the `Container` struct for storing objects of type T
     /// which can be accessed by key-values of type K.
     fn container() -> Container<T, K>;
 }
-
 
 /// Define a basic interface to interact with underlying data.
 /// T is the data type being stored and K is the key type to access stored data.
@@ -109,10 +108,11 @@ pub trait Collection<T, K> {
 /// The key only needs to be hashable.
 #[derive(Debug)]
 pub struct Container<T, K>
-    where K: Eq + Hash
+where
+    K: Eq + Hash,
 {
     // The inner field is a HashMap with key type K and value type T
-    inner: HashMap<K, T>
+    inner: HashMap<K, T>,
 }
 
 impl<T, K: Eq + Hash> Container<T, K> {
@@ -123,14 +123,13 @@ impl<T, K: Eq + Hash> Container<T, K> {
     }
 
     /// Return a readonly reference to stored HashMap
-    pub fn _inner(&self) -> &HashMap<K, T> {
-        &self.inner
+    pub fn iter(&self) -> Iter<'_, K, T> {
+        self.inner.iter()
     }
 }
 
 /// Implement the `Collection` interface for `Container`
 impl<T, K: Hash + Eq> Collection<T, K> for Container<T, K> {
-
     /// Add a key-value pair to the collection and return a boolean indicating if the value has been added to the collection.
     /// Using `entry` method on the inner HashMap to check if the key already exists in the HashMap
     ///  - If the key already exists, the returned value is `std::collections::hash_map::Entry::Occupied`, which returns false.

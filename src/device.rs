@@ -1,11 +1,9 @@
 /// Provide Low-level Device Functionality
-
-use chrono::{Duration, Utc};
+use chrono::{DateTime, Duration, Utc};
 use std::fmt::Formatter;
 
-use crate::io;
 use crate::container::{Container, Containerized};
-
+use crate::io;
 
 /// Basic interface for GPIO device metadata
 pub trait Device<T> {
@@ -13,7 +11,6 @@ pub trait Device<T> {
     fn name(&self) -> String;
     fn id(&self) -> i32;
 }
-
 
 /// Interface for an input device
 /// It is used as a trait object and can be stored in a container using the `Containerized` trait.
@@ -46,19 +43,22 @@ pub trait Device<T> {
 pub trait Sensor<T>: Device<T> {
     fn read(&self) -> T;
 
-    fn get_event(&self) -> io::IOEvent<T> where Self: Sized {
-        io::IOEvent::create(self,
-                          Utc::now(),
-                          self.read())
+    fn get_event(&self, dt: DateTime<Utc>) -> io::IOEvent<T> {
+        io::IOEvent::create(self, dt, self.read())
     }
 }
 
 impl<T> std::fmt::Debug for dyn Sensor<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Sensor {{ name: {}, id: {}, info: {}", self.name(), self.id(), self.get_metadata())
+        write!(
+            f,
+            "Sensor {{ name: {}, id: {}, info: {}",
+            self.name(),
+            self.id(),
+            self.get_metadata()
+        )
     }
 }
-
 
 /// Defines an interface for an input device that needs to be calibrated
 pub trait Calibrated {
@@ -97,7 +97,7 @@ pub struct DeviceMetadata<T> {
     max_value: T,
     resolution: T,
 
-    min_delay: Duration,
+    pub min_delay: Duration,
 }
 
 impl<T> DeviceMetadata<T> {
@@ -117,11 +117,24 @@ impl<T> DeviceMetadata<T> {
     /// # Returns
     ///
     /// A new instance with given specified parameters
-    pub fn new(name: String, version_id: i32, sensor_id: i32, kind: io::IOKind,
-               min_value: T, max_value: T, resolution: T, min_delay: Duration) -> Self {
+    pub fn new(
+        name: String,
+        version_id: i32,
+        sensor_id: i32,
+        kind: io::IOKind,
+        min_value: T,
+        max_value: T,
+        resolution: T,
+        min_delay: Duration,
+    ) -> Self {
         DeviceMetadata {
-            name, version_id, sensor_id, kind,
-            min_value, max_value, resolution,
+            name,
+            version_id,
+            sensor_id,
+            kind,
+            min_value,
+            max_value,
+            resolution,
             min_delay,
         }
     }
@@ -129,16 +142,21 @@ impl<T> DeviceMetadata<T> {
 
 impl<T> std::fmt::Display for DeviceMetadata<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Device Info {{ Kind: {}, Min. Delay: {} }}", self.kind, self.min_delay.to_string())
+        write!(
+            f,
+            "Device Info {{ Kind: {}, Min. Delay: {} }}",
+            self.kind,
+            self.min_delay.to_string()
+        )
     }
 }
-
 
 /// Returns a new instance of `Container` for storing objects which implement the `Sensor` trait which are accessed ``
 /// Objects are stored as `Box<dyn Sensor<T>>`
 impl<T, K> Containerized<Box<dyn Sensor<T>>, K> for dyn Sensor<T>
-    where T: std::fmt::Debug,
-          K: std::hash::Hash + Eq
+where
+    T: std::fmt::Debug,
+    K: std::hash::Hash + Eq,
 {
     fn container() -> Container<Box<dyn Sensor<T>>, K> {
         Container::<Box<dyn Sensor<T>>, K>::new()
