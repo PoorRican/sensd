@@ -30,6 +30,10 @@ fn main() {
     poller.sensors.add(0, Box::new(s0));
     poller.sensors.add(1, Box::new(s1));
 
-    dbg!(poller.sensors.iter());
+    loop {
+        poller.poll();
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        dbg!(&poller.log)
+    }
 
 }

@@ -51,12 +51,14 @@ impl std::fmt::Display for IOKind {
 // TODO: enum for `IODirection` when implementing control system
 
 /// Encapsulates sensor data. Provides a unified data type for returning data.
+#[derive(Debug)]
 pub struct IOData<T> {
     pub kind: IOKind,
     pub data: T,
 }
 
 /// Encapsulates `IOData` alongside of timestamp and device data
+#[derive(Debug)]
 pub struct IOEvent<T> {
     pub version_id: i32,
     pub sensor_id: i32,
