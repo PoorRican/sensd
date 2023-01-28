@@ -5,8 +5,15 @@ use crate::container::{Collection, Container, Containerized};
 use crate::device::Sensor;
 use crate::io::IOEvent;
 
-/// Mediator that polls a `Container` of `Sensors` and populates another container with `IOEvent` objects.
-/// TODO: multithreaded polling
+/// Mediator to periodically poll sensors of various types, and store the resulting `IOEvent` objects in a `Container`.
+///
+/// `poll()` is the primary callable and iterates through the `Sensor` container to call `get_event()` on each sensor.
+/// Resulting `IOEvent` objects are then added to the `log` container.
+///
+/// The `interval` field indicates the duration between each poll and the `last_execution` field indicates the last time the poll method was executed
+///
+/// TODO: multithreaded polling. Implement `RwLock` or `Mutex` to synchronize access to the sensors and
+///       log containers in order to make the poll() function thread-safe.
 pub struct Poller<T, K: Eq + Hash> {
     interval: Duration,
     last_execution: DateTime<Utc>,
@@ -32,6 +39,8 @@ impl<T: std::fmt::Debug, K: Eq + Hash> Poller<T, K> {
         }
     }
 
+    /// Constructor for `Poller` struct.
+    /// Internal containers are instantiated as empty.
     pub fn new( interval: Duration, last_execution: DateTime<Utc> ) -> Self {
         let sensors: Container<Box<dyn Sensor<T>>, K> = <dyn Sensor<T>>::container();
         let log: Container<IOEvent<T>, DateTime<Utc>> = <IOEvent<T>>::container();
