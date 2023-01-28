@@ -23,7 +23,7 @@ impl<T: std::fmt::Debug, K: Eq + Hash> Poller<T, K> {
         let next_execution = self.last_execution + self.interval;
 
         if next_execution <= Utc::now() {
-            for (_, sensor) in self.sensors._inner() {
+            for (_, sensor) in self.sensors.iter() {
                 self.last_execution = next_execution;
                 let event = sensor.get_event(next_execution);
                 self.log.add(next_execution, event);

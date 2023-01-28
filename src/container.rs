@@ -123,7 +123,7 @@ impl<T, K: Eq + Hash> Container<T, K> {
     }
 
     /// Return a readonly reference to stored HashMap
-    pub fn _inner(&self) -> Iter<'_, K, T> {
+    pub fn iter(&self) -> Iter<'_, K, T> {
         self.inner.iter()
     }
 }

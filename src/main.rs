@@ -27,6 +27,6 @@ fn main() {
     poller.sensors.add(0, Box::new(s0));
     poller.sensors.add(1, Box::new(s1));
 
-    dbg!(poller.sensors._inner());
+    dbg!(poller.sensors.iter());
 
 }
