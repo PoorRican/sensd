@@ -1,9 +1,10 @@
 use chrono::Duration;
 use dotenv::dotenv;
+use std::env::var;
 
 /// Default values
 const VERSION: &str = "0.0.1-alpha";
-const INTERVAL: i32 = 10;
+const INTERVAL: i64 = 10;
 
 /// Struct containing settings loaded from ".env"
 pub struct Settings {
@@ -15,8 +16,10 @@ impl Settings {
     /// Read settings from .env file
     pub fn initialize() -> Self {
         dotenv().ok();
-        let version = std::env::var("VERSION").unwrap_or_else(|_| VERSION.to_string());
-        let interval =  Duration::seconds(i64::from(std::env::var("INTERVAL").unwrap_or(INTERVAL.to_string())));
+        let version = var("VERSION").unwrap_or_else(|_| VERSION.to_string());
+        let interval =  Duration::seconds(
+            var("INTERVAL").unwrap_or(INTERVAL.to_string()).parse::<i64>().unwrap());
+
         Settings { version, interval }
     }
 }

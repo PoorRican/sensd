@@ -1,22 +1,22 @@
 use chrono::{DateTime, Duration, Utc};
 use std::hash::Hash;
 
-use crate::container::{Collection, Container};
+use crate::container::{Collection, Container, Containerized};
 use crate::device::Sensor;
 use crate::io::IOEvent;
 
 /// Mediator that polls a `Container` of `Sensors` and populates another container with `IOEvent` objects.
 /// TODO: multithreaded polling
-pub struct Poller<T: 'static, K: Eq + Hash + 'static> {
-    interval: &'static Duration,
+pub struct Poller<T, K: Eq + Hash> {
+    interval: Duration,
     last_execution: DateTime<Utc>,
 
     // internal containers
-    sensors: &'static mut Container<Box<dyn Sensor<T>>, K>,
-    log: &'static mut Container<IOEvent<T>, DateTime<Utc>>,
+    pub sensors: Container<Box<dyn Sensor<T>>, K>,
+    pub log: Container<IOEvent<T>, DateTime<Utc>>,
 }
 
-impl<T, K: Eq + Hash> Poller<T, K> {
+impl<T: std::fmt::Debug, K: Eq + Hash> Poller<T, K> {
     /// Iterate through container once. Call `get_event()` on each value.
     /// Update according to the lowest rate.
     pub fn poll(&mut self) {
@@ -31,9 +31,9 @@ impl<T, K: Eq + Hash> Poller<T, K> {
         }
     }
 
-    pub fn new( interval: &'static Duration, last_execution: DateTime<Utc>,
-            sensors: &'static mut Container<Box<dyn Sensor<T>>, K>,
-            log: &'static mut Container<IOEvent<T>, DateTime<Utc>> ) -> Self {
+    pub fn new( interval: Duration, last_execution: DateTime<Utc> ) -> Self {
+        let sensors: Container<Box<dyn Sensor<T>>, K> = <dyn Sensor<T>>::container();
+        let log: Container<IOEvent<T>, DateTime<Utc>> = <IOEvent<T>>::container();
         Self { interval, last_execution, sensors, log }
     }
 }
