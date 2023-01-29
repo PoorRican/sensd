@@ -12,7 +12,7 @@ use chrono::{DateTime, Duration, Utc};
 
 use crate::container::{Collection, Container, Containerized};
 use crate::device::Sensor;
-use crate::polling::Poller;
+use crate::polling::PollGroup;
 use crate::sensors::ph::MockPhSensor;
 use crate::settings::Settings;
 use crate::units::Ph;
@@ -22,7 +22,7 @@ fn main() {
     let settings: Settings = Settings::initialize();
 
     /// # Setup Poller
-    let mut poller: Poller<Ph, i32> = Poller::new(settings.interval, Utc::now() - settings.interval);
+    let mut poller: PollGroup<Ph, i32> = PollGroup::new(settings.interval, Utc::now() - settings.interval);
 
     let s0 = MockPhSensor::new("test name".to_string(), 0, Duration::seconds(5));
     let s1 = MockPhSensor::new("second sensor".to_string(), 1, Duration::seconds(10));

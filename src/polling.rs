@@ -14,7 +14,7 @@ use crate::io::IOEvent;
 ///
 /// TODO: multithreaded polling. Implement `RwLock` or `Mutex` to synchronize access to the sensors and
 ///       log containers in order to make the poll() function thread-safe.
-pub struct Poller<T, K: Eq + Hash> {
+pub struct PollGroup<T, K: Eq + Hash> {
     interval: Duration,
     last_execution: DateTime<Utc>,
 
@@ -23,7 +23,7 @@ pub struct Poller<T, K: Eq + Hash> {
     pub log: Container<IOEvent<T>, DateTime<Utc>>,
 }
 
-impl<T: std::fmt::Debug, K: Eq + Hash> Poller<T, K> {
+impl<T: std::fmt::Debug, K: Eq + Hash> PollGroup<T, K> {
     /// Iterate through container once. Call `get_event()` on each value.
     /// Update according to the lowest rate.
     pub fn poll(&mut self) {
