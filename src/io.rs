@@ -1,12 +1,14 @@
 /// Encapsulate IO for devices
 use chrono::{DateTime, Utc};
 use std::fmt::Formatter;
+use serde::{Serialize, Deserialize};
+use serde::ser::{Serializer, SerializeStruct};
 
 use crate::container::{Container, Containerized};
 use crate::device;
 
 /// Defines sensor type. Used to classify data along with `IOData`.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum IOKind {
     Light,
     Pressure,
@@ -51,18 +53,20 @@ impl std::fmt::Display for IOKind {
 // TODO: enum for `IODirection` when implementing control system
 
 /// Encapsulates sensor data. Provides a unified data type for returning data.
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct IOData<T> {
     pub kind: IOKind,
     pub data: T,
 }
 
 /// Encapsulates `IOData` alongside of timestamp and device data
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct IOEvent<T> {
     pub version_id: i32,
     pub sensor_id: i32,
     pub timestamp: DateTime<Utc>,
+
+    #[serde(flatten)]
     pub data: IOData<T>,
 }
 

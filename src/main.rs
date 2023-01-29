@@ -1,4 +1,6 @@
+#[macro_use]
 extern crate chrono;
+extern crate serde;
 
 mod container;
 mod device;
@@ -33,7 +35,7 @@ fn main() {
     loop {
         poller.poll();
         std::thread::sleep(std::time::Duration::from_secs(1));
-        dbg!(&poller.log)
+        dbg!(&poller.log);
     }
 
 }
