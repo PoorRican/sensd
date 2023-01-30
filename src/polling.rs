@@ -31,11 +31,10 @@ impl<T: std::fmt::Debug, K: Eq + Hash> PollGroup<T, K> {
 
         if next_execution <= Utc::now() {
             for (_, sensor) in self.sensors.iter() {
-                self.last_execution = next_execution;
                 let event = sensor.get_event(next_execution);
                 self.log.add(next_execution, event);
-                dbg!(sensor);
             }
+            self.last_execution = next_execution;
         }
     }
 

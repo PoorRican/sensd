@@ -16,10 +16,9 @@ impl MockPhSensor {
     ///
     /// * `name`: arbitrary name of sensor
     /// * `sensor_id`: arbitrary, numeric ID to differentiate from other sensors
-    /// * `min_delay`: minimum delay between sensor reads
     ///
     /// returns: MockPhSensor
-    pub fn new(name: String, sensor_id: i32, min_delay: Duration) -> Self {
+    pub fn new(name: String, sensor_id: i32) -> Self {
         let version_id = 0;
         let kind = io::IOKind::PH;
         let min_value = Ph(0.0);
@@ -27,7 +26,7 @@ impl MockPhSensor {
         let resolution = Ph(0.1);
 
         let metadata: device::DeviceMetadata<Ph> = device::DeviceMetadata::new(
-            name, version_id, sensor_id, kind, min_value, max_value, resolution, min_delay,
+            name, version_id, sensor_id, kind, min_value, max_value, resolution,
         );
 
         MockPhSensor { metadata }

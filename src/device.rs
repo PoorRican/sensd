@@ -69,7 +69,7 @@ pub trait Calibrated {
 /// Encapsulation of individual device metadata
 ///
 /// This struct stores information about a device, including its name, version ID, sensor ID,
-/// kind, minimum and maximum value, resolution, and minimum delay between readings.
+/// kind, minimum and maximum value, and resolution.
 ///
 /// # Example
 ///
@@ -81,13 +81,12 @@ pub trait Calibrated {
 /// let min_value = 0.0;
 /// let max_value = 14.0;
 /// let resolution = 0.1;
-/// let min_delay = chrono::Duration::seconds(1);
 ///
-/// let info = crate::DeviceInfo::new(name, version_id, sensor_id, kind, min_value, max_value, resolution, min_delay);
+/// let info = crate::DeviceInfo::new(name, version_id, sensor_id, kind, min_value, max_value, resolution);
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeviceMetadata<T> {
-    // TODO: what changes should be made? Dedicated struct for number space? Should `min_delay` be moved to `Device`?
+    // TODO: what changes should be made? Dedicated struct for number space?
     pub name: String,
     pub version_id: i32,
     pub sensor_id: i32,
@@ -96,8 +95,6 @@ pub struct DeviceMetadata<T> {
     min_value: T,
     max_value: T,
     resolution: T,
-
-    pub min_delay: Duration,
 }
 
 impl<T> DeviceMetadata<T> {
@@ -112,7 +109,6 @@ impl<T> DeviceMetadata<T> {
     /// * `min_value`: measurable or theoretical minimum value (in SI units)
     /// * `max_value`: measurable or theoretical maximum value (in SI units)
     /// * `resolution`: measurable resolution of the device
-    /// * `min_delay`: minimum delay between communication
     ///
     /// # Returns
     ///
@@ -125,7 +121,6 @@ impl<T> DeviceMetadata<T> {
         min_value: T,
         max_value: T,
         resolution: T,
-        min_delay: Duration,
     ) -> Self {
         DeviceMetadata {
             name,
@@ -135,7 +130,6 @@ impl<T> DeviceMetadata<T> {
             min_value,
             max_value,
             resolution,
-            min_delay,
         }
     }
 }
@@ -144,9 +138,8 @@ impl<T> std::fmt::Display for DeviceMetadata<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Device Info {{ Kind: {}, Min. Delay: {} }}",
+            "Device Info {{ Kind: {} }}",
             self.kind,
-            self.min_delay.to_string()
         )
     }
 }
