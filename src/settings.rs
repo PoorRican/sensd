@@ -3,7 +3,7 @@ use dotenv::dotenv;
 use std::env::var;
 
 /// Default values
-const VERSION: &str = "0.0.1-alpha";
+const VERSION: String = String::from("0.1.0-alpha");
 const INTERVAL: i64 = 10;
 
 /// Struct containing settings loaded from ".env"
