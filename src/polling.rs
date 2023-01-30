@@ -15,6 +15,7 @@ use crate::io::IOEvent;
 /// TODO: multithreaded polling. Implement `RwLock` or `Mutex` to synchronize access to the sensors and
 ///       log containers in order to make the poll() function thread-safe.
 pub struct PollGroup<T, K: Eq + Hash> {
+    name: String,
     interval: Duration,
     last_execution: DateTime<Utc>,
 
@@ -40,9 +41,9 @@ impl<T: std::fmt::Debug, K: Eq + Hash> PollGroup<T, K> {
 
     /// Constructor for `Poller` struct.
     /// Internal containers are instantiated as empty.
-    pub fn new( interval: Duration, last_execution: DateTime<Utc> ) -> Self {
+    pub fn new( name: String, interval: Duration, last_execution: DateTime<Utc> ) -> Self {
         let sensors: Container<Box<dyn Sensor<T>>, K> = <dyn Sensor<T>>::container();
         let log: Container<IOEvent<T>, DateTime<Utc>> = <IOEvent<T>>::container();
-        Self { interval, last_execution, sensors, log }
+        Self { name, interval, last_execution, sensors, log }
     }
 }

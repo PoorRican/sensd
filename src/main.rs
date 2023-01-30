@@ -24,7 +24,7 @@ fn main() {
     let settings: Settings = Settings::initialize();
 
     /// # Setup Poller
-    let mut poller: PollGroup<Ph, i32> = PollGroup::new(settings.interval, Utc::now() - settings.interval);
+    let mut poller: PollGroup<Ph, i32> = PollGroup::new( String::from("main"), settings.interval, Utc::now() - settings.interval);
 
     let s0 = MockPhSensor::new("test name".to_string(), 0);
     let s1 = MockPhSensor::new("second sensor".to_string(), 1);
