@@ -9,6 +9,7 @@ mod polling;
 mod sensors;
 mod settings;
 mod units;
+mod storage;
 
 use chrono::{DateTime, Duration, Utc};
 
