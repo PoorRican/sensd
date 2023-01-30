@@ -1,5 +1,6 @@
 /// Provide Low-level Device Functionality
 use chrono::{DateTime, Duration, Utc};
+use serde::{Serialize, Deserialize};
 use std::fmt::Formatter;
 
 use crate::container::{Container, Containerized};
@@ -84,7 +85,7 @@ pub trait Calibrated {
 ///
 /// let info = crate::DeviceInfo::new(name, version_id, sensor_id, kind, min_value, max_value, resolution);
 /// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DeviceMetadata<T> {
     // TODO: what changes should be made? Dedicated struct for number space?
     pub name: String,
