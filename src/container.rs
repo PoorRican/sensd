@@ -1,4 +1,3 @@
-use std::collections::hash_map::Iter;
 /// Data structures and interfaces to store data
 ///
 /// The main workhorses that provide functionality are `Containerized` and `Container`. The `Containerized`
@@ -19,8 +18,9 @@ use std::collections::hash_map::Iter;
 /// store a collection of objects of a specific type `T`, and identified by a specific key type `K`. The relationship
 /// between `Containerized` and `Container` is that `Containerized` defines how the `Container` should be created
 /// and used for a specific type, while `Container` actually holds the collection of objects.
-use std::collections::HashMap;
+use std::collections::{hash_map::Iter, HashMap};
 use std::hash::Hash;
+use serde::{Deserialize, Serialize};
 
 /// A trait for creating a specialized `Container` instance
 ///
@@ -83,6 +83,7 @@ where
 
 /// Define a basic interface to interact with underlying data.
 /// T is the data type being stored and K is the key type to access stored data.
+// TODO: type should be stored in implementations
 pub trait Collection<T, K> {
     /// Add a key-value pair to the collection and return a boolean indicating if the addition was successful.
     /// If the key already existed, then `false` is returned.
@@ -106,7 +107,7 @@ pub trait Collection<T, K> {
 /// Define a struct `Container` which takes in two types T and K.
 /// This container is meant to store any complex type and is stored with an arbitrary key.
 /// The key only needs to be hashable.
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Container<T, K>
 where
     K: Eq + Hash,
