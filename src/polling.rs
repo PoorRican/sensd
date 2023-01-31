@@ -2,7 +2,8 @@ use chrono::{DateTime, Duration, Utc};
 use std::hash::Hash;
 
 use crate::container::{Collection, Container, Containerized};
-use crate::device::Sensor;
+use crate::device::{DeviceMetadata, Sensor, Device};
+use crate::errors::{Result, Error};
 use crate::io::IOEvent;
 
 /// Mediator to periodically poll sensors of various types, and store the resulting `IOEvent` objects in a `Container`.
