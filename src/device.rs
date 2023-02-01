@@ -2,6 +2,7 @@
 use chrono::{DateTime, Duration, Utc};
 use serde::{Serialize, Deserialize};
 use std::fmt::Formatter;
+use serde::de::DeserializeOwned;
 
 use crate::container::{Container, Containerized};
 use crate::io;
@@ -98,7 +99,7 @@ pub struct DeviceMetadata<T> {
     resolution: T,
 }
 
-impl<T> DeviceMetadata<T> {
+impl<T: Serialize> DeviceMetadata<T> {
     /// Creates a new instance of `DeviceInfo`
     ///
     /// # Arguments
@@ -135,7 +136,7 @@ impl<T> DeviceMetadata<T> {
     }
 }
 
-impl<T> std::fmt::Display for DeviceMetadata<T> {
+impl<T: Serialize> std::fmt::Display for DeviceMetadata<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
