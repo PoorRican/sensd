@@ -52,3 +52,9 @@ impl device::Sensor<Ph> for MockPhSensor {
         Ph::new(1.2).unwrap()
     }
 }
+
+impl From<device::DeviceMetadata<Ph>> for MockPhSensor {
+    fn from(metadata: device::DeviceMetadata<Ph>) -> Self {
+        Self { metadata }
+    }
+}
