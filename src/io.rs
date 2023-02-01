@@ -54,24 +54,24 @@ impl std::fmt::Display for IOKind {
 
 /// Encapsulates sensor data. Provides a unified data type for returning data.
 #[derive(Debug, Serialize, Deserialize)]
-pub struct IOData<T> {
+pub struct IOData {
     pub kind: IOKind,
-    pub data: T,
+    pub data: f64,
 }
 
 /// Encapsulates `IOData` alongside of timestamp and device data
 #[derive(Debug, Serialize, Deserialize)]
-pub struct IOEvent<T> {
+pub struct IOEvent {
     pub version_id: i32,
     pub sensor_id: i32,
     pub timestamp: DateTime<Utc>,
 
     #[serde(flatten)]
-    pub data: IOData<T>,
+    pub data: IOData,
 }
 
 // TODO: add kind to `IOEvent`
-impl<T> IOEvent<T> {
+impl IOEvent {
     /// Generate sensor event.
     ///
     /// # Arguments
@@ -80,7 +80,7 @@ impl<T> IOEvent<T> {
     /// * `timestamp`: timestamp of event
     /// * `value`: value to include in
     ///
-    /// returns: SensorEvent<T>
+    /// returns: SensorEvent
     ///
     /// # Examples
     ///
@@ -88,9 +88,9 @@ impl<T> IOEvent<T> {
     ///
     /// ```
     pub fn create(
-        device: &(impl device::Device<T> + ?Sized),
+        device: &(impl device::Device + ?Sized),
         timestamp: DateTime<Utc>,
-        value: T,
+        value: f64,
     ) -> Self {
         let info = device.get_metadata();
         let version_id = info.version_id;
@@ -108,12 +108,11 @@ impl<T> IOEvent<T> {
     }
 }
 
-/// Return a new instance of `Container` with for storing `IOEvent<T>` which are accessed by `DateTime<Utc>` as keys
-impl<T> Containerized<IOEvent<T>, DateTime<Utc>> for IOEvent<T>
+/// Return a new instance of `Container` with for storing `IOEvent` which are accessed by `DateTime<Utc>` as keys
+impl Containerized<IOEvent, DateTime<Utc>> for IOEvent
 where
-    T: std::fmt::Debug,
 {
-    fn container() -> Container<IOEvent<T>, DateTime<Utc>> {
-        Container::<IOEvent<T>, DateTime<Utc>>::new()
+    fn container() -> Container<IOEvent, DateTime<Utc>> {
+        Container::<IOEvent, DateTime<Utc>>::new()
     }
 }

@@ -4,7 +4,7 @@ use crate::{device, io, units::Ph};
 
 #[derive(Debug, Clone)]
 pub struct MockPhSensor {
-    metadata: device::DeviceMetadata<Ph>,
+    metadata: device::DeviceMetadata,
 }
 
 /** Represents a mock pH sensor.
@@ -21,11 +21,11 @@ impl MockPhSensor {
     pub fn new(name: String, sensor_id: i32) -> Self {
         let version_id = 0;
         let kind = io::IOKind::PH;
-        let min_value = Ph(0.0);
-        let max_value = Ph(14.0);
-        let resolution = Ph(0.1);
+        let min_value = 0.0;
+        let max_value = 14.0;
+        let resolution = 0.1;
 
-        let metadata: device::DeviceMetadata<Ph> = device::DeviceMetadata::new(
+        let metadata: device::DeviceMetadata = device::DeviceMetadata::new(
             name, version_id, sensor_id, kind, min_value, max_value, resolution,
         );
 
@@ -34,8 +34,8 @@ impl MockPhSensor {
 }
 
 // Implement traits
-impl device::Device<Ph> for MockPhSensor {
-    fn get_metadata(&self) -> &device::DeviceMetadata<Ph> {
+impl device::Device for MockPhSensor {
+    fn get_metadata(&self) -> &device::DeviceMetadata {
         &self.metadata
     }
     fn name(&self) -> String {
@@ -46,15 +46,15 @@ impl device::Device<Ph> for MockPhSensor {
     }
 }
 
-impl device::Sensor<Ph> for MockPhSensor {
+impl device::Sensor for MockPhSensor {
     /// Return a mock value
-    fn read(&self) -> Ph {
-        Ph::new(1.2).unwrap()
+    fn read(&self) -> f64 {
+        1.2
     }
 }
 
-impl From<device::DeviceMetadata<Ph>> for MockPhSensor {
-    fn from(metadata: device::DeviceMetadata<Ph>) -> Self {
+impl From<device::DeviceMetadata> for MockPhSensor {
+    fn from(metadata: device::DeviceMetadata) -> Self {
         Self { metadata }
     }
 }

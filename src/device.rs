@@ -8,8 +8,8 @@ use crate::container::{Container, Containerized};
 use crate::io;
 
 /// Basic interface for GPIO device metadata
-pub trait Device<T> {
-    fn get_metadata(&self) -> &DeviceMetadata<T>;
+pub trait Device {
+    fn get_metadata(&self) -> &DeviceMetadata;
     fn name(&self) -> String;
     fn id(&self) -> i32;
 }
@@ -22,7 +22,7 @@ pub trait Device<T> {
 ///
 /// # Functions
 /// - `read() -> T`: Reads the sensor and return the data as a value of type `T`.
-/// - `get_event() -> &IOEvent<T>`: Create an `IOEvent` with current sensor data.
+/// - `get_event() -> &IOEvent`: Create an `IOEvent` with current sensor data.
 ///
 /// # Examples
 /// ```
@@ -42,15 +42,15 @@ pub trait Device<T> {
 /// container.insert(2, Box::new(HumiditySensor::new(String::from("Humidity Sensor"), 2)));
 /// ```
 /// > Note how two different sensor types were stored in `container`.
-pub trait Sensor<T>: Device<T> {
-    fn read(&self) -> T;
+pub trait Sensor: Device {
+    fn read(&self) -> f64;
 
-    fn get_event(&self, dt: DateTime<Utc>) -> io::IOEvent<T> {
+    fn get_event(&self, dt: DateTime<Utc>) -> io::IOEvent {
         io::IOEvent::create(self, dt, self.read())
     }
 }
 
-impl<T> std::fmt::Debug for dyn Sensor<T> {
+impl std::fmt::Debug for dyn Sensor {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -87,19 +87,19 @@ pub trait Calibrated {
 /// let info = crate::DeviceInfo::new(name, version_id, sensor_id, kind, min_value, max_value, resolution);
 /// ```
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct DeviceMetadata<T> {
+pub struct DeviceMetadata {
     // TODO: what changes should be made? Dedicated struct for number space?
     pub name: String,
     pub version_id: i32,
     pub sensor_id: i32,
     pub kind: io::IOKind,
 
-    min_value: T,
-    max_value: T,
-    resolution: T,
+    min_value: f64,
+    max_value: f64,
+    resolution: f64,
 }
 
-impl<T: Serialize> DeviceMetadata<T> {
+impl DeviceMetadata {
     /// Creates a new instance of `DeviceInfo`
     ///
     /// # Arguments
@@ -120,9 +120,9 @@ impl<T: Serialize> DeviceMetadata<T> {
         version_id: i32,
         sensor_id: i32,
         kind: io::IOKind,
-        min_value: T,
-        max_value: T,
-        resolution: T,
+        min_value: f64,
+        max_value: f64,
+        resolution: f64,
     ) -> Self {
         DeviceMetadata {
             name,
@@ -136,7 +136,7 @@ impl<T: Serialize> DeviceMetadata<T> {
     }
 }
 
-impl<T: Serialize> std::fmt::Display for DeviceMetadata<T> {
+impl std::fmt::Display for DeviceMetadata {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -147,13 +147,12 @@ impl<T: Serialize> std::fmt::Display for DeviceMetadata<T> {
 }
 
 /// Returns a new instance of `Container` for storing objects which implement the `Sensor` trait which are accessed ``
-/// Objects are stored as `Box<dyn Sensor<T>>`
-impl<T, K> Containerized<Box<dyn Sensor<T>>, K> for dyn Sensor<T>
+/// Objects are stored as `Box<dyn Sensor>`
+impl<K> Containerized<Box<dyn Sensor>, K> for dyn Sensor
 where
-    T: std::fmt::Debug,
     K: std::hash::Hash + Eq,
 {
-    fn container() -> Container<Box<dyn Sensor<T>>, K> {
-        Container::<Box<dyn Sensor<T>>, K>::new()
+    fn container() -> Container<Box<dyn Sensor>, K> {
+        Container::<Box<dyn Sensor>, K>::new()
     }
 }
