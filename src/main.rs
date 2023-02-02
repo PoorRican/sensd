@@ -12,7 +12,9 @@ mod settings;
 mod units;
 mod storage;
 
+use std::sync::Arc;
 use chrono::{DateTime, Duration, Utc};
+use sens::device::Device;
 
 use crate::container::{Collection, Container, Containerized};
 use crate::device::Sensor;
@@ -23,16 +25,16 @@ use crate::units::Ph;
 
 fn main() {
     /// # Load Settings
-    let settings: Settings = Settings::initialize();
+    let settings: Arc<Settings> = Arc::new(Settings::initialize());
 
     /// # Setup Poller
-    let mut poller: PollGroup<i32> = PollGroup::new( String::from("main"), settings.interval, Utc::now() - settings.interval);
+    let mut poller: PollGroup<i32> = PollGroup::new( "main", settings);
 
     let s0 = MockPhSensor::new("test name".to_string(), 0);
     let s1 = MockPhSensor::new("second sensor".to_string(), 1);
 
-    poller.sensors.add(0, Box::new(s0));
-    poller.sensors.add(1, Box::new(s1));
+    poller.sensors.add(s0.id(), Box::new(s0));
+    poller.sensors.add(s1.id(), Box::new(s1));
 
     loop {
         poller.poll();

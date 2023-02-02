@@ -1,10 +1,15 @@
 use chrono::{DateTime, Duration, Utc};
+use std::fmt::Debug;
 use std::hash::Hash;
+use std::sync::Arc;
 
 use crate::container::{Collection, Container, Containerized};
 use crate::device::{DeviceMetadata, Sensor, Device};
 use crate::errors::{Result, Error};
 use crate::io::IOEvent;
+use crate::sensors::ph::MockPhSensor;
+use crate::settings::Settings;
+use crate::storage::Persistent;
 
 /// Mediator to periodically poll sensors of various types, and store the resulting `IOEvent` objects in a `Container`.
 ///
@@ -17,19 +22,19 @@ use crate::io::IOEvent;
 ///       log containers in order to make the poll() function thread-safe.
 pub struct PollGroup<K: Eq + Hash> {
     name: String,
-    interval: Duration,
     last_execution: DateTime<Utc>,
+    settings: Arc<Settings>,
 
     // internal containers
     pub sensors: Container<Box<dyn Sensor>, K>,
     pub log: Container<IOEvent, DateTime<Utc>>,
 }
 
-impl<K: Eq + Hash> PollGroup<K> {
+impl<K: Eq + Hash> PollGroup<K> where MockPhSensor: Sensor {
     /// Iterate through container once. Call `get_event()` on each value.
     /// Update according to the lowest rate.
     pub fn poll(&mut self) {
-        let next_execution = self.last_execution + self.interval;
+        let next_execution = self.last_execution + self.settings.interval;
 
         if next_execution <= Utc::now() {
             for (_, sensor) in self.sensors.iter() {
@@ -42,9 +47,12 @@ impl<K: Eq + Hash> PollGroup<K> {
 
     /// Constructor for `Poller` struct.
     /// Internal containers are instantiated as empty.
-    pub fn new( name: String, interval: Duration, last_execution: DateTime<Utc> ) -> Self {
+    pub fn new( name: &str, settings: Arc<Settings> ) -> Self {
+        let last_execution = Utc::now() - settings.interval;
+
         let sensors: Container<Box<dyn Sensor>, K> = <dyn Sensor>::container();
         let log: Container<IOEvent, DateTime<Utc>> = <IOEvent>::container();
-        Self { name, interval, last_execution, sensors, log }
+
+        Self { name: String::from(name), settings, last_execution, sensors, log }
     }
 }
