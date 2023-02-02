@@ -1,4 +1,4 @@
-# 6SENS
+# sensd
 A Multi-purpose Sensor Logger and Control System
 
 ## Purpose
