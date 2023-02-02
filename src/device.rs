@@ -54,10 +54,10 @@ impl std::fmt::Debug for dyn Sensor {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Sensor {{ name: {}, id: {}, info: {}",
+            "Sensor {{ name: {}, id: {}, kind: {}",
             self.name(),
             self.id(),
-            self.get_metadata()
+            self.get_metadata().kind
         )
     }
 }
