@@ -7,10 +7,9 @@ mod settings;
 mod units;
 mod storage;
 
-use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use crate::storage::{MappedCollection, PollGroup, Persistent};
+use crate::storage::{MappedCollection, PollGroup};
 use crate::io::{Device, LogType, MockPhSensor};
 use crate::errors::Result;
 use crate::settings::Settings;

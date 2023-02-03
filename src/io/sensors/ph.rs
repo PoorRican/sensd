@@ -1,11 +1,9 @@
-use std::borrow::BorrowMut;
 use chrono::{DateTime, Utc};
 use std::sync::{Arc, Mutex};
 
 use crate::io::{Device, Input, IOKind, LogType};
-use crate::io::event::IOEvent;
 use crate::io::metadata::DeviceMetadata;
-use crate::storage::{Container, Containerized, MappedCollection};
+use crate::storage::MappedCollection;
 
 #[derive(Debug)]
 pub struct MockPhSensor {
