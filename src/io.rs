@@ -6,9 +6,9 @@ use serde::{Deserialize, Serialize};
 
 mod device;
 mod sensors;
-mod sensor;
+mod input;
 
-pub use sensor::Sensor;
+pub use input::Input;
 pub use device::{Calibrated, Device, DeviceMetadata};
 pub use sensors::ph::MockPhSensor;
 

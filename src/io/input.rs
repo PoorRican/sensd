@@ -31,7 +31,7 @@ use crate::storage::{Container, Containerized};
 /// container.insert(2, Box::new(HumiditySensor::new(String::from("Humidity Sensor"), 2)));
 /// ```
 /// > Note how two different sensor types were stored in `container`.
-pub trait Sensor: Device {
+pub trait Input: Device {
     fn read(&self) -> f64;
 
     fn get_event(&self, dt: DateTime<Utc>) -> io::IOEvent {
@@ -43,11 +43,11 @@ pub trait Sensor: Device {
 
 /// Returns a new instance of `Container` for objects with `Sensor` trait indexed by `K`.
 /// Sensor traits are stored as `Box<dyn Sensor>`
-impl<K> Containerized<Box<dyn Sensor>, K> for dyn Sensor
+impl<K> Containerized<Box<dyn Input>, K> for dyn Input
 where
     K: std::hash::Hash + Eq,
 {
-    fn container() -> Container<Box<dyn Sensor>, K> {
-        Container::<Box<dyn Sensor>, K>::new()
+    fn container() -> Container<Box<dyn Input>, K> {
+        Container::<Box<dyn Input>, K>::new()
     }
 }

@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::io::{IOKind, IOEvent, Device, DeviceMetadata, Sensor};
+use crate::io::{IOKind, IOEvent, Device, DeviceMetadata, Input};
 use crate::storage::{MappedCollection, Container, Containerized};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -51,7 +51,7 @@ impl Device for MockPhSensor {
     }
 }
 
-impl Sensor for MockPhSensor {
+impl Input for MockPhSensor {
     /// Return a mock value
     fn read(&self) -> f64 {
         1.2

@@ -4,7 +4,7 @@ use std::hash::Hash;
 use std::sync::Arc;
 
 use crate::errors::{Error, Result};
-use crate::io::{IOEvent, MockPhSensor, Device, DeviceMetadata, Sensor};
+use crate::io::{IOEvent, MockPhSensor, Device, DeviceMetadata, Input};
 use crate::settings::Settings;
 use crate::storage::{MappedCollection, Container, Containerized, Persistent};
 
@@ -23,10 +23,10 @@ pub struct PollGroup<K: Eq + Hash> {
     settings: Arc<Settings>,
 
     // internal containers
-    pub sensors: Container<Box<dyn Sensor>, K>,
+    pub sensors: Container<Box<dyn Input>, K>,
 }
 
-impl<K: Eq + Hash> PollGroup<K> where MockPhSensor: Sensor {
+impl<K: Eq + Hash> PollGroup<K> where MockPhSensor: Input {
     /// Iterate through container once. Call `get_event()` on each value.
     /// Update according to the lowest rate.
     pub fn poll(&mut self) -> std::result::Result<Vec<Result<()>>, ()>{
@@ -49,7 +49,7 @@ impl<K: Eq + Hash> PollGroup<K> where MockPhSensor: Sensor {
     pub fn new( name: &str, settings: Arc<Settings> ) -> Self {
         let last_execution = Utc::now() - settings.interval;
 
-        let sensors: Container<Box<dyn Sensor>, K> = <dyn Sensor>::container();
+        let sensors: Container<Box<dyn Input>, K> = <dyn Input>::container();
 
         Self { name: String::from(name), settings, last_execution, sensors }
     }

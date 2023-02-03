@@ -5,7 +5,7 @@ use std::fmt::Formatter;
 
 use crate::errors::Result;
 use crate::io;
-use crate::io::sensor::Sensor;
+use crate::io::input::Input;
 use crate::storage::{Container, Containerized};
 
 /// Basic interface for GPIO device metadata
@@ -15,7 +15,7 @@ pub trait Device {
     fn id(&self) -> i32;
 }
 
-impl std::fmt::Debug for dyn Sensor {
+impl std::fmt::Debug for dyn Input {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
