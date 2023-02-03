@@ -7,10 +7,11 @@ mod settings;
 mod units;
 mod storage;
 
-use std::sync::Arc;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 use crate::storage::{MappedCollection, PollGroup, Persistent};
-use crate::io::{Device, MockPhSensor};
+use crate::io::{Device, LogType, MockPhSensor};
 use crate::errors::Result;
 use crate::settings::Settings;
 
@@ -21,11 +22,11 @@ fn main() -> Result<()> {
     // # Setup Poller
     let mut poller: PollGroup<i32> = PollGroup::new( "main", settings);
 
-    let s0 = MockPhSensor::new("test name".to_string(), 0);
-    let s1 = MockPhSensor::new("second sensor".to_string(), 1);
-
-    let sensors = [s0, s1];
-    for sensor in sensors {
+    let config = [("test name", 0), ("second sensor", 1)];
+    for (name, id) in config {
+        let log = Arc::new(Mutex::new(LogType::new()));
+        poller.logs.push(log);
+        let sensor = MockPhSensor::new(name.to_string(), id, poller.logs.last().unwrap().clone());
         poller.sensors.add(sensor.id(), sensor.boxed())?;
     }
 

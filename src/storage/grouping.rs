@@ -1,7 +1,7 @@
 use chrono::{DateTime, Duration, Utc};
 use std::fmt::Debug;
 use std::hash::Hash;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use crate::errors::{Error, Result};
 use crate::io::{Device, Input, IOEvent, MockPhSensor, DeviceMetadata, InputType, LogType};
@@ -23,7 +23,7 @@ pub struct PollGroup<K: Eq + Hash> {
     settings: Arc<Settings>,
 
     // internal containers
-    pub logs: Vec<Arc<LogType>>,
+    pub logs: Vec<Arc<Mutex<LogType>>>,
     pub sensors: Container<InputType, K>,
 }
 
@@ -46,12 +46,12 @@ impl<K: Eq + Hash> PollGroup<K> {
     }
 
     /// Constructor for `Poller` struct.
-    /// Internal containers are instantiated as empty.
+    /// Initialized empty containers.
     pub fn new( name: &str, settings: Arc<Settings> ) -> Self {
         let last_execution = Utc::now() - settings.interval;
 
-        let sensors: Container<Box<dyn Input>, K> = <dyn Input>::container();
-        let logs: Vec<Arc<LogType>> = Vec::new();
+        let sensors: Container<InputType, K> = <dyn Input>::container();
+        let logs: Vec<Arc<Mutex<LogType>>> = Vec::new();
 
         Self { name: String::from(name), settings, last_execution, logs, sensors }
     }
