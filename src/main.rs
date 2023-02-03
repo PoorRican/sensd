@@ -37,7 +37,7 @@ fn main() -> Result<()> {
     }
 
     loop {
-        poller.poll().unwrap();
+        match poller.poll() {_ => ()};
         std::thread::sleep(std::time::Duration::from_secs(1));
         // match poller.save() {
         //     Ok(_) => (),

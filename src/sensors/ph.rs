@@ -5,7 +5,7 @@ use crate::{device, io};
 use crate::container::{Collection, Container, Containerized};
 use crate::io::IOEvent;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct MockPhSensor {
     metadata: device::DeviceMetadata,
     log: Container<IOEvent, DateTime<Utc>>,

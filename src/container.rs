@@ -18,7 +18,7 @@
 /// store a collection of objects of a specific type `T`, and identified by a specific key type `K`. The relationship
 /// between `Containerized` and `Container` is that `Containerized` defines how the `Container` should be created
 /// and used for a specific type, while `Container` actually holds the collection of objects.
-use std::collections::{hash_map::Iter, HashMap};
+use std::collections::{hash_map::{Iter, IterMut}, HashMap,};
 use std::hash::Hash;
 use serde::{Deserialize, Serialize};
 
@@ -88,7 +88,7 @@ where
 pub trait Collection<T, K> {
     /// Add a key-value pair to the collection and return a boolean indicating if the addition was successful.
     /// If the key already existed, then `false` is returned.
-    fn add(&mut self, key: K, data: T) -> bool;
+    fn add(&mut self, key: K, data: T) -> Result<()>;
 
     /// Access object by key
     /// Since key might not exist, an option is returned.
@@ -127,6 +127,10 @@ impl<T, K: Eq + Hash> Container<T, K> {
     /// Return a readonly reference to stored HashMap
     pub fn iter(&self) -> Iter<'_, K, T> {
         self.inner.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> IterMut<'_, K, T> {
+        self.inner.iter_mut()
     }
 }
 

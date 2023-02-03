@@ -49,7 +49,7 @@ pub trait Sensor: Device {
         io::IOEvent::create(self, dt, self.read())
     }
 
-    fn poll(&self, time: DateTime<Utc>) -> Result<()>;
+    fn poll(&mut self, time: DateTime<Utc>) -> Result<()>;
 }
 
 impl std::fmt::Debug for dyn Sensor {
