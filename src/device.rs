@@ -92,10 +92,6 @@ pub struct DeviceMetadata {
     pub version_id: i32,
     pub sensor_id: i32,
     pub kind: io::IOKind,
-
-    min_value: f64,
-    max_value: f64,
-    resolution: f64,
 }
 
 impl DeviceMetadata {
@@ -119,18 +115,12 @@ impl DeviceMetadata {
         version_id: i32,
         sensor_id: i32,
         kind: io::IOKind,
-        min_value: f64,
-        max_value: f64,
-        resolution: f64,
     ) -> Self {
         DeviceMetadata {
             name,
             version_id,
             sensor_id,
             kind,
-            min_value,
-            max_value,
-            resolution,
         }
     }
 }
