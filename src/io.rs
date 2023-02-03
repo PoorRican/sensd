@@ -9,11 +9,13 @@ mod sensors;
 mod input;
 mod event;
 mod metadata;
+mod calibrated;
 
+pub use calibrated::Calibrated;
 pub use device::*;
-pub use metadata::DeviceMetadata;
 pub use event::IOEvent;
 pub use input::Input;
+pub use metadata::DeviceMetadata;
 pub use sensors::*;
 
 use crate::storage::{Container, Containerized};

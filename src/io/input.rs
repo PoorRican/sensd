@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use std::fmt::Formatter;
 use crate::{errors, io};
 use crate::io::{Device, event};
 use crate::storage::{Container, Containerized};
@@ -49,5 +50,17 @@ where
 {
     fn container() -> Container<Box<dyn Input>, K> {
         Container::<Box<dyn Input>, K>::new()
+    }
+}
+
+impl std::fmt::Debug for dyn Input {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Sensor {{ name: {}, id: {}, kind: {}",
+            self.name(),
+            self.id(),
+            self.get_metadata().kind
+        )
     }
 }
