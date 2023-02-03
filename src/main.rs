@@ -3,17 +3,15 @@ extern crate serde;
 
 mod errors;
 mod io;
-mod polling;
 mod settings;
 mod units;
 mod storage;
 
 use std::sync::Arc;
 
-use crate::storage::MappedCollection;
+use crate::storage::{MappedCollection, PollGroup};
 use crate::io::{Device, MockPhSensor};
 use crate::errors::Result;
-use crate::polling::PollGroup;
 use crate::settings::Settings;
 use crate::storage::Persistent;
 
