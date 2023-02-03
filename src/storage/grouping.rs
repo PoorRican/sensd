@@ -26,7 +26,7 @@ pub struct PollGroup<K: Eq + Hash> {
     pub sensors: Container<Box<dyn Input>, K>,
 }
 
-impl<K: Eq + Hash> PollGroup<K> where MockPhSensor: Input {
+impl<K: Eq + Hash> PollGroup<K> {
     /// Iterate through container once. Call `get_event()` on each value.
     /// Update according to the lowest rate.
     pub fn poll(&mut self) -> std::result::Result<Vec<Result<()>>, ()>{

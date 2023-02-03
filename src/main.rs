@@ -9,11 +9,10 @@ mod storage;
 
 use std::sync::Arc;
 
-use crate::storage::{MappedCollection, PollGroup};
+use crate::storage::{MappedCollection, PollGroup, Persistent};
 use crate::io::{Device, MockPhSensor};
 use crate::errors::Result;
 use crate::settings::Settings;
-use crate::storage::Persistent;
 
 fn main() -> Result<()> {
     // # Load Settings

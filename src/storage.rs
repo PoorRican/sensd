@@ -1,9 +1,9 @@
 mod container;
 mod persistent;
 mod collection;
-mod polling;
+mod grouping;
 
 pub use container::{Container, Containerized};
 pub use persistent::Persistent;
 pub use collection::MappedCollection;
-pub use polling::PollGroup;
+pub use grouping::PollGroup;
