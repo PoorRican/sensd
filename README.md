@@ -3,9 +3,10 @@ A Multi-purpose Sensor Logger and Control System
 
 ## Purpose
 
-Provide a library to build dedicated systems for monitoring an arbitrary amount of sensors of multiple types, across an arbitrary distance.
-Originally, the system has been designed to monitor the mechanical and biological processes in an aquaponics system to minimize downtime.
-However, it is agnostic to data type.
+Provide an industrial strength library for building sensor monitoring and control systems.
+Originally, the system has been designed to monitor the mechanical and biological processes in an aquaponics system,
+but the system has been designed with generic types that and is agnostic to context or space.
+Possible applications include wild-life tracking, greenhouse management, access control, or anything imaginable.
 
 ## Future Intentions
 
