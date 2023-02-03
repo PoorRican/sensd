@@ -1,8 +1,8 @@
+use crate::errors;
+use crate::io::{event, Device, InputType};
+use crate::storage::{Container, Containerized};
 use chrono::{DateTime, Utc};
 use std::fmt::Formatter;
-use crate::errors;
-use crate::io::{Device, event, InputType};
-use crate::storage::Container;
 
 /// Interface for an input device
 /// It is used as a trait object and can be stored in a container using the `Containerized` trait.

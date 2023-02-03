@@ -20,7 +20,7 @@ pub struct Error {
 impl Error {
     pub fn new(kind: ErrorKind, msg: &str) -> Box<dyn _Error> {
         let message = String::from(msg);
-        Box::new( Error { kind, message })
+        Box::new(Error { kind, message })
     }
 }
 

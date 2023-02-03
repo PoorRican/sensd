@@ -1,15 +1,14 @@
 /// Encapsulate IO for devices
-
 use chrono::{DateTime, Utc};
-use std::fmt::Formatter;
 use serde::{Deserialize, Serialize};
+use std::fmt::Formatter;
 
-mod device;
-mod sensors;
-mod input;
-mod event;
-mod metadata;
 mod calibrated;
+mod device;
+mod event;
+mod input;
+mod metadata;
+mod sensors;
 
 pub use calibrated::Calibrated;
 pub use device::*;

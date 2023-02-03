@@ -19,13 +19,13 @@
 /// between `Containerized` and `Container` is that `Containerized` defines how the `Container` should be created
 /// and used for a specific type, while `Container` actually holds the collection of objects.
 
-use std::hash::Hash;
-use std::collections::HashMap;
-use std::collections::hash_map::{Iter, IterMut};
-use serde::{Deserialize, Serialize};
-use crate::storage::collection::MappedCollection;
 use crate::errors;
 use crate::errors::{Error, ErrorKind};
+use crate::storage::collection::MappedCollection;
+use serde::{Deserialize, Serialize};
+use std::collections::hash_map::{Iter, IterMut};
+use std::collections::HashMap;
+use std::hash::Hash;
 
 /// A trait for creating a specialized `Container` instance
 ///
@@ -122,8 +122,9 @@ impl<T, K: Hash + Eq> MappedCollection<T, K> for Container<T, K> {
     ///  - If the key does not exist, the returned value is `std::collections::hash_map::Entry::Vacant`, which inserts the key-value pair into the HashMap and returns true.
     fn add(&mut self, key: K, data: T) -> errors::Result<()> {
         match self.inner.entry(key) {
-            std::collections::hash_map::Entry::Occupied(_) =>
-                Err(Error::new(ErrorKind::ContainerError, "Key already exists")),
+            std::collections::hash_map::Entry::Occupied(_) => {
+                Err(Error::new(ErrorKind::ContainerError, "Key already exists"))
+            }
             std::collections::hash_map::Entry::Vacant(entry) => {
                 entry.insert(data);
                 Ok(())

@@ -1,6 +1,6 @@
+use crate::io;
 use serde::{Deserialize, Serialize};
 use std::fmt::Formatter;
-use crate::io;
 
 /// Encapsulation of individual device metadata
 ///
@@ -44,12 +44,7 @@ impl DeviceMetadata {
     /// # Returns
     ///
     /// A new instance with given specified parameters
-    pub fn new(
-        name: String,
-        version_id: i32,
-        sensor_id: i32,
-        kind: io::IOKind,
-    ) -> Self {
+    pub fn new(name: String, version_id: i32, sensor_id: i32, kind: io::IOKind) -> Self {
         DeviceMetadata {
             name,
             version_id,
@@ -61,10 +56,6 @@ impl DeviceMetadata {
 
 impl std::fmt::Display for DeviceMetadata {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Device Info {{ Kind: {} }}",
-            self.kind,
-        )
+        write!(f, "Device Info {{ Kind: {} }}", self.kind,)
     }
 }

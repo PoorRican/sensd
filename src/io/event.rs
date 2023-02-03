@@ -1,7 +1,7 @@
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
 use crate::io::{Device, IOData, LogType};
 use crate::storage::{Container, Containerized};
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 /// Encapsulates `IOData` alongside of timestamp and device data
 #[derive(Debug, Serialize, Deserialize)]
@@ -31,11 +31,7 @@ impl IOEvent {
     /// ```
     ///
     /// ```
-    pub fn create(
-        device: &(impl Device + ?Sized),
-        timestamp: DateTime<Utc>,
-        value: f64,
-    ) -> Self {
+    pub fn create(device: &(impl Device + ?Sized), timestamp: DateTime<Utc>, value: f64) -> Self {
         let info = device.get_metadata();
         let version_id = info.version_id;
         let sensor_id = info.sensor_id;
@@ -53,9 +49,7 @@ impl IOEvent {
 }
 
 /// Return a new instance of `Container` with for storing `IOEvent` which are accessed by `DateTime<Utc>` as keys
-impl Containerized<IOEvent, DateTime<Utc>> for IOEvent
-where
-{
+impl Containerized<IOEvent, DateTime<Utc>> for IOEvent {
     fn container() -> LogType {
         Container::<IOEvent, DateTime<Utc>>::new()
     }

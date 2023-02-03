@@ -24,11 +24,21 @@ impl Settings {
     pub fn initialize() -> Self {
         dotenv().ok();
         let version = var("VERSION").unwrap_or_else(|_| String::from(VERSION));
-        let interval =  Duration::seconds(
-            var("INTERVAL").unwrap_or(INTERVAL.to_string()).parse::<i64>().unwrap());
+        let interval = Duration::seconds(
+            var("INTERVAL")
+                .unwrap_or(INTERVAL.to_string())
+                .parse::<i64>()
+                .unwrap(),
+        );
         let log_fn_prefix = var("LOG_FN_PREFIX").unwrap_or_else(|_| String::from(LOG_FN_PREFIX));
-        let sensors_fn_prefix = var("SENSORS_FN_PREFIX").unwrap_or_else(|_| String::from(SENSORS_FN_PREFIX));
+        let sensors_fn_prefix =
+            var("SENSORS_FN_PREFIX").unwrap_or_else(|_| String::from(SENSORS_FN_PREFIX));
 
-        Settings { version, interval, log_fn_prefix, sensors_fn_prefix }
+        Settings {
+            version,
+            interval,
+            log_fn_prefix,
+            sensors_fn_prefix,
+        }
     }
 }

@@ -1,8 +1,8 @@
 use chrono::{DateTime, Utc};
 use std::sync::{Arc, Mutex};
 
-use crate::io::{Device, Input, IOKind, LogType};
 use crate::io::metadata::DeviceMetadata;
+use crate::io::{Device, IOKind, Input, LogType};
 use crate::storage::MappedCollection;
 
 #[derive(Debug)]
@@ -26,8 +26,7 @@ impl MockPhSensor {
         let version_id = 0;
         let kind = IOKind::PH;
 
-        let metadata: DeviceMetadata =
-            DeviceMetadata::new( name, version_id, sensor_id, kind, );
+        let metadata: DeviceMetadata = DeviceMetadata::new(name, version_id, sensor_id, kind);
 
         MockPhSensor { metadata, log }
     }

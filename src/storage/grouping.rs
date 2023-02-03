@@ -29,7 +29,7 @@ pub struct PollGroup<K: Eq + Hash> {
 impl<K: Eq + Hash> PollGroup<K> {
     /// Iterate through container once. Call `get_event()` on each value.
     /// Update according to the lowest rate.
-    pub fn poll(&mut self) -> std::result::Result<Vec<Result<()>>, ()>{
+    pub fn poll(&mut self) -> std::result::Result<Vec<Result<()>>, ()> {
         let mut results: Vec<Result<()>> = Vec::new();
         let next_execution = self.last_execution + self.settings.interval;
 
@@ -46,12 +46,18 @@ impl<K: Eq + Hash> PollGroup<K> {
 
     /// Constructor for `Poller` struct.
     /// Initialized empty containers.
-    pub fn new( name: &str, settings: Arc<Settings> ) -> Self {
+    pub fn new(name: &str, settings: Arc<Settings>) -> Self {
         let last_execution = Utc::now() - settings.interval;
 
         let sensors: Container<InputType, K> = <dyn Input>::container();
         let logs: Vec<Arc<Mutex<LogType>>> = Vec::new();
 
-        Self { name: String::from(name), settings, last_execution, logs, sensors }
+        Self {
+            name: String::from(name),
+            settings,
+            last_execution,
+            logs,
+            sensors,
+        }
     }
 }

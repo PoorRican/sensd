@@ -1,6 +1,6 @@
+use serde::{Deserialize, Serialize};
 use std::convert::From;
 use std::fmt;
-use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct Ph(pub f64);
