@@ -4,4 +4,4 @@ mod collection;
 
 pub use container::{Container, Containerized};
 pub use persistent::Persistent;
-pub use collection::Collection;
+pub use collection::MappedCollection;

@@ -23,7 +23,7 @@ use std::hash::Hash;
 use std::collections::HashMap;
 use std::collections::hash_map::{Iter, IterMut};
 use serde::{Deserialize, Serialize};
-use crate::storage::collection::Collection;
+use crate::storage::collection::MappedCollection;
 use crate::errors;
 use crate::errors::{Error, ErrorKind};
 
@@ -115,7 +115,7 @@ impl<T, K: Eq + Hash> Container<T, K> {
 }
 
 /// Implement the `Collection` interface for `Container`
-impl<T, K: Hash + Eq> Collection<T, K> for Container<T, K> {
+impl<T, K: Hash + Eq> MappedCollection<T, K> for Container<T, K> {
     /// Add a key-value pair to the collection and return a boolean indicating if the value has been added to the collection.
     /// Using `entry` method on the inner HashMap to check if the key already exists in the HashMap
     ///  - If the key already exists, the returned value is `std::collections::hash_map::Entry::Occupied`, which returns false.

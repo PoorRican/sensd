@@ -1,7 +1,6 @@
 extern crate chrono;
 extern crate serde;
 
-mod device;
 mod errors;
 mod io;
 mod polling;
@@ -12,8 +11,8 @@ mod storage;
 
 use std::sync::Arc;
 
-use crate::storage::Collection;
-use crate::device::Device;
+use crate::storage::MappedCollection;
+use crate::io::Device;
 use crate::errors::Result;
 use crate::polling::PollGroup;
 use crate::sensors::ph::MockPhSensor;

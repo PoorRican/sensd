@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{device, io};
 use crate::io::IOEvent;
-use crate::storage::{Collection, Container, Containerized};
+use crate::storage::{MappedCollection, Container, Containerized};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MockPhSensor {

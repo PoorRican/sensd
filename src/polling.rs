@@ -8,7 +8,7 @@ use crate::errors::{Error, Result};
 use crate::io::IOEvent;
 use crate::sensors::ph::MockPhSensor;
 use crate::settings::Settings;
-use crate::storage::{Collection, Container, Containerized};
+use crate::storage::{MappedCollection, Container, Containerized};
 use crate::storage::Persistent;
 
 /// Mediator to periodically poll sensors of various types, and store the resulting `IOEvent` objects in a `Container`.
