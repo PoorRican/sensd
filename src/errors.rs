@@ -7,14 +7,16 @@ pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 pub enum Error {
     ContainerEmpty(Option<String>),
     ContainerNotEmpty(Option<String>),
+    SerializationError(Option<String>),
 }
 
 impl Error {
     pub fn new(error_type: Error, message: &str) -> Box<dyn _Error> {
         let msg = String::from(message);
         Box::new( match error_type {
-            Error::ContainerEmpty(ref _msg) => Error::ContainerEmpty(Some(msg)),
-            Error::ContainerNotEmpty(ref _msg) => Error::ContainerNotEmpty(Some(msg)),
+            Self::ContainerEmpty(ref _msg) => Self::ContainerEmpty(Some(msg)),
+            Self::ContainerNotEmpty(ref _msg) => Self::ContainerNotEmpty(Some(msg)),
+            Self::SerializationError(ref _msg) => Self::SerializationError(Some(msg)),
         })
     }
 }
@@ -22,20 +24,27 @@ impl Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Error::ContainerEmpty(ref message) => {
+            Self::ContainerEmpty(ref message) => {
                 if let Some(ref message) = message {
                     write!(f, "Container is empty: {}", message)
                 } else {
                     write!(f, "Container is empty")
                 }
             },
-            Error::ContainerNotEmpty(ref message) => {
+            Self::ContainerNotEmpty(ref message) => {
                 if let Some(ref message) = message {
                     write!(f, "Container is not empty: {}", message)
                 } else {
                     write!(f, "Container is not empty")
                 }
             },
+            Self::SerializationError(ref message) => {
+                if let Some(ref message) = message {
+                    write!(f, "Error from Serializer: {}", message)
+                } else {
+                    write!(f, "Error during serialization")
+                }
+            }
         }
     }
 }
