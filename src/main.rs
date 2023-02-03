@@ -31,16 +31,18 @@ fn main() -> Result<()> {
     let s0 = MockPhSensor::new("test name".to_string(), 0);
     let s1 = MockPhSensor::new("second sensor".to_string(), 1);
 
-    poller.sensors.add(s0.id(), s0.boxed());
-    poller.sensors.add(s1.id(), s1.boxed());
+    let sensors = [s0, s1];
+    for sensor in sensors {
+        poller.sensors.add(sensor.id(), sensor.boxed())?;
+    }
 
     loop {
-        poller.poll();
+        poller.poll().unwrap();
         std::thread::sleep(std::time::Duration::from_secs(1));
-        match poller.save() {
-            Ok(_) => (),
-            Err(t) => return Err(t)
-        };
+        // match poller.save() {
+        //     Ok(_) => (),
+        //     Err(t) => return Err(t)
+        // };
     }
 
 }
