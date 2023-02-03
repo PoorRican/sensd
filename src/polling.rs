@@ -27,21 +27,23 @@ pub struct PollGroup<K: Eq + Hash> {
 
     // internal containers
     pub sensors: Container<Box<dyn Sensor>, K>,
-    pub log: Container<IOEvent, DateTime<Utc>>,
 }
 
 impl<K: Eq + Hash> PollGroup<K> where MockPhSensor: Sensor {
     /// Iterate through container once. Call `get_event()` on each value.
     /// Update according to the lowest rate.
-    pub fn poll(&mut self) {
+    pub fn poll(&mut self) -> std::result::Result<Vec<Result<()>>, ()>{
+        let mut results: Vec<Result<()>> = Vec::new();
         let next_execution = self.last_execution + self.settings.interval;
 
         if next_execution <= Utc::now() {
-            for (_, sensor) in self.sensors.iter() {
-                let event = sensor.get_event(next_execution);
-                self.log.add(next_execution, event);
+            for (_, sensor) in self.sensors.iter_mut() {
+                results.push(sensor.poll(next_execution));
             }
             self.last_execution = next_execution;
+            Ok(results)
+        } else {
+            Err(())
         }
     }
 
@@ -51,8 +53,7 @@ impl<K: Eq + Hash> PollGroup<K> where MockPhSensor: Sensor {
         let last_execution = Utc::now() - settings.interval;
 
         let sensors: Container<Box<dyn Sensor>, K> = <dyn Sensor>::container();
-        let log: Container<IOEvent, DateTime<Utc>> = <IOEvent>::container();
 
-        Self { name: String::from(name), settings, last_execution, sensors, log }
+        Self { name: String::from(name), settings, last_execution, sensors }
     }
 }
