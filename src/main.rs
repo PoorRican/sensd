@@ -24,9 +24,12 @@ fn main() -> Result<()> {
 
     let config = [("test name", 0), ("second sensor", 1)];
     for (name, id) in config {
+
+        // variable allowed to go out-of-scope because `poller` owns reference
         let log = Arc::new(Mutex::new(LogType::new()));
-        poller.logs.push(log);
-        let sensor = MockPhSensor::new(name.to_string(), id, poller.logs.last().unwrap().clone());
+        poller.logs.push(log.clone());
+
+        let sensor = MockPhSensor::new(name.to_string(), id, log.clone());
         poller.sensors.add(sensor.id(), sensor.boxed())?;
     }
 
