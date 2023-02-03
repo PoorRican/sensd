@@ -1,8 +1,8 @@
-use chrono::Duration;
+use serde::{Deserialize, Serialize};
 
-use crate::{device, io, units::Ph};
+use crate::{device, io};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MockPhSensor {
     metadata: device::DeviceMetadata,
 }
@@ -30,6 +30,10 @@ impl MockPhSensor {
         );
 
         MockPhSensor { metadata }
+    }
+
+    pub fn boxed(self) -> Box<Self> {
+        Box::new(self)
     }
 }
 
