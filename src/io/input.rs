@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use std::fmt::Formatter;
 use crate::{errors, io};
-use crate::io::{Device, event};
+use crate::io::{Device, event, InputType};
 use crate::storage::{Container, Containerized};
 
 /// Interface for an input device
@@ -48,8 +48,8 @@ impl<K> Containerized<Box<dyn Input>, K> for dyn Input
 where
     K: std::hash::Hash + Eq,
 {
-    fn container() -> Container<Box<dyn Input>, K> {
-        Container::<Box<dyn Input>, K>::new()
+    fn container() -> Container<InputType, K> {
+        Container::<InputType, K>::new()
     }
 }
 

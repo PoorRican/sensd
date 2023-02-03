@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use crate::io::{Device, IOData};
+use crate::io::{Device, IOData, LogType};
 use crate::storage::{Container, Containerized};
 
 /// Encapsulates `IOData` alongside of timestamp and device data
@@ -56,7 +56,7 @@ impl IOEvent {
 impl Containerized<IOEvent, DateTime<Utc>> for IOEvent
 where
 {
-    fn container() -> Container<IOEvent, DateTime<Utc>> {
+    fn container() -> LogType {
         Container::<IOEvent, DateTime<Utc>>::new()
     }
 }

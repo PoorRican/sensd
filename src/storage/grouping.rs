@@ -4,7 +4,7 @@ use std::hash::Hash;
 use std::sync::Arc;
 
 use crate::errors::{Error, Result};
-use crate::io::{Device, Input, IOEvent, MockPhSensor, DeviceMetadata};
+use crate::io::{Device, Input, IOEvent, MockPhSensor, DeviceMetadata, InputType, LogType};
 use crate::settings::Settings;
 use crate::storage::{Container, Containerized, MappedCollection, Persistent};
 
@@ -23,7 +23,8 @@ pub struct PollGroup<K: Eq + Hash> {
     settings: Arc<Settings>,
 
     // internal containers
-    pub sensors: Container<Box<dyn Input>, K>,
+    pub logs: Vec<Arc<LogType>>,
+    pub sensors: Container<InputType, K>,
 }
 
 impl<K: Eq + Hash> PollGroup<K> {
@@ -50,7 +51,8 @@ impl<K: Eq + Hash> PollGroup<K> {
         let last_execution = Utc::now() - settings.interval;
 
         let sensors: Container<Box<dyn Input>, K> = <dyn Input>::container();
+        let logs: Vec<Arc<LogType>> = Vec::new();
 
-        Self { name: String::from(name), settings, last_execution, sensors }
+        Self { name: String::from(name), settings, last_execution, logs, sensors }
     }
 }

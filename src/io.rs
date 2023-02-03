@@ -71,3 +71,6 @@ pub struct IOData {
     pub kind: IOKind,
     pub data: f64,
 }
+
+pub type LogType = Container<IOEvent, DateTime<Utc>>;
+pub type InputType = Box<dyn Input>;

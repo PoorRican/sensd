@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::io::{Device, Input, IOKind};
+use crate::io::{Device, Input, IOKind, LogType};
 use crate::io::event::IOEvent;
 use crate::io::metadata::DeviceMetadata;
 use crate::storage::{Container, Containerized, MappedCollection};
@@ -9,7 +9,7 @@ use crate::storage::{Container, Containerized, MappedCollection};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MockPhSensor {
     metadata: DeviceMetadata,
-    log: Container<IOEvent, DateTime<Utc>>,
+    log: LogType,
 }
 
 /** Represents a mock pH sensor.
