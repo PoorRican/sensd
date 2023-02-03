@@ -18,11 +18,14 @@
 /// store a collection of objects of a specific type `T`, and identified by a specific key type `K`. The relationship
 /// between `Containerized` and `Container` is that `Containerized` defines how the `Container` should be created
 /// and used for a specific type, while `Container` actually holds the collection of objects.
-use std::collections::{hash_map::{Iter, IterMut}, HashMap,};
-use std::hash::Hash;
-use serde::{Deserialize, Serialize};
 
-use crate::errors::{Error, ErrorKind, Result};
+use std::hash::Hash;
+use std::collections::HashMap;
+use std::collections::hash_map::{Iter, IterMut};
+use serde::{Deserialize, Serialize};
+use crate::storage::collection::Collection;
+use crate::errors;
+use crate::errors::{Error, ErrorKind};
 
 /// A trait for creating a specialized `Container` instance
 ///
@@ -82,29 +85,6 @@ where
     fn container() -> Container<T, K>;
 }
 
-/// Define a basic interface to interact with underlying data.
-/// T is the data type being stored and K is the key type to access stored data.
-// TODO: type should be stored in implementations
-pub trait Collection<T, K> {
-    /// Add a key-value pair to the collection and return a boolean indicating if the addition was successful.
-    /// If the key already existed, then `false` is returned.
-    fn add(&mut self, key: K, data: T) -> Result<()>;
-
-    /// Access object by key
-    /// Since key might not exist, an option is returned.
-    fn get(&self, key: K) -> Option<&T>;
-
-    /// Remove the key-value pair associated with the key.
-    /// The removed data is returned.
-    fn remove(&mut self, key: K) -> Option<T>;
-
-    /// Return a boolean indicating if the collection is empty.
-    fn is_empty(&self) -> bool;
-
-    /// Return the number of elements in the collection
-    fn length(&self) -> usize;
-}
-
 /// Define a struct `Container` which takes in two types T and K.
 /// This container is meant to store any complex type and is stored with an arbitrary key.
 /// The key only needs to be hashable.
@@ -140,7 +120,7 @@ impl<T, K: Hash + Eq> Collection<T, K> for Container<T, K> {
     /// Using `entry` method on the inner HashMap to check if the key already exists in the HashMap
     ///  - If the key already exists, the returned value is `std::collections::hash_map::Entry::Occupied`, which returns false.
     ///  - If the key does not exist, the returned value is `std::collections::hash_map::Entry::Vacant`, which inserts the key-value pair into the HashMap and returns true.
-    fn add(&mut self, key: K, data: T) -> Result<()> {
+    fn add(&mut self, key: K, data: T) -> errors::Result<()> {
         match self.inner.entry(key) {
             std::collections::hash_map::Entry::Occupied(_) =>
                 Err(Error::new(ErrorKind::ContainerError, "Key already exists")),

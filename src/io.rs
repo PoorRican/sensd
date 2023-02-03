@@ -1,10 +1,10 @@
 /// Encapsulate IO for devices
 use chrono::{DateTime, Utc};
 use std::fmt::Formatter;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-use crate::container::{Container, Containerized};
 use crate::device;
+use crate::storage::{Container, Containerized};
 
 /// Defines sensor type. Used to classify data along with `IOData`.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]

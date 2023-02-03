@@ -1,10 +1,7 @@
-use crate::errors::{Result};
+mod container;
+mod persistent;
+mod collection;
 
-// trait that expresses an interface to save or load from disk
-pub trait Persistent {
-    // save data to disk
-    fn save(&self) -> Result<()>;
-
-    // load from disk
-    fn load(&mut self) -> Result<()>;
- }
+pub use container::{Container, Containerized};
+pub use persistent::Persistent;
+pub use collection::Collection;

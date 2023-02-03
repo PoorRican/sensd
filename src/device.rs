@@ -1,11 +1,11 @@
 /// Provide Low-level Device Functionality
 use chrono::{DateTime, Utc};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::fmt::Formatter;
 
-use crate::container::{Container, Containerized};
 use crate::errors::Result;
 use crate::io;
+use crate::storage::{Container, Containerized};
 
 /// Basic interface for GPIO device metadata
 pub trait Device {

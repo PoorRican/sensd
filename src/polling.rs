@@ -3,12 +3,12 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::sync::Arc;
 
-use crate::container::{Collection, Container, Containerized};
-use crate::device::{DeviceMetadata, Sensor, Device};
-use crate::errors::{Result, Error};
+use crate::device::{Device, DeviceMetadata, Sensor};
+use crate::errors::{Error, Result};
 use crate::io::IOEvent;
 use crate::sensors::ph::MockPhSensor;
 use crate::settings::Settings;
+use crate::storage::{Collection, Container, Containerized};
 use crate::storage::Persistent;
 
 /// Mediator to periodically poll sensors of various types, and store the resulting `IOEvent` objects in a `Container`.

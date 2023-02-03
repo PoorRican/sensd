@@ -1,7 +1,6 @@
 extern crate chrono;
 extern crate serde;
 
-mod container;
 mod device;
 mod errors;
 mod io;
@@ -13,7 +12,7 @@ mod storage;
 
 use std::sync::Arc;
 
-use crate::container::{Collection};
+use crate::storage::Collection;
 use crate::device::Device;
 use crate::errors::Result;
 use crate::polling::PollGroup;
