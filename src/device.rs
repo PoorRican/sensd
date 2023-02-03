@@ -4,6 +4,7 @@ use serde::{Serialize, Deserialize};
 use std::fmt::Formatter;
 
 use crate::container::{Container, Containerized};
+use crate::errors::Result;
 use crate::io;
 
 /// Basic interface for GPIO device metadata
@@ -47,6 +48,8 @@ pub trait Sensor: Device {
     fn get_event(&self, dt: DateTime<Utc>) -> io::IOEvent {
         io::IOEvent::create(self, dt, self.read())
     }
+
+    fn poll(&self, time: DateTime<Utc>) -> Result<()>;
 }
 
 impl std::fmt::Debug for dyn Sensor {

@@ -1,10 +1,14 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::{device, io};
+use crate::container::{Collection, Container, Containerized};
+use crate::io::IOEvent;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MockPhSensor {
     metadata: device::DeviceMetadata,
+    log: Container<IOEvent, DateTime<Utc>>,
 }
 
 /** Represents a mock pH sensor.
@@ -22,11 +26,12 @@ impl MockPhSensor {
         let version_id = 0;
         let kind = io::IOKind::PH;
 
-        let metadata: device::DeviceMetadata = device::DeviceMetadata::new(
-            name, version_id, sensor_id, kind, min_value, max_value, resolution,
-        );
+        let metadata: device::DeviceMetadata =
+            device::DeviceMetadata::new( name, version_id, sensor_id, kind, );
 
-        MockPhSensor { metadata }
+        let log = <IOEvent>::container();
+
+        MockPhSensor { metadata, log }
     }
 
     pub fn boxed(self) -> Box<Self> {
@@ -52,10 +57,16 @@ impl device::Sensor for MockPhSensor {
     fn read(&self) -> f64 {
         1.2
     }
+
+    /// Call `get_event` and add to log
+    /// listeners would be asynchronously called here
+    fn poll(&mut self, time: DateTime<Utc>) -> crate::errors::Result<()> {
+        self.log.add(time, self.get_event(time))
+    }
 }
 
 impl From<device::DeviceMetadata> for MockPhSensor {
     fn from(metadata: device::DeviceMetadata) -> Self {
-        Self { metadata }
+        Self { metadata, log: <IOEvent>::container() }
     }
 }
