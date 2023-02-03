@@ -1,9 +1,17 @@
 /// Encapsulate IO for devices
+
 use chrono::{DateTime, Utc};
 use std::fmt::Formatter;
 use serde::{Deserialize, Serialize};
 
-use crate::device;
+mod device;
+mod sensors;
+mod sensor;
+
+pub use sensor::Sensor;
+pub use device::{Calibrated, Device, DeviceMetadata};
+pub use sensors::ph::MockPhSensor;
+
 use crate::storage::{Container, Containerized};
 
 /// Defines sensor type. Used to classify data along with `IOData`.
@@ -87,7 +95,7 @@ impl IOEvent {
     ///
     /// ```
     pub fn create(
-        device: &(impl device::Device + ?Sized),
+        device: &(impl Device + ?Sized),
         timestamp: DateTime<Utc>,
         value: f64,
     ) -> Self {

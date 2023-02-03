@@ -1,13 +1,12 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::{device, io};
-use crate::io::IOEvent;
+use crate::io::{IOKind, IOEvent, Device, DeviceMetadata, Sensor};
 use crate::storage::{MappedCollection, Container, Containerized};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MockPhSensor {
-    metadata: device::DeviceMetadata,
+    metadata: DeviceMetadata,
     log: Container<IOEvent, DateTime<Utc>>,
 }
 
@@ -24,10 +23,10 @@ impl MockPhSensor {
     /// returns: MockPhSensor
     pub fn new(name: String, sensor_id: i32) -> Self {
         let version_id = 0;
-        let kind = io::IOKind::PH;
+        let kind = IOKind::PH;
 
-        let metadata: device::DeviceMetadata =
-            device::DeviceMetadata::new( name, version_id, sensor_id, kind, );
+        let metadata: DeviceMetadata =
+            DeviceMetadata::new( name, version_id, sensor_id, kind, );
 
         let log = <IOEvent>::container();
 
@@ -40,8 +39,8 @@ impl MockPhSensor {
 }
 
 // Implement traits
-impl device::Device for MockPhSensor {
-    fn get_metadata(&self) -> &device::DeviceMetadata {
+impl Device for MockPhSensor {
+    fn get_metadata(&self) -> &DeviceMetadata {
         &self.metadata
     }
     fn name(&self) -> String {
@@ -52,7 +51,7 @@ impl device::Device for MockPhSensor {
     }
 }
 
-impl device::Sensor for MockPhSensor {
+impl Sensor for MockPhSensor {
     /// Return a mock value
     fn read(&self) -> f64 {
         1.2
@@ -65,8 +64,8 @@ impl device::Sensor for MockPhSensor {
     }
 }
 
-impl From<device::DeviceMetadata> for MockPhSensor {
-    fn from(metadata: device::DeviceMetadata) -> Self {
+impl From<DeviceMetadata> for MockPhSensor {
+    fn from(metadata: DeviceMetadata) -> Self {
         Self { metadata, log: <IOEvent>::container() }
     }
 }
