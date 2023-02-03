@@ -22,6 +22,8 @@ use std::collections::{hash_map::Iter, HashMap};
 use std::hash::Hash;
 use serde::{Deserialize, Serialize};
 
+use crate::errors::{Error, ErrorKind, Result};
+
 /// A trait for creating a specialized `Container` instance
 ///
 /// # Notes
@@ -134,12 +136,13 @@ impl<T, K: Hash + Eq> Collection<T, K> for Container<T, K> {
     /// Using `entry` method on the inner HashMap to check if the key already exists in the HashMap
     ///  - If the key already exists, the returned value is `std::collections::hash_map::Entry::Occupied`, which returns false.
     ///  - If the key does not exist, the returned value is `std::collections::hash_map::Entry::Vacant`, which inserts the key-value pair into the HashMap and returns true.
-    fn add(&mut self, key: K, data: T) -> bool {
+    fn add(&mut self, key: K, data: T) -> Result<()> {
         match self.inner.entry(key) {
-            std::collections::hash_map::Entry::Occupied(_) => false,
+            std::collections::hash_map::Entry::Occupied(_) =>
+                Err(Error::new(ErrorKind::ContainerError, "Key already exists")),
             std::collections::hash_map::Entry::Vacant(entry) => {
                 entry.insert(data);
-                true
+                Ok(())
             }
         }
     }
