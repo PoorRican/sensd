@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use crate::{errors, io};
-use crate::io::Device;
+use crate::io::{Device, event};
 use crate::storage::{Container, Containerized};
 
 /// Interface for an input device
@@ -34,8 +34,8 @@ use crate::storage::{Container, Containerized};
 pub trait Input: Device {
     fn read(&self) -> f64;
 
-    fn get_event(&self, dt: DateTime<Utc>) -> io::IOEvent {
-        io::IOEvent::create(self, dt, self.read())
+    fn get_event(&self, dt: DateTime<Utc>) -> event::IOEvent {
+        event::IOEvent::create(self, dt, self.read())
     }
 
     fn poll(&mut self, time: DateTime<Utc>) -> errors::Result<()>;

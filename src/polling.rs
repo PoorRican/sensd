@@ -4,9 +4,9 @@ use std::hash::Hash;
 use std::sync::Arc;
 
 use crate::errors::{Error, Result};
-use crate::io::{IOEvent, MockPhSensor, Device, DeviceMetadata, Input};
+use crate::io::{Device, Input, IOEvent, MockPhSensor, DeviceMetadata};
 use crate::settings::Settings;
-use crate::storage::{MappedCollection, Container, Containerized, Persistent};
+use crate::storage::{Container, Containerized, MappedCollection, Persistent};
 
 /// Mediator to periodically poll sensors of various types, and store the resulting `IOEvent` objects in a `Container`.
 ///

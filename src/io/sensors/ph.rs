@@ -1,8 +1,10 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::io::{IOKind, IOEvent, Device, DeviceMetadata, Input};
-use crate::storage::{MappedCollection, Container, Containerized};
+use crate::io::{Device, Input, IOKind};
+use crate::io::event::IOEvent;
+use crate::io::metadata::DeviceMetadata;
+use crate::storage::{Container, Containerized, MappedCollection};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MockPhSensor {

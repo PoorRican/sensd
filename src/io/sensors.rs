@@ -1,1 +1,3 @@
-pub mod ph;
+mod ph;
+
+pub use ph::MockPhSensor;
