@@ -70,7 +70,6 @@ use serde::{Deserialize, Serialize};
 ///
 /// // Since Containerized is implemented for Sensor, any derived objects should be stored as `dyn Sensor<T>`
 /// ```
-
 pub trait Containerized<T, K>
 where
     K: Eq + Hash,

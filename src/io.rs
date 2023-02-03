@@ -2,7 +2,6 @@
 use chrono::{DateTime, Utc};
 use std::fmt::Formatter;
 use serde::{Serialize, Deserialize};
-use serde::ser::{Serializer, SerializeStruct};
 
 use crate::container::{Container, Containerized};
 use crate::device;

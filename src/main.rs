@@ -1,4 +1,3 @@
-#[macro_use]
 extern crate chrono;
 extern crate serde;
 
@@ -13,33 +12,35 @@ mod units;
 mod storage;
 
 use std::sync::Arc;
-use chrono::{DateTime, Duration, Utc};
-use sens::device::Device;
 
-use crate::container::{Collection, Container, Containerized};
-use crate::device::Sensor;
+use crate::container::{Collection};
+use crate::device::Device;
+use crate::errors::Result;
 use crate::polling::PollGroup;
 use crate::sensors::ph::MockPhSensor;
 use crate::settings::Settings;
-use crate::units::Ph;
+use crate::storage::Persistent;
 
-fn main() {
-    /// # Load Settings
+fn main() -> Result<()> {
+    // # Load Settings
     let settings: Arc<Settings> = Arc::new(Settings::initialize());
 
-    /// # Setup Poller
+    // # Setup Poller
     let mut poller: PollGroup<i32> = PollGroup::new( "main", settings);
 
     let s0 = MockPhSensor::new("test name".to_string(), 0);
     let s1 = MockPhSensor::new("second sensor".to_string(), 1);
 
-    poller.sensors.add(s0.id(), Box::new(s0));
-    poller.sensors.add(s1.id(), Box::new(s1));
+    poller.sensors.add(s0.id(), s0.boxed());
+    poller.sensors.add(s1.id(), s1.boxed());
 
     loop {
         poller.poll();
         std::thread::sleep(std::time::Duration::from_secs(1));
-        dbg!(&poller.log);
+        match poller.save() {
+            Ok(_) => (),
+            Err(t) => return Err(t)
+        };
     }
 
 }

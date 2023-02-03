@@ -1,8 +1,7 @@
 /// Provide Low-level Device Functionality
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Utc};
 use serde::{Serialize, Deserialize};
 use std::fmt::Formatter;
-use serde::de::DeserializeOwned;
 
 use crate::container::{Container, Containerized};
 use crate::io;
