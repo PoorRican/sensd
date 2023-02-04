@@ -1,6 +1,4 @@
 /// Provide Low-level Device Functionality
-use serde::{Deserialize, Serialize};
-
 use crate::io::metadata::DeviceMetadata;
 
 /// Basic interface for GPIO device metadata

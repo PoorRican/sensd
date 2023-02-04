@@ -9,10 +9,11 @@ mod units;
 
 use std::sync::{Arc, Mutex};
 
-use crate::errors::Result;
-use crate::io::{Device, LogType, MockPhSensor};
-use crate::settings::Settings;
-use crate::storage::{MappedCollection, PollGroup};
+use sensd;
+use sensd::errors::Result;
+use sensd::io::{Device, LogType, MockPhSensor};
+use sensd::settings::Settings;
+use sensd::storage::{MappedCollection, PollGroup};
 
 fn main() -> Result<()> {
     // # Load Settings

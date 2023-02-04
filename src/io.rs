@@ -17,7 +17,7 @@ pub use input::Input;
 pub use metadata::DeviceMetadata;
 pub use sensors::*;
 
-use crate::storage::{Container, Containerized};
+use crate::storage::{Container};
 
 /// Defines sensor type. Used to classify data along with `IOData`.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
