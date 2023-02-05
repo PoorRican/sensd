@@ -60,7 +60,7 @@ impl std::fmt::Debug for dyn Input {
             "Sensor {{ name: {}, id: {}, kind: {}",
             self.name(),
             self.id(),
-            self.get_metadata().kind
+            self.metadata().kind
         )
     }
 }

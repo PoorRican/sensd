@@ -2,12 +2,13 @@ use crate::io::{Device, IOData, LogType};
 use crate::storage::{Container, Containerized};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use crate::io::device::IdType;
 
 /// Encapsulates `IOData` alongside of timestamp and device data
 #[derive(Debug, Serialize, Deserialize)]
 pub struct IOEvent {
     pub version_id: i32,
-    pub sensor_id: i32,
+    pub sensor_id: IdType,
     pub timestamp: DateTime<Utc>,
 
     #[serde(flatten)]
@@ -32,7 +33,7 @@ impl IOEvent {
     ///
     /// ```
     pub fn create(device: &(impl Device + ?Sized), timestamp: DateTime<Utc>, value: f64) -> Self {
-        let info = device.get_metadata();
+        let info = device.metadata();
         let version_id = info.version_id;
         let sensor_id = info.sensor_id;
         let data = IOData {
