@@ -3,9 +3,12 @@ use std::hash::Hash;
 use std::sync::{Arc, Mutex};
 
 use crate::errors::Result;
-use crate::io::{Input, InputType, LogType};
+use crate::io::MockPhSensor;
+use crate::io::{Device, Input, InputType, LogType};
 use crate::settings::Settings;
-use crate::storage::{Container, Containerized};
+use crate::storage::{Container, Containerized, MappedCollection};
+use crate::io::IdType;
+
 
 /// Mediator to periodically poll sensors of various types, and store the resulting `IOEvent` objects in a `Container`.
 ///
@@ -59,5 +62,23 @@ impl PollGroup {
             logs,
             sensors,
         }
+    }
+
+    pub fn add_sensor(&mut self, name: &str, id: IdType) -> Result<()> {
+        // variable allowed to go out-of-scope because `poller` owns reference
+        let log = Arc::new(Mutex::new(LogType::new()));
+        self.logs.push(log.clone());
+
+        let sensor = MockPhSensor::new(name.to_string(), id, log.clone());
+        self.sensors.add(sensor.id(), sensor.boxed())
+    }
+
+    pub fn add_sensors(&mut self, arr: Vec<(&str, i32)>) -> Vec<Result<()>> {
+        let mut results = Vec::new();
+        for (name, id) in arr {
+            let result = self.add_sensor(name, id as IdType);
+            results.push(result);
+        }
+        results
     }
 }

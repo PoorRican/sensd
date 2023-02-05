@@ -22,14 +22,9 @@ fn main() -> Result<()> {
     // # Setup Poller
     let mut poller: PollGroup = PollGroup::new("main", settings);
 
-    let config = [("test name", 0), ("second sensor", 1)];
-    for (name, id) in config {
-        // variable allowed to go out-of-scope because `poller` owns reference
-        let log = Arc::new(Mutex::new(LogType::new()));
-        poller.logs.push(log.clone());
-
-        let sensor = MockPhSensor::new(name.to_string(), id, log.clone());
-        poller.sensors.add(sensor.id(), sensor.boxed())?;
+    let config = vec![("test name", 0), ("second sensor", 1)];
+    for result in poller.add_sensors(config) {
+        result.unwrap();
     }
 
     loop {
