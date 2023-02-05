@@ -7,13 +7,12 @@ mod settings;
 mod storage;
 mod units;
 
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use sensd;
 use sensd::errors::Result;
-use sensd::io::{Device, LogType, MockPhSensor};
 use sensd::settings::Settings;
-use sensd::storage::{MappedCollection, PollGroup};
+use sensd::storage::PollGroup;
 
 fn main() -> Result<()> {
     // # Load Settings
