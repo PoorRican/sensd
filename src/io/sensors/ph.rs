@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use std::sync::{Arc, Mutex};
+use crate::io::device::IdType;
 
 use crate::io::metadata::DeviceMetadata;
 use crate::io::{Device, IOKind, Input, LogType};
@@ -22,7 +23,7 @@ impl MockPhSensor {
     /// * `sensor_id`: arbitrary, numeric ID to differentiate from other sensors
     ///
     /// returns: MockPhSensor
-    pub fn new(name: String, sensor_id: i32, log: Arc<Mutex<LogType>>) -> Self {
+    pub fn new(name: String, sensor_id: IdType, log: Arc<Mutex<LogType>>) -> Self {
         let version_id = 0;
         let kind = IOKind::PH;
 
@@ -38,14 +39,8 @@ impl MockPhSensor {
 
 // Implement traits
 impl Device for MockPhSensor {
-    fn get_metadata(&self) -> &DeviceMetadata {
+    fn metadata(&self) -> &DeviceMetadata {
         &self.metadata
-    }
-    fn name(&self) -> String {
-        self.metadata.name.clone()
-    }
-    fn id(&self) -> i32 {
-        self.metadata.sensor_id
     }
 }
 

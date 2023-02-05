@@ -16,17 +16,17 @@ use crate::storage::{Container, Containerized};
 ///
 /// TODO: multithreaded polling. Implement `RwLock` or `Mutex` to synchronize access to the sensors and
 ///       log containers in order to make the poll() function thread-safe.
-pub struct PollGroup<K: Eq + Hash> {
+pub struct PollGroup {
     name: String,
     last_execution: DateTime<Utc>,
     settings: Arc<Settings>,
 
     // internal containers
     pub logs: Vec<Arc<Mutex<LogType>>>,
-    pub sensors: Container<InputType, K>,
+    pub sensors: Container<InputType, IdType>,
 }
 
-impl<K: Eq + Hash> PollGroup<K> {
+impl PollGroup {
     /// Iterate through container once. Call `get_event()` on each value.
     /// Update according to the lowest rate.
     pub fn poll(&mut self) -> std::result::Result<Vec<Result<()>>, ()> {
@@ -49,7 +49,7 @@ impl<K: Eq + Hash> PollGroup<K> {
     pub fn new(name: &str, settings: Arc<Settings>) -> Self {
         let last_execution = Utc::now() - settings.interval;
 
-        let sensors: Container<InputType, K> = <dyn Input>::container();
+        let sensors: Container<InputType, IdType> = <dyn Input>::container();
         let logs: Vec<Arc<Mutex<LogType>>> = Vec::new();
 
         Self {

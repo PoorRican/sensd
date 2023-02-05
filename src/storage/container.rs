@@ -113,7 +113,7 @@ impl<T, K: Eq + Hash> Container<T, K> {
     }
 }
 
-/// Implement the `Collection` interface for `Container`
+/// Generic interface for interacting with mapped data
 impl<T, K: Hash + Eq> MappedCollection<T, K> for Container<T, K> {
     /// Add a key-value pair to the collection and return a boolean indicating if the value has been added to the collection.
     /// Using `entry` method on the inner HashMap to check if the key already exists in the HashMap

@@ -20,7 +20,7 @@ fn main() -> Result<()> {
     let settings: Arc<Settings> = Arc::new(Settings::initialize());
 
     // # Setup Poller
-    let mut poller: PollGroup<i32> = PollGroup::new("main", settings);
+    let mut poller: PollGroup = PollGroup::new("main", settings);
 
     let config = [("test name", 0), ("second sensor", 1)];
     for (name, id) in config {

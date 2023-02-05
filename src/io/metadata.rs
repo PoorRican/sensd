@@ -1,4 +1,5 @@
 use crate::io;
+use crate::io::device::IdType;
 use serde::{Deserialize, Serialize};
 use std::fmt::Formatter;
 
@@ -24,7 +25,7 @@ use std::fmt::Formatter;
 pub struct DeviceMetadata {
     pub name: String,
     pub version_id: i32,
-    pub sensor_id: i32,
+    pub sensor_id: IdType,
     pub kind: io::IOKind,
 }
 
@@ -44,7 +45,7 @@ impl DeviceMetadata {
     /// # Returns
     ///
     /// A new instance with given specified parameters
-    pub fn new(name: String, version_id: i32, sensor_id: i32, kind: io::IOKind) -> Self {
+    pub fn new(name: String, version_id: i32, sensor_id: IdType, kind: io::IOKind) -> Self {
         DeviceMetadata {
             name,
             version_id,

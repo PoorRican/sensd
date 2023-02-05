@@ -1,9 +1,13 @@
+use std::hash::Hash;
 use crate::errors;
 
 /// Define a basic interface to interact with underlying data.
 /// T is the data type being stored and K is the key type to access stored data.
-// TODO: type should be stored in implementations
-pub trait MappedCollection<T, K> {
+///
+/// Generics should be agnostic to underlying implementation aside from the fact that key should
+/// can be used as key in `HashMap`. `MappedCollection` sole purpose is a universal interface for interacting
+/// with mapping stored data.
+pub trait MappedCollection<T, K: Eq + Hash> {
     /// Add a key-value pair to the collection and return a boolean indicating if the addition was successful.
     /// If the key already existed, then `false` is returned.
     fn add(&mut self, key: K, data: T) -> errors::Result<()>;
