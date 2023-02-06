@@ -93,7 +93,7 @@ where
     K: Eq + Hash,
 {
     // The inner field is a HashMap with key type K and value type T
-    inner: HashMap<K, T>,
+    pub inner: HashMap<K, T>,
 }
 
 impl<T, K: Eq + Hash> Container<T, K> {

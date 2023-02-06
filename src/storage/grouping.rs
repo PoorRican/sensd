@@ -1,11 +1,11 @@
 use chrono::{DateTime, Utc};
 use std::sync::{Arc, Mutex};
 
-use crate::errors::Result;
+use crate::errors::{Result, Error};
 use crate::io::MockPhSensor;
 use crate::io::{Device, Input, InputType, LogType};
 use crate::settings::Settings;
-use crate::storage::{Container, Containerized, MappedCollection};
+use crate::storage::{Container, Containerized, MappedCollection, Persistent};
 use crate::io::IdType;
 
 
@@ -76,6 +76,26 @@ impl PollGroup {
         let mut results = Vec::new();
         for (name, id) in arr {
             let result = self.add_sensor(name, id as IdType);
+            results.push(result);
+        }
+        results
+    }
+
+    fn log_fn(&self, name: String) -> String {
+        let s = String::new();
+        s + &self.settings.log_fn_prefix + name.as_str() + ".json"
+    }
+
+    fn sensors_fn(&self, name: String) -> String {
+        let s = String::new();
+        s + &self.settings.sensors_fn_prefix + name.as_str() + ".toml"
+    }
+
+    pub fn save_logs(&self) -> Vec<Result<()>> {
+        let mut results = Vec::new();
+        for (i, guarded) in self.logs.iter().enumerate() {
+            let path = Some(self.log_fn(i.to_string()));
+            let result = guarded.lock().unwrap().save(path);
             results.push(result);
         }
         results

@@ -31,6 +31,7 @@ fn main() -> Result<()> {
             _ => (),
         };
         std::thread::sleep(std::time::Duration::from_secs(1));
+        poller.save_logs();
         // match poller.save() {
         //     Ok(_) => (),
         //     Err(t) => return Err(t)
