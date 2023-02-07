@@ -9,7 +9,7 @@ use crate::storage::MappedCollection;
 #[derive(Debug)]
 pub struct MockPhSensor {
     metadata: DeviceMetadata,
-    log: Arc<Mutex<LogType>>,
+    pub log: Arc<Mutex<LogType>>,
 }
 
 /** Represents a mock pH sensor.
