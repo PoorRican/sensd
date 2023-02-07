@@ -4,3 +4,6 @@ migrations
 .idea/
 
 .env
+
+*.json
+*.csv

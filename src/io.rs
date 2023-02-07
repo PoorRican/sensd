@@ -1,12 +1,26 @@
 /// Encapsulate IO for devices
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use std::fmt::Formatter;
 
-use crate::container::{Container, Containerized};
-use crate::device;
+mod calibrated;
+mod device;
+mod event;
+mod input;
+mod metadata;
+mod sensors;
+
+pub use calibrated::Calibrated;
+pub use device::*;
+pub use event::IOEvent;
+pub use input::Input;
+pub use metadata::DeviceMetadata;
+pub use sensors::*;
+
+use crate::storage::{Container};
 
 /// Defines sensor type. Used to classify data along with `IOData`.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum IOKind {
     Light,
     Pressure,
@@ -51,65 +65,11 @@ impl std::fmt::Display for IOKind {
 // TODO: enum for `IODirection` when implementing control system
 
 /// Encapsulates sensor data. Provides a unified data type for returning data.
-#[derive(Debug)]
-pub struct IOData<T> {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct IOData {
     pub kind: IOKind,
-    pub data: T,
+    pub data: f64,
 }
 
-/// Encapsulates `IOData` alongside of timestamp and device data
-#[derive(Debug)]
-pub struct IOEvent<T> {
-    pub version_id: i32,
-    pub sensor_id: i32,
-    pub timestamp: DateTime<Utc>,
-    pub data: IOData<T>,
-}
-
-// TODO: add kind to `IOEvent`
-impl<T> IOEvent<T> {
-    /// Generate sensor event.
-    ///
-    /// # Arguments
-    ///
-    /// * `device`: struct that has implemented the `Device` trait
-    /// * `timestamp`: timestamp of event
-    /// * `value`: value to include in
-    ///
-    /// returns: SensorEvent<T>
-    ///
-    /// # Examples
-    ///
-    /// ```
-    ///
-    /// ```
-    pub fn create(
-        device: &(impl device::Device<T> + ?Sized),
-        timestamp: DateTime<Utc>,
-        value: T,
-    ) -> Self {
-        let info = device.get_metadata();
-        let version_id = info.version_id;
-        let sensor_id = info.sensor_id;
-        let data = IOData {
-            kind: info.kind.clone(),
-            data: value,
-        };
-        IOEvent {
-            version_id,
-            sensor_id,
-            timestamp,
-            data,
-        }
-    }
-}
-
-/// Return a new instance of `Container` with for storing `IOEvent<T>` which are accessed by `DateTime<Utc>` as keys
-impl<T> Containerized<IOEvent<T>, DateTime<Utc>> for IOEvent<T>
-where
-    T: std::fmt::Debug,
-{
-    fn container() -> Container<IOEvent<T>, DateTime<Utc>> {
-        Container::<IOEvent<T>, DateTime<Utc>>::new()
-    }
-}
+pub type LogType = Container<IOEvent, DateTime<Utc>>;
+pub type InputType = Box<dyn Input>;

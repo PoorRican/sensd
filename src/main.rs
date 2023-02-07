@@ -1,39 +1,39 @@
 extern crate chrono;
+extern crate serde;
 
-mod container;
-mod device;
+mod errors;
 mod io;
-mod polling;
-mod sensors;
 mod settings;
+mod storage;
 mod units;
 
-use chrono::{DateTime, Duration, Utc};
+use std::sync::Arc;
 
-use crate::container::{Collection, Container, Containerized};
-use crate::device::Sensor;
-use crate::polling::Poller;
-use crate::sensors::ph::MockPhSensor;
-use crate::settings::Settings;
-use crate::units::Ph;
+use sensd;
+use sensd::errors::Result;
+use sensd::settings::Settings;
+use sensd::storage::{PollGroup, Persistent};
 
-fn main() {
-    /// # Load Settings
-    let settings: Settings = Settings::initialize();
+fn main() -> Result<()> {
+    // # Load Settings
+    let settings: Arc<Settings> = Arc::new(Settings::initialize());
 
-    /// # Setup Poller
-    let mut poller: Poller<Ph, i32> = Poller::new(settings.interval, Utc::now() - settings.interval);
+    // # Setup Poller
+    let mut poller: PollGroup = PollGroup::new("main", settings);
 
-    let s0 = MockPhSensor::new("test name".to_string(), 0, Duration::seconds(5));
-    let s1 = MockPhSensor::new("second sensor".to_string(), 1, Duration::seconds(10));
-
-    poller.sensors.add(0, Box::new(s0));
-    poller.sensors.add(1, Box::new(s1));
-
-    loop {
-        poller.poll();
-        std::thread::sleep(std::time::Duration::from_secs(1));
-        dbg!(&poller.log)
+    let config = vec![("test name", 0), ("second sensor", 1)];
+    for result in poller.add_sensors(config) {
+        result.unwrap();
     }
 
+    loop {
+        match poller.poll() {
+            _ => (),
+        };
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        match poller.save(None) {
+            Ok(_) => (),
+            Err(t) => return Err(t)
+        };
+    }
 }
