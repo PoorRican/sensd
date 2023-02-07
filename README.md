@@ -1,5 +1,6 @@
 # sensd - _The Ultimate Sensor Logging and Control System_
 
+
 ## Purpose
 
 `sensd` is a multipurpose robust framework for sensor logging and a control system for mission-critical 
@@ -26,6 +27,7 @@ embedded devices.
 # Getting Started
 To use the library, simply add the following to your Cargo.toml file:
 
+
 ```toml
 [dependencies]
 sensd = "0.0.1-alpha"
@@ -40,3 +42,10 @@ For further documentation and examples on how to use the library, please refer t
 
 # Contributing
 We welcome all contributions to the library, whether it's in the form of bug reports, feature requests, or code contributions. To get started, simply fork the repository and make your changes. Before submitting a pull request, please make sure to run the test suite and update the documentation as necessary.
+
+## Planned Features
+The following features are planned for the next major releases (in order of priority):
+    - A control system for operating switches, motors, and other output devices.
+    - 3D (or 2D), location awareness. Nodes can be aware of neighbors.
+    - Port to an embedded system (to run on "bare-metal"). Which means a hardware UI.
+    - Secure, wireless network for receiving data and sending commands to nodes.
