@@ -91,7 +91,7 @@ impl PollGroup {
         s + &self.settings.sensors_fn_prefix + name.as_str() + ".toml"
     }
 
-    pub fn save_logs(&self) -> Vec<Result<()>> {
+    fn save_logs(&self) -> Vec<Result<()>> {
         let mut results = Vec::new();
         for (i, guarded) in self.logs.iter().enumerate() {
             let path = Some(self.log_fn(i.to_string()));
@@ -99,5 +99,39 @@ impl PollGroup {
             results.push(result);
         }
         results
+    }
+
+    fn load_logs(&self) -> Vec<Result<()>> {
+        let mut results = Vec::new();
+        for (i, guarded) in self.logs.iter().enumerate() {
+            let path = Some(self.log_fn(i.to_string()));
+            let result = guarded.lock().unwrap().load(path);
+            results.push(result);
+        }
+        results
+    }
+}
+
+impl Persistent for PollGroup {
+    fn save(&self, _: Option<String>) -> Result<()> {
+        let results = self.save_logs();
+        for result in results.into_iter() {
+            match result {
+                Err(e) => return Err(e),
+                _ => continue
+            };
+        }
+        Ok(())
+    }
+
+    fn load(&mut self, _: Option<String>) -> Result<()> {
+        let results = self.load_logs();
+        for result in results.into_iter() {
+            match result {
+                Err(e) => return Err(e),
+                _ => continue
+            }
+        };
+        Ok(())
     }
 }
