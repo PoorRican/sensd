@@ -1,12 +1,13 @@
 use chrono::{DateTime, Utc};
 use std::sync::{Arc, Mutex};
 
-use crate::errors::{Result, Error};
+use crate::errors::{Error, Result};
 use crate::io::MockPhSensor;
-use crate::io::{Device, Input, InputType, LogType};
+use crate::io::{Device, Input, InputType};
 use crate::settings::Settings;
 use crate::storage::{Container, Containerized, MappedCollection, Persistent};
 use crate::io::IdType;
+use crate::storage::logging::LogType;
 
 
 /// Mediator to periodically poll sensors of various types, and store the resulting `IOEvent` objects in a `Container`.

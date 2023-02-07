@@ -1,5 +1,5 @@
-use sensd::io::{LogType, MockPhSensor};
-use sensd::storage::{PollGroup, MappedCollection};
+use sensd::io::{MockPhSensor};
+use sensd::storage::{PollGroup, MappedCollection, LogType};
 use std::sync::Arc;
 use std::sync::Mutex;
 use sensd::settings::Settings;

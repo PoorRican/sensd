@@ -3,8 +3,8 @@ use std::sync::{Arc, Mutex};
 use crate::io::device::IdType;
 
 use crate::io::metadata::DeviceMetadata;
-use crate::io::{Device, IOKind, Input, LogType};
-use crate::storage::MappedCollection;
+use crate::io::{Device, Input, IOKind};
+use crate::storage::{MappedCollection, LogType};
 
 #[derive(Debug)]
 pub struct MockPhSensor {

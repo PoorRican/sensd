@@ -1,5 +1,5 @@
-use crate::io::{Device, IOData, LogType};
-use crate::storage::{Container, Containerized};
+use crate::io::{Device, IOData};
+use crate::storage::{Container, Containerized, LogType};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use crate::io::device::IdType;

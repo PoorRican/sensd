@@ -3,8 +3,8 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use chrono::Utc;
-use sensd::storage::{Persistent, MappedCollection};
-use sensd::io::{IOEvent, LogType, MockPhSensor, Input, IdType};
+use sensd::storage::{Persistent, MappedCollection, LogType};
+use sensd::io::{IOEvent, MockPhSensor, Input, IdType};
 
 #[test]
 fn test_load_save() {
