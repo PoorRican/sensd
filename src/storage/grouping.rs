@@ -70,7 +70,7 @@ impl PollGroup {
         self.logs.push(log.clone());
 
         let sensor = MockPhSensor::new(name.to_string(), id, log.clone());
-        self.sensors.add(sensor.id(), sensor.boxed())
+        self.sensors.push(sensor.id(), sensor.boxed())
     }
 
     pub fn add_sensors(&mut self, arr: Vec<(&str, i32)>) -> Vec<Result<()>> {

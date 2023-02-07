@@ -22,7 +22,7 @@ fn test_load_save() {
         let device: MockPhSensor = MockPhSensor::new(String::from(SENSOR_NAME), ID, log);
         for _ in 0..COUNT {
             let event = IOEvent::create(&device, Utc::now(), device.read());
-            device.log.lock().unwrap().add(event.timestamp, event).unwrap();
+            device.log.lock().unwrap().push(event.timestamp, event).unwrap();
             thread::sleep(Duration::from_nanos(1));
         }
         device.log.lock().unwrap().save(Some(String::from(PATH))).unwrap();

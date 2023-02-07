@@ -10,7 +10,7 @@ use crate::errors;
 pub trait MappedCollection<T, K: Eq + Hash> {
     /// Add a key-value pair to the collection and return a boolean indicating if the addition was successful.
     /// If the key already existed, then `false` is returned.
-    fn add(&mut self, key: K, data: T) -> errors::Result<()>;
+    fn push(&mut self, key: K, data: T) -> errors::Result<()>;
 
     /// Access object by key
     /// Since key might not exist, an option is returned.

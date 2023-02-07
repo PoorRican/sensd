@@ -53,6 +53,6 @@ impl Input for MockPhSensor {
     /// Call `get_event` and add to log
     /// listeners would be asynchronously called here
     fn poll(&mut self, time: DateTime<Utc>) -> crate::errors::Result<()> {
-        self.log.lock().unwrap().add(time, self.get_event(time))
+        self.log.lock().unwrap().push(time, self.get_event(time))
     }
 }
