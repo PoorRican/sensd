@@ -3,6 +3,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::fmt::Formatter;
 use std::hash::Hash;
+use std::sync::Arc;
 
 mod calibrated;
 mod device;
@@ -17,6 +18,7 @@ pub use event::IOEvent;
 pub use input::Input;
 pub use metadata::DeviceMetadata;
 pub use sensors::*;
+use crate::helpers::Deferred;
 
 use crate::storage::Container;
 
@@ -75,4 +77,28 @@ pub struct IOData {
 /// Traits required to be implemented for a type to be usable as an `id`
 pub trait IdTraits: Eq + Hash + Default + Serialize {}
 
-pub type InputType = Box<dyn Input>;
+pub trait InputDevice: Input + Device {}
+
+pub struct DeviceType(Box<dyn Device>);
+
+/// Facade for input objects
+pub struct InputType(Box<dyn InputDevice>);
+impl Device for InputType {
+    fn metadata(&self) -> &DeviceMetadata {
+            &self.metadata()
+        }
+}
+impl Input for InputType {
+    /// facade for input device implementation
+    /// Should eventually return `Result<f64>`
+    fn read(&self) -> f64 {
+        self.read()
+    }
+
+    /// facade for polling
+    fn poll(&mut self, time: DateTime<Utc>) -> crate::errors::Result<()> {
+        self.poll(time)
+    }
+}
+
+pub type InputContainer<K: IdTraits> = Container<Deferred<InputType>, K>;

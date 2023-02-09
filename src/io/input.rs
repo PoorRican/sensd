@@ -3,6 +3,8 @@ use crate::io::{event, Device, InputType, IdTraits};
 use crate::storage::{Container, Containerized};
 use chrono::{DateTime, Utc};
 use std::fmt::Formatter;
+use std::sync::Arc;
+use crate::helpers::Deferred;
 
 /// Interface for an input device
 /// It is used as a trait object and can be stored in a container using the `Containerized` trait.
@@ -44,12 +46,12 @@ pub trait Input: Device {
 
 /// Returns a new instance of `Container` for objects with `Sensor` trait indexed by `K`.
 /// Sensor traits are stored as `Box<dyn Sensor>`
-impl<K> Containerized<Box<dyn Input>, K> for dyn Input
+impl<K> Containerized<Deferred<InputType>, K> for InputType
 where
     K: IdTraits,
 {
-    fn container() -> Container<InputType, K> {
-        Container::<InputType, K>::new()
+    fn container() -> Container<Deferred<InputType>, K> {
+        Container::<Deferred<InputType>, K>::new()
     }
 }
 

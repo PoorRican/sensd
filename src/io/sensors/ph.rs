@@ -1,15 +1,14 @@
 use chrono::{DateTime, Utc};
 use std::sync::{Arc, Mutex};
-use crate::io::device::IdType;
 
-use crate::io::metadata::DeviceMetadata;
-use crate::io::{Device, Input, IOKind};
+use crate::io::{Device, Input, IOKind, IdType, DeviceMetadata, InputType, InputDevice, DeviceType};
+use crate::helpers::Deferred;
 use crate::storage::{MappedCollection, LogType};
 
 #[derive(Debug)]
 pub struct MockPhSensor {
     metadata: DeviceMetadata,
-    pub log: Arc<Mutex<LogType>>,
+    pub log: Deferred<LogType>,
 }
 
 /** Represents a mock pH sensor.
@@ -23,7 +22,7 @@ impl MockPhSensor {
     /// * `sensor_id`: arbitrary, numeric ID to differentiate from other sensors
     ///
     /// returns: MockPhSensor
-    pub fn new(name: String, sensor_id: IdType, log: Arc<Mutex<LogType>>) -> Self {
+    pub fn new(name: String, sensor_id: IdType, log: Deferred<OwnedLog>) -> Self {
         let version_id = 0;
         let kind = IOKind::PH;
 
@@ -32,8 +31,8 @@ impl MockPhSensor {
         MockPhSensor { metadata, log }
     }
 
-    pub fn boxed(self) -> Box<Self> {
-        Box::new(self)
+    pub fn deferred(self) -> Deferred<InputType> {
+        Arc::new(Mutex::new(InputType(Box::new(self))))
     }
 }
 
@@ -56,3 +55,5 @@ impl Input for MockPhSensor {
         self.log.lock().unwrap().push(time, self.get_event(time))
     }
 }
+
+impl InputDevice for MockPhSensor {}
