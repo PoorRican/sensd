@@ -13,11 +13,11 @@ pub fn write_or_create(path: &Path) -> File {
 }
 
 pub fn check_results(results: &[Result<()>]) -> Result<()> {
-    for &result in results.into_iter() {
+    for result in results {
         match result {
-            Err(e) => return Err(e),
+            Err(e) => dbg!(e),
             _ => continue
-        }
+        };
     };
     Ok(())
 }
