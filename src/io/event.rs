@@ -1,8 +1,8 @@
-use crate::io::{Device, IOData};
-use crate::storage::{Container, Containerized, LogType};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use crate::io::device::IdType;
+
+use crate::io::{Device, IOData, IdType, IdTraits};
+use crate::storage::{Container, Containerized, LogType};
 
 /// Encapsulates `IOData` alongside of timestamp and device data
 #[derive(Debug, Serialize, Deserialize)]
@@ -48,6 +48,8 @@ impl IOEvent {
         }
     }
 }
+
+impl IdTraits for DateTime<Utc> {}
 
 /// Return a new instance of `Container` with for storing `IOEvent` which are accessed by `DateTime<Utc>` as keys
 impl Containerized<IOEvent, DateTime<Utc>> for IOEvent {

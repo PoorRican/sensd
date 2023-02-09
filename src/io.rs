@@ -2,6 +2,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::fmt::Formatter;
+use std::hash::Hash;
 
 mod calibrated;
 mod device;
@@ -70,5 +71,8 @@ pub struct IOData {
     pub kind: IOKind,
     pub data: f64,
 }
+
+/// Traits required to be implemented for a type to be usable as an `id`
+pub trait IdTraits: Eq + Hash + Default + Serialize {}
 
 pub type InputType = Box<dyn Input>;

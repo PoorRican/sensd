@@ -1,5 +1,5 @@
 use crate::errors;
-use crate::io::{event, Device, InputType};
+use crate::io::{event, Device, InputType, IdTraits};
 use crate::storage::{Container, Containerized};
 use chrono::{DateTime, Utc};
 use std::fmt::Formatter;
@@ -46,7 +46,7 @@ pub trait Input: Device {
 /// Sensor traits are stored as `Box<dyn Sensor>`
 impl<K> Containerized<Box<dyn Input>, K> for dyn Input
 where
-    K: std::hash::Hash + Eq,
+    K: IdTraits,
 {
     fn container() -> Container<InputType, K> {
         Container::<InputType, K>::new()
