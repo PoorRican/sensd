@@ -65,17 +65,16 @@ impl PollGroup {
 
     pub fn add_sensor(&mut self, name: &str, id: IdType) -> Result<()> {
         // variable allowed to go out-of-scope because `poller` owns reference
-        let log = Arc::new(Mutex::new(LogType::new()));
-        self.logs.push(log.clone());
-
-        let sensor = MockPhSensor::new(name.to_string(), id, log.clone());
-        self.sensors.push(sensor.id(), sensor.boxed())
+        let (log, sensor) = input_log_builder(name, id, self.settings.clone());
+        self.logs.push(log);
+        let id = sensor.lock().unwrap().id();
+        self.sensors.push(id, sensor)
     }
 
-    pub fn add_sensors(&mut self, arr: Vec<(&str, i32)>) -> Vec<Result<()>> {
+    pub fn add_sensors(&mut self, arr: &[(&str, i32)]) -> Vec<Result<()>> {
         let mut results = Vec::new();
         for (name, id) in arr {
-            let result = self.add_sensor(name, id as IdType);
+            let result = self.add_sensor(name, *id as IdType);
             results.push(result);
         }
         results
