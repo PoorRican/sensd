@@ -19,6 +19,17 @@ pub struct Settings {
     pub sensors_fn_prefix: String,
 }
 
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            version: VERSION.to_string(),
+            interval: Duration::seconds(INTERVAL),
+            log_fn_prefix: LOG_FN_PREFIX.to_string(),
+            sensors_fn_prefix: SENSORS_FN_PREFIX.to_string(),
+        }
+    }
+}
+
 impl Settings {
     /// Read settings from .env file
     pub fn initialize() -> Self {
