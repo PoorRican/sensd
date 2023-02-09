@@ -2,11 +2,11 @@ use chrono::{DateTime, Utc};
 use std::sync::{Arc, Mutex};
 
 use crate::errors::{Error, Result};
-use crate::io::MockPhSensor;
-use crate::io::{Device, Input, InputType, IdType};
+use crate::io::{Device, Input, InputType, IOEvent, MockPhSensor, IdType, InputContainer};
 use crate::settings::Settings;
 use crate::storage::{Container, Containerized, MappedCollection, Persistent};
-use crate::storage::logging::LogType;
+use crate::storage::{LogType, LogContainer};
+use crate::helpers::{check_results, Deferred, input_log_builder};
 
 
 /// Mediator to periodically poll sensors of various types, and store the resulting `IOEvent` objects in a `Container`.
@@ -24,8 +24,8 @@ pub struct PollGroup {
     settings: Arc<Settings>,
 
     // internal containers
-    pub logs: Vec<Arc<Mutex<LogType>>>,
-    pub sensors: Container<InputType, IdType>,
+    pub logs: Vec<Deferred<LogType>>,
+    pub sensors: InputContainer<IdType>,
 }
 
 impl PollGroup {
@@ -37,7 +37,8 @@ impl PollGroup {
 
         if next_execution <= Utc::now() {
             for (_, sensor) in self.sensors.iter_mut() {
-                results.push(sensor.poll(next_execution));
+                let result = sensor.lock().unwrap().poll(next_execution);
+                results.push(result);
             }
             self.last_execution = next_execution;
             Ok(results)
@@ -51,8 +52,8 @@ impl PollGroup {
     pub fn new(name: &str, settings: Arc<Settings>) -> Self {
         let last_execution = Utc::now() - settings.interval;
 
-        let sensors: Container<InputType, IdType> = <dyn Input>::container();
-        let logs: Vec<Arc<Mutex<LogType>>> = Vec::new();
+        let sensors = <InputContainer<IdType>>::default();
+        let logs = Vec::default();
 
         Self {
             name: String::from(name),
@@ -90,47 +91,45 @@ impl PollGroup {
         s + &self.settings.sensors_fn_prefix + name.as_str() + ".toml"
     }
 
-    fn save_logs(&self) -> Vec<Result<()>> {
+    /// Load each individual log
+    /// # Notes
+    /// This works because each log container should have it's own name upon initialization
+    /// from hardcoded sensors.
+    fn load_logs(&self, path: &Option<String>) -> Result<()> {
         let mut results = Vec::new();
-        for (i, guarded) in self.logs.iter().enumerate() {
-            let path = Some(self.log_fn(i.to_string()));
-            let result = guarded.lock().unwrap().save(path);
+        for log in self.logs.iter() {
+            let result = log.lock().unwrap().load(path);
             results.push(result);
         }
-        results
+        check_results(&results)
     }
 
-    fn load_logs(&self) -> Vec<Result<()>> {
+    /// Save each individual log
+    /// # Notes
+    /// This works because each log container should have it's own name upon initialization
+    /// from hardcoded sensors.
+    fn save_logs(&self, path: &Option<String>) -> Result<()> {
         let mut results = Vec::new();
-        for (i, guarded) in self.logs.iter().enumerate() {
-            let path = Some(self.log_fn(i.to_string()));
-            let result = guarded.lock().unwrap().load(path);
+        for log in self.logs.iter() {
+            let result = log.lock().unwrap().save(path);
             results.push(result);
         }
-        results
+        check_results(&results)
     }
 }
 
 impl Persistent for PollGroup {
-    fn save(&self, _: Option<String>) -> Result<()> {
-        let results = self.save_logs();
-        for result in results.into_iter() {
-            match result {
-                Err(e) => return Err(e),
-                _ => continue
-            };
-        }
+    fn save(&self, path: &Option<String>) -> Result<()> {
+        let results = [self.save_logs(path)];
+        // check_results(&results).as_ref()
+        // hack to run code
         Ok(())
     }
 
-    fn load(&mut self, _: Option<String>) -> Result<()> {
-        let results = self.load_logs();
-        for result in results.into_iter() {
-            match result {
-                Err(e) => return Err(e),
-                _ => continue
-            }
-        };
+    fn load(&mut self, path: &Option<String>) -> Result<()> {
+        let results = [self.load_logs(path)];
+        // check_results(&results)
+        // hack to run code
         Ok(())
     }
 }

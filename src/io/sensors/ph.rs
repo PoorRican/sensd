@@ -22,7 +22,7 @@ impl MockPhSensor {
     /// * `sensor_id`: arbitrary, numeric ID to differentiate from other sensors
     ///
     /// returns: MockPhSensor
-    pub fn new(name: String, sensor_id: IdType, log: Deferred<OwnedLog>) -> Self {
+    pub fn new(name: String, sensor_id: IdType, log: Deferred<LogType>) -> Self {
         let version_id = 0;
         let kind = IOKind::PH;
 

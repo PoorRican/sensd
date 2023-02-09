@@ -23,7 +23,7 @@ fn main() -> Result<()> {
     let mut poller: PollGroup = PollGroup::new("main", settings);
 
     let config = vec![("test name", 0), ("second sensor", 1)];
-    for result in poller.add_sensors(config) {
+    for result in poller.add_sensors(&config) {
         result.unwrap();
     }
 
@@ -32,7 +32,7 @@ fn main() -> Result<()> {
             _ => (),
         };
         std::thread::sleep(std::time::Duration::from_secs(1));
-        match poller.save(None) {
+        match poller.save(&None) {
             Ok(_) => (),
             Err(t) => return Err(t)
         };
