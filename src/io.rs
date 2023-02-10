@@ -85,19 +85,19 @@ pub struct DeviceType(Box<dyn Device>);
 pub struct InputType(Box<dyn InputDevice>);
 impl Device for InputType {
     fn metadata(&self) -> &DeviceMetadata {
-            &self.metadata()
+            &self.0.metadata()
         }
 }
 impl Input for InputType {
     /// facade for input device implementation
     /// Should eventually return `Result<f64>`
     fn read(&self) -> f64 {
-        self.read()
+        self.0.read()
     }
 
     /// facade for polling
     fn poll(&mut self, time: DateTime<Utc>) -> crate::errors::Result<()> {
-        self.poll(time)
+        self.0.poll(time)
     }
 }
 
