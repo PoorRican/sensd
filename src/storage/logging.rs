@@ -1,3 +1,4 @@
+use std::collections::hash_map::Iter;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -53,7 +54,7 @@ impl OwnedLog {
     pub fn new(id: IdType, settings: Option<Arc<Settings>>) -> Self {
         let owner = None;
         let log = LogType::default();
-        Self { id, owner, log, settings: settings.unwrap_or_else(Settings::default()) }
+        Self { id, owner, log, settings: settings.unwrap_or_else(|| Arc::new(Settings::default())) }
     }
 
     pub fn filename(&self) -> String {
@@ -63,6 +64,10 @@ impl OwnedLog {
             self.settings.log_fn_prefix.clone(),
             owner.lock().unwrap().name().as_str(), self.id.to_string().as_str()
         )
+    }
+
+    pub fn iter(&self) -> Iter<DateTime<Utc>, IOEvent> {
+        self.log.iter()
     }
 }
 
