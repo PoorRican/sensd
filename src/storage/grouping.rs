@@ -110,8 +110,9 @@ impl PollGroup {
     /// from hardcoded sensors.
     fn save_logs(&self, path: &Option<String>) -> Result<()> {
         let mut results = Vec::new();
-        for log in self.logs.iter() {
-            let result = log.lock().unwrap().save(path);
+        for (i, log) in self.logs.iter().enumerate() {
+            let tmp = Some(i.to_string());
+            let result = log.lock().unwrap().save(&tmp);
             results.push(result);
         }
         check_results(&results)
