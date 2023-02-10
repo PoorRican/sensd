@@ -21,6 +21,9 @@ use crate::helpers::{check_results, Deferred, input_log_builder};
 pub struct PollGroup {
     pub name: String,
     last_execution: DateTime<Utc>,
+
+    /// Non-mutable storage of runtime settings
+    /// Ownership of settings should be given to `PollGroup`
     settings: Arc<Settings>,
 
     // internal containers
