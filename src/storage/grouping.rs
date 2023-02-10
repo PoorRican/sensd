@@ -1,13 +1,11 @@
-use chrono::{DateTime, Utc};
-use std::sync::{Arc};
+use chrono::{DateTime, Duration, Utc};
+use std::sync::Arc;
 
-use crate::errors::{Result};
-use crate::io::{Device, Input, IdType, InputContainer};
+use crate::errors::Result;
+use crate::helpers::{check_results, input_log_builder};
+use crate::io::{Device, IdType, Input, InputContainer};
 use crate::settings::Settings;
-use crate::storage::{Container, Containerized, MappedCollection, OwnedLog, Persistent};
-use crate::storage::{LogType, LogContainer};
-use crate::helpers::{check_results, Deferred, input_log_builder};
-
+use crate::storage::{MappedCollection, Persistent, LogContainer};
 
 /// Mediator to periodically poll sensors of various types, and store the resulting `IOEvent` objects in a `Container`.
 ///
@@ -27,8 +25,8 @@ pub struct PollGroup {
     settings: Arc<Settings>,
 
     // internal containers
-    pub logs: Vec<Deferred<OwnedLog>>,
-    pub sensors: InputContainer<IdType>,
+    pub logs: LogContainer,
+    pub inputs: InputContainer<IdType>,
 }
 
 impl PollGroup {
@@ -39,7 +37,7 @@ impl PollGroup {
         let next_execution = self.last_execution + self.settings.interval;
 
         if next_execution <= Utc::now() {
-            for (_, sensor) in self.sensors.iter_mut() {
+            for (_, sensor) in self.inputs.iter_mut() {
                 let result = sensor.lock().unwrap().poll(next_execution);
                 results.push(result);
             }
@@ -52,7 +50,8 @@ impl PollGroup {
 
     /// Constructor for `Poller` struct.
     /// Initialized empty containers.
-    pub fn new(name: &str, settings: Arc<Settings>) -> Self {
+    pub fn new(name: &str, settings: Option<Arc<Settings>>) -> Self {
+        let settings = settings.unwrap_or_else(|| Arc::new(Settings::default()));
         let last_execution = Utc::now() - settings.interval;
 
         let sensors = <InputContainer<IdType>>::default();
@@ -63,25 +62,33 @@ impl PollGroup {
             settings,
             last_execution,
             logs,
-            sensors,
+            inputs: sensors,
         }
     }
 
-    pub fn _add_sensor(&mut self, name: &str, id: IdType) -> Result<()> {
+    pub fn build_input(&mut self, name: &str, id: IdType) -> Result<()> {
         // variable allowed to go out-of-scope because `poller` owns reference
-        let (log, sensor) = input_log_builder(name, id, Some(self.settings.clone()));
+        let (log, input) = input_log_builder(name, id, Some(self.settings.clone()));
         self.logs.push(log);
-        let id = sensor.lock().unwrap().id();
-        self.sensors.push(id, sensor)
+        let id = input.lock().unwrap().id();
+        self.inputs.push(id, input)
     }
 
-    pub fn _add_sensors(&mut self, arr: &[(&str, i32)]) -> Result<()> {
+    /// Builds multiple input objects and respective `OwnedLog` containers.
+    /// # Args:
+    /// Single array should be any sequence of tuples containing a name literal and an `IdType`
+    pub fn add_inputs(&mut self, arr: &[(&str, IdType)]) -> Result<()> {
         let mut results = Vec::new();
         for (name, id) in arr {
-            let result = self._add_sensor(name, *id as IdType);
+            let result = self.build_input(name, *id);
             results.push(result);
         }
         check_results(&results)
+    }
+
+    /// Facade to return operating frequency
+    pub fn _interval(&self) -> Duration {
+        self.settings.interval
     }
 
     /// Load each individual log
@@ -111,18 +118,16 @@ impl PollGroup {
     }
 }
 
+/// Only save and load log data since PollGroup is statically initialized
+/// If `&None` is given to either methods, then current directory is used.
 impl Persistent for PollGroup {
     fn save(&self, path: &Option<String>) -> Result<()> {
-        let results = [self.save_logs(path)];
-        // check_results(&results).as_ref()
-        // hack to run code
-        Ok(())
+        let results = &[self.save_logs(path)];
+        check_results(results)
     }
 
     fn load(&mut self, path: &Option<String>) -> Result<()> {
-        let results = [self.load_logs(path)];
-        // check_results(&results)
-        // hack to run code
-        Ok(())
+        let results = &[self.load_logs(path)];
+        check_results(results)
     }
 }

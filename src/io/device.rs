@@ -1,11 +1,10 @@
+use crate::io::metadata::DeviceMetadata;
 /// Provide Low-level Device Functionality
 use crate::io::IdTraits;
-use crate::io::metadata::DeviceMetadata;
 
 pub type IdType = u32;
 
 impl IdTraits for IdType {}
-
 
 /// Basic interface for GPIO device metadata
 pub trait Device {

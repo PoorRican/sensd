@@ -11,19 +11,21 @@ mod input;
 mod metadata;
 mod sensors;
 
+use crate::helpers::Deferred;
 pub use calibrated::Calibrated;
 pub use device::*;
 pub use event::IOEvent;
 pub use input::Input;
 pub use metadata::DeviceMetadata;
 pub use sensors::*;
-use crate::helpers::Deferred;
 
 use crate::storage::Container;
 
 /// Defines sensor type. Used to classify data along with `IOData`.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
 pub enum IOKind {
+    #[default]
+    Unassigned,
     Light,
     Pressure,
     Proximity,
@@ -44,6 +46,7 @@ pub enum IOKind {
 impl std::fmt::Display for IOKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let name = match self {
+            IOKind::Unassigned => "Unassigned",
             IOKind::Light => "Light",
             IOKind::Pressure => "Pressure",
             IOKind::Proximity => "Proximity",
@@ -84,8 +87,8 @@ pub struct DeviceType(Box<dyn Device>);
 pub struct InputType(Box<dyn InputDevice>);
 impl Device for InputType {
     fn metadata(&self) -> &DeviceMetadata {
-            &self.0.metadata()
-        }
+        &self.0.metadata()
+    }
 }
 impl Input for InputType {
     /// facade for input device implementation

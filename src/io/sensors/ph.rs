@@ -1,11 +1,11 @@
 use chrono::{DateTime, Utc};
 use std::sync::{Arc, Mutex};
 
-use crate::io::{Device, Input, IOKind, IdType, DeviceMetadata, InputType, InputDevice, DeviceType};
-use crate::helpers::Deferred;
-use crate::storage::{MappedCollection, LogType, OwnedLog};
+use crate::helpers::{Deferrable, Deferred};
+use crate::io::{Device, DeviceMetadata, IOKind, IdType, Input, InputDevice, InputType, Sensor};
+use crate::storage::{MappedCollection, OwnedLog};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct MockPhSensor {
     metadata: DeviceMetadata,
     pub log: Deferred<OwnedLog>,
@@ -13,7 +13,7 @@ pub struct MockPhSensor {
 
 /** Represents a mock pH sensor.
 */
-impl MockPhSensor {
+impl Sensor for MockPhSensor {
     /// Creates a mock ph sensor which returns random values
     ///
     /// # Arguments
@@ -22,7 +22,7 @@ impl MockPhSensor {
     /// * `sensor_id`: arbitrary, numeric ID to differentiate from other sensors
     ///
     /// returns: MockPhSensor
-    pub fn new(name: String, sensor_id: IdType, log: Deferred<OwnedLog>) -> Self {
+    fn new(name: String, sensor_id: IdType, log: Deferred<OwnedLog>) -> Self {
         let version_id = 0;
         let kind = IOKind::PH;
 
@@ -30,8 +30,12 @@ impl MockPhSensor {
 
         MockPhSensor { metadata, log }
     }
+}
 
-    pub fn deferred(self) -> Deferred<InputType> {
+impl Deferrable for MockPhSensor {
+    type Inner = InputType;
+    /// Return wrapped Sensor in
+    fn deferred(self) -> Deferred<Self::Inner> {
         Arc::new(Mutex::new(InputType(Box::new(self))))
     }
 }

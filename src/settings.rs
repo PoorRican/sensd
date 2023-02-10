@@ -4,7 +4,7 @@ use std::env::var;
 
 /// Default values
 const VERSION: &str = "0.1.0-alpha";
-const INTERVAL: i64 = 10;
+const INTERVAL: i64 = 1;
 
 /// Default Filename Prefixes
 const LOG_FN_PREFIX: &str = "log_";
@@ -32,7 +32,7 @@ impl Default for Settings {
 
 impl Settings {
     /// Read settings from .env file
-    pub fn _initialize() -> Self {
+    pub fn initialize() -> Self {
         dotenv().ok();
         let version = var("VERSION").unwrap_or_else(|_| String::from(VERSION));
         let interval = Duration::seconds(

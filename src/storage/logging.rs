@@ -1,16 +1,15 @@
-use std::collections::hash_map::Iter;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::fmt::{format, Formatter};
+use std::collections::hash_map::Iter;
+use std::fmt::Formatter;
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::ops::Deref;
 use std::sync::{Arc, Mutex, Weak};
 
 use crate::errors::{Error, ErrorKind, Result};
-use crate::helpers::{Deferred, write_or_create};
-use crate::io::{Device, IOEvent, IdType, Input, InputDevice, DeviceType, InputType};
+use crate::helpers::{writable_or_create, Deferred};
+use crate::io::{Device, IOEvent, IdType, InputType};
 use crate::settings::Settings;
 use crate::storage::{Container, MappedCollection, Persistent};
 
@@ -18,7 +17,7 @@ use crate::storage::{Container, MappedCollection, Persistent};
 pub type LogType = Container<IOEvent, DateTime<Utc>>;
 
 /// Define the `Deferred` type as an Arc of a Mutex wrapping the generic type `T`.
-pub type LogContainer = Container<Deferred<OwnedLog>, IdType>;
+pub type LogContainer = Vec<Deferred<OwnedLog>>;
 
 const FILETYPE: &str = ".json";
 
@@ -54,15 +53,22 @@ impl OwnedLog {
     pub fn new(id: IdType, settings: Option<Arc<Settings>>) -> Self {
         let owner = None;
         let log = LogType::default();
-        Self { id, owner, log, settings: settings.unwrap_or_else(|| Arc::new(Settings::default())) }
+        Self {
+            id,
+            owner,
+            log,
+            settings: settings.unwrap_or_else(|| Arc::new(Settings::default())),
+        }
     }
 
     pub fn filename(&self) -> String {
         let owner: Deferred<InputType> = self.owner();
         format!(
-            "{}_{}_{}.json",
+            "{}_{}_{}{}",
             self.settings.log_fn_prefix.clone(),
-            owner.lock().unwrap().name().as_str(), self.id.to_string().as_str()
+            owner.lock().unwrap().name().as_str(),
+            self.id.to_string().as_str(),
+            FILETYPE
         )
     }
 
@@ -97,17 +103,22 @@ impl MappedCollection<IOEvent, DateTime<Utc>> for OwnedLog {
 impl Persistent for OwnedLog {
     fn save(&self, path: &Option<String>) -> Result<()> {
         if self.log.is_empty() {
-            Err(Error::new(ErrorKind::ContainerEmpty, "Log is empty. Will not save."))
+            Err(Error::new(
+                ErrorKind::ContainerEmpty,
+                "Log is empty. Will not save.",
+            ))
         } else {
-
-            let file = write_or_create(self.full_path(path));
+            let file = writable_or_create(self.full_path(path));
             let writer = BufWriter::new(file);
 
             match serde_json::to_writer_pretty(writer, &self) {
                 Ok(_) => println!("Saved"),
-                Err(e) =>
-                    return Err(Error::new(ErrorKind::SerializationError,
-                                          e.to_string().as_str()))
+                Err(e) => {
+                    return Err(Error::new(
+                        ErrorKind::SerializationError,
+                        e.to_string().as_str(),
+                    ))
+                }
             }
             Ok(())
         }
@@ -120,15 +131,20 @@ impl Persistent for OwnedLog {
 
             let buff: OwnedLog = match serde_json::from_reader(reader) {
                 Ok(data) => data,
-                Err(e) =>
-                    return Err(Error::new(ErrorKind::SerializationError,
-                                          e.to_string().as_str()))
+                Err(e) => {
+                    return Err(Error::new(
+                        ErrorKind::SerializationError,
+                        e.to_string().as_str(),
+                    ))
+                }
             };
             self.log = buff.log;
             Ok(())
-
         } else {
-            Err(Error::new(ErrorKind::ContainerNotEmpty, "Cannot load objects into non-empty container"))
+            Err(Error::new(
+                ErrorKind::ContainerNotEmpty,
+                "Cannot load objects into non-empty container",
+            ))
         }
     }
 }

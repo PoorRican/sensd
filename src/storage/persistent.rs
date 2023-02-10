@@ -1,4 +1,4 @@
-use crate::errors::{Result};
+use crate::errors::Result;
 
 // trait that expresses an interface to save or load from disk
 pub trait Persistent {
