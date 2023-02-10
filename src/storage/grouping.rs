@@ -4,8 +4,8 @@ use std::sync::{Arc};
 use crate::errors::{Result};
 use crate::io::{Device, Input, IdType, InputContainer};
 use crate::settings::Settings;
-use crate::storage::{MappedCollection, Persistent};
-use crate::storage::{LogType};
+use crate::storage::{Container, Containerized, MappedCollection, OwnedLog, Persistent};
+use crate::storage::{LogType, LogContainer};
 use crate::helpers::{check_results, Deferred, input_log_builder};
 
 
@@ -19,7 +19,7 @@ use crate::helpers::{check_results, Deferred, input_log_builder};
 /// TODO: multithreaded polling. Implement `RwLock` or `Mutex` to synchronize access to the sensors and
 ///       log containers in order to make the poll() function thread-safe.
 pub struct PollGroup {
-    pub name: String,
+    name: String,
     last_execution: DateTime<Utc>,
 
     /// Non-mutable storage of runtime settings
@@ -27,7 +27,7 @@ pub struct PollGroup {
     settings: Arc<Settings>,
 
     // internal containers
-    pub logs: Vec<Deferred<LogType>>,
+    pub logs: Vec<Deferred<OwnedLog>>,
     pub sensors: InputContainer<IdType>,
 }
 
@@ -69,7 +69,7 @@ impl PollGroup {
 
     pub fn _add_sensor(&mut self, name: &str, id: IdType) -> Result<()> {
         // variable allowed to go out-of-scope because `poller` owns reference
-        let (log, sensor) = input_log_builder(name, id);
+        let (log, sensor) = input_log_builder(name, id, self.settings.clone());
         self.logs.push(log);
         let id = sensor.lock().unwrap().id();
         self.sensors.push(id, sensor)
@@ -103,9 +103,8 @@ impl PollGroup {
     /// from hardcoded sensors.
     fn save_logs(&self, path: &Option<String>) -> Result<()> {
         let mut results = Vec::new();
-        for (i, log) in self.logs.iter().enumerate() {
-            let tmp = Some(i.to_string());
-            let result = log.lock().unwrap().save(&tmp);
+        for log in self.logs.iter() {
+            let result = log.lock().unwrap().save(path);
             results.push(result);
         }
         check_results(&results)
