@@ -21,7 +21,7 @@ use std::fmt::Formatter;
 ///
 /// let info = crate::DeviceInfo::new(name, version_id, sensor_id, kind, min_value, max_value, resolution);
 /// ```
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceMetadata {
     pub name: String,
     pub version_id: i32,

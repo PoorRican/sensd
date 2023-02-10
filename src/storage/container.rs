@@ -18,13 +18,12 @@
 /// store a collection of objects of a specific type `T`, and identified by a specific key type `K`. The relationship
 /// between `Containerized` and `Container` is that `Containerized` defines how the `Container` should be created
 /// and used for a specific type, while `Container` actually holds the collection of objects.
-
 use crate::errors::{Error, ErrorKind, Result};
+use crate::io::IdTraits;
 use crate::storage::collection::MappedCollection;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::{Iter, IterMut};
 use std::collections::HashMap;
-use std::hash::Hash;
 
 /// A trait for creating a specialized `Container` instance
 ///
@@ -76,7 +75,7 @@ use std::hash::Hash;
 /// ```
 pub trait Containerized<T, K>
 where
-    K: Eq + Hash,
+    K: IdTraits,
 {
     // TODO: add type
     /// Returns a new instance of the `Container` struct for storing objects of type T
@@ -90,13 +89,20 @@ where
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Container<T, K>
 where
-    K: Eq + Hash,
+    K: IdTraits,
 {
     // The inner field is a HashMap with key type K and value type T
     pub inner: HashMap<K, T>,
 }
 
-impl<T, K: Eq + Hash> Container<T, K> {
+impl<T, K: IdTraits> Default for Container<T, K> {
+    fn default() -> Self {
+        let inner: HashMap<K, T> = Default::default();
+        Self { inner }
+    }
+}
+
+impl<T, K: IdTraits> Container<T, K> {
     // A new Container struct is created with an empty HashMap
     pub fn new() -> Self {
         let inner: HashMap<K, T> = Default::default();
@@ -114,12 +120,12 @@ impl<T, K: Eq + Hash> Container<T, K> {
 }
 
 /// Generic interface for interacting with mapped data
-impl<T, K: Hash + Eq> MappedCollection<T, K> for Container<T, K> {
+impl<T, K: IdTraits> MappedCollection<T, K> for Container<T, K> {
     /// Add a key-value pair to the collection and return a boolean indicating if the value has been added to the collection.
     /// Using `entry` method on the inner HashMap to check if the key already exists in the HashMap
     ///  - If the key already exists, the returned value is `std::collections::hash_map::Entry::Occupied`, which returns false.
     ///  - If the key does not exist, the returned value is `std::collections::hash_map::Entry::Vacant`, which inserts the key-value pair into the HashMap and returns true.
-    fn add(&mut self, key: K, data: T) -> Result<()> {
+    fn push(&mut self, key: K, data: T) -> Result<()> {
         match self.inner.entry(key) {
             std::collections::hash_map::Entry::Occupied(_) => {
                 Err(Error::new(ErrorKind::ContainerError, "Key already exists"))

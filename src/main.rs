@@ -2,6 +2,7 @@ extern crate chrono;
 extern crate serde;
 
 mod errors;
+mod helpers;
 mod io;
 mod settings;
 mod storage;
@@ -9,31 +10,32 @@ mod units;
 
 use std::sync::Arc;
 
-use sensd;
-use sensd::errors::Result;
-use sensd::settings::Settings;
-use sensd::storage::{PollGroup, Persistent};
+use crate::errors::Result;
+use crate::settings::Settings;
+use crate::storage::{Persistent, PollGroup};
 
-fn main() -> Result<()> {
-    // # Load Settings
+/// Load settings and setup `PollGroup`
+/// # Args
+/// name - Name to be converted to string
+fn init(name: &str) -> PollGroup {
     let settings: Arc<Settings> = Arc::new(Settings::initialize());
 
-    // # Setup Poller
-    let mut poller: PollGroup = PollGroup::new("main", settings);
+    PollGroup::new(name, Some(settings))
+}
 
+fn main() -> Result<()> {
+    let mut poller = init("main");
     let config = vec![("test name", 0), ("second sensor", 1)];
-    for result in poller.add_sensors(config) {
-        result.unwrap();
-    }
+    poller.add_inputs(&config).unwrap();
 
     loop {
         match poller.poll() {
+            Ok(_) => match poller.save(&None) {
+                Ok(_) => (),
+                Err(t) => return Err(t),
+            },
             _ => (),
         };
         std::thread::sleep(std::time::Duration::from_secs(1));
-        match poller.save(None) {
-            Ok(_) => (),
-            Err(t) => return Err(t)
-        };
     }
 }

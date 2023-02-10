@@ -4,7 +4,7 @@ use std::env::var;
 
 /// Default values
 const VERSION: &str = "0.1.0-alpha";
-const INTERVAL: i64 = 10;
+const INTERVAL: i64 = 1;
 
 /// Default Filename Prefixes
 const LOG_FN_PREFIX: &str = "log_";
@@ -17,6 +17,17 @@ pub struct Settings {
 
     pub log_fn_prefix: String,
     pub sensors_fn_prefix: String,
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            version: VERSION.to_string(),
+            interval: Duration::seconds(INTERVAL),
+            log_fn_prefix: LOG_FN_PREFIX.to_string(),
+            sensors_fn_prefix: SENSORS_FN_PREFIX.to_string(),
+        }
+    }
 }
 
 impl Settings {
