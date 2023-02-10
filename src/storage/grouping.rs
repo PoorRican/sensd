@@ -69,7 +69,7 @@ impl PollGroup {
 
     pub fn _add_sensor(&mut self, name: &str, id: IdType) -> Result<()> {
         // variable allowed to go out-of-scope because `poller` owns reference
-        let (log, sensor) = input_log_builder(name, id, self.settings.clone());
+        let (log, sensor) = input_log_builder(name, id, Some(self.settings.clone()));
         self.logs.push(log);
         let id = sensor.lock().unwrap().id();
         self.sensors.push(id, sensor)

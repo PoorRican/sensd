@@ -33,7 +33,7 @@ pub trait Deferrable<T> {
 }
 
 /// Init sensor and `OwnedLog`, then set owner on log. Return log and sensor.
-pub fn input_log_builder(name: &str, id: IdType, settings: Arc<Settings>) -> (Deferred<OwnedLog>, Deferred<InputType>) {
+pub fn input_log_builder(name: &str, id: IdType, settings: Option<Arc<Settings>>) -> (Deferred<OwnedLog>, Deferred<InputType>) {
     let log = Arc::new(Mutex::new(OwnedLog::new(id, settings)));
     let sensor = MockPhSensor::new(name.to_string(), id, log.clone());
 

@@ -50,10 +50,10 @@ impl OwnedLog {
         format!("{}{}", prefix, self.filename())
     }
 
-    pub fn new(id: IdType, settings: Arc<Settings>) -> Self {
+    pub fn new(id: IdType, settings: Option<Arc<Settings>>) -> Self {
         let owner = None;
         let log = LogType::default();
-        Self { id, owner, log, settings }
+        Self { id, owner, log, settings: settings.unwrap_or_else(Settings::default()) }
     }
 
     pub fn filename(&self) -> String {
