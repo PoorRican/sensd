@@ -3,7 +3,6 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::fmt::Formatter;
 use std::hash::Hash;
-use std::sync::Arc;
 
 mod calibrated;
 mod device;
@@ -101,4 +100,4 @@ impl Input for InputType {
     }
 }
 
-pub type InputContainer<K: IdTraits> = Container<Deferred<InputType>, K>;
+pub type InputContainer<K> = Container<Deferred<InputType>, K>;

@@ -1,11 +1,11 @@
 use chrono::{DateTime, Utc};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
 
-use crate::errors::{Error, Result};
-use crate::io::{Device, Input, InputType, IOEvent, MockPhSensor, IdType, InputContainer};
+use crate::errors::{Result};
+use crate::io::{Device, Input, IdType, InputContainer};
 use crate::settings::Settings;
-use crate::storage::{Container, Containerized, MappedCollection, Persistent};
-use crate::storage::{LogType, LogContainer};
+use crate::storage::{MappedCollection, Persistent};
+use crate::storage::{LogType};
 use crate::helpers::{check_results, Deferred, input_log_builder};
 
 
@@ -19,7 +19,7 @@ use crate::helpers::{check_results, Deferred, input_log_builder};
 /// TODO: multithreaded polling. Implement `RwLock` or `Mutex` to synchronize access to the sensors and
 ///       log containers in order to make the poll() function thread-safe.
 pub struct PollGroup {
-    name: String,
+    pub name: String,
     last_execution: DateTime<Utc>,
     settings: Arc<Settings>,
 
@@ -64,31 +64,21 @@ impl PollGroup {
         }
     }
 
-    pub fn add_sensor(&mut self, name: &str, id: IdType) -> Result<()> {
+    pub fn _add_sensor(&mut self, name: &str, id: IdType) -> Result<()> {
         // variable allowed to go out-of-scope because `poller` owns reference
-        let (log, sensor) = input_log_builder(name, id, self.settings.clone());
+        let (log, sensor) = input_log_builder(name, id);
         self.logs.push(log);
         let id = sensor.lock().unwrap().id();
         self.sensors.push(id, sensor)
     }
 
-    pub fn add_sensors(&mut self, arr: &[(&str, i32)]) -> Vec<Result<()>> {
+    pub fn _add_sensors(&mut self, arr: &[(&str, i32)]) -> Result<()> {
         let mut results = Vec::new();
         for (name, id) in arr {
-            let result = self.add_sensor(name, *id as IdType);
+            let result = self._add_sensor(name, *id as IdType);
             results.push(result);
         }
-        results
-    }
-
-    fn log_fn(&self, name: String) -> String {
-        let s = String::new();
-        s + &self.settings.log_fn_prefix + name.as_str() + ".json"
-    }
-
-    fn sensors_fn(&self, name: String) -> String {
-        let s = String::new();
-        s + &self.settings.sensors_fn_prefix + name.as_str() + ".toml"
+        check_results(&results)
     }
 
     /// Load each individual log

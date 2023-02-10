@@ -1,4 +1,3 @@
-use std::hash::Hash;
 use crate::errors;
 use crate::io::IdTraits;
 

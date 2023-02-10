@@ -3,7 +3,6 @@ use crate::io::{event, Device, InputType, IdTraits};
 use crate::storage::{Container, Containerized};
 use chrono::{DateTime, Utc};
 use std::fmt::Formatter;
-use std::sync::Arc;
 use crate::helpers::Deferred;
 
 /// Interface for an input device

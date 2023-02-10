@@ -10,22 +10,19 @@ mod units;
 
 use std::sync::Arc;
 
-use sensd;
-use sensd::errors::Result;
-use sensd::settings::Settings;
-use sensd::storage::{PollGroup, Persistent};
+use crate::errors::Result;
+use crate::settings::Settings;
+use crate::storage::{PollGroup, Persistent};
 
 fn main() -> Result<()> {
     // # Load Settings
-    let settings: Arc<Settings> = Arc::new(Settings::initialize());
+    let settings: Arc<Settings> = Arc::new(Settings::_initialize());
 
     // # Setup Poller
     let mut poller: PollGroup = PollGroup::new("main", settings);
 
     let config = vec![("test name", 0), ("second sensor", 1)];
-    for result in poller.add_sensors(&config) {
-        result.unwrap();
-    }
+    poller._add_sensors(&config).unwrap();
 
     loop {
         match poller.poll() {

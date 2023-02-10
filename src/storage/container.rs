@@ -24,7 +24,6 @@ use crate::storage::collection::MappedCollection;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::{Iter, IterMut};
 use std::collections::HashMap;
-use std::hash::Hash;
 use crate::io::IdTraits;
 
 /// A trait for creating a specialized `Container` instance

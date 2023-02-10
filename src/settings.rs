@@ -32,7 +32,7 @@ impl Default for Settings {
 
 impl Settings {
     /// Read settings from .env file
-    pub fn initialize() -> Self {
+    pub fn _initialize() -> Self {
         dotenv().ok();
         let version = var("VERSION").unwrap_or_else(|_| String::from(VERSION));
         let interval = Duration::seconds(

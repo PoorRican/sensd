@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use std::sync::{Arc, Mutex};
 
-use crate::io::{Device, Input, IOKind, IdType, DeviceMetadata, InputType, InputDevice, DeviceType};
+use crate::io::{Device, Input, IOKind, IdType, DeviceMetadata, InputType, InputDevice};
 use crate::helpers::Deferred;
 use crate::storage::{MappedCollection, LogType};
 
@@ -22,7 +22,7 @@ impl MockPhSensor {
     /// * `sensor_id`: arbitrary, numeric ID to differentiate from other sensors
     ///
     /// returns: MockPhSensor
-    pub fn new(name: String, sensor_id: IdType, log: Deferred<LogType>) -> Self {
+    pub(crate) fn new(name: String, sensor_id: IdType, log: Deferred<LogType>) -> Self {
         let version_id = 0;
         let kind = IOKind::PH;
 
@@ -31,7 +31,7 @@ impl MockPhSensor {
         MockPhSensor { metadata, log }
     }
 
-    pub fn deferred(self) -> Deferred<InputType> {
+    pub(crate) fn deferred(self) -> Deferred<InputType> {
         Arc::new(Mutex::new(InputType(Box::new(self))))
     }
 }
