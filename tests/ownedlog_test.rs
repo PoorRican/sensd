@@ -1,6 +1,6 @@
 use chrono::Utc;
 use sensd::helpers::{input_log_builder, Deferred};
-use sensd::io::{Device, DeviceType, IOEvent, IdType, Input, InputType, MockPhSensor};
+use sensd::io::{Device, DeviceType, IOEvent, IdType, Input, InputType, GenericSensor, IOKind};
 use sensd::storage::{LogType, MappedCollection, OwnedLog, Persistent};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -27,7 +27,7 @@ fn test_load_save() {
     let filename;
     // test save
     {
-        let (log, device) = input_log_builder(SENSOR_NAME, ID, None);
+        let (log, device) = input_log_builder(SENSOR_NAME, &ID, &Some(IOKind::Flow), None);
         add_to_log(&device, &log, COUNT);
         let _log = log.lock().unwrap();
         _log.save(&None).unwrap();
@@ -41,7 +41,7 @@ fn test_load_save() {
     // test load
     // build back up then load
     {
-        let (log, device) = input_log_builder(SENSOR_NAME, ID, None);
+        let (log, device) = input_log_builder(SENSOR_NAME, &ID, &Some(IOKind::Flow), None);
         let mut _log = log.lock().unwrap();
         _log.load(&None).unwrap();
 

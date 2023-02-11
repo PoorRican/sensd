@@ -1,19 +1,24 @@
+use crate::helpers::{Deferrable, Deferred};
+use crate::io::{Device, DeviceMetadata, IOKind, IdType, Input, InputDevice, InputType};
+use crate::storage::{MappedCollection, OwnedLog};
+
+pub trait Sensor: Default + InputDevice + Deferrable {
+    fn new(name: String, sensor_id: IdType, kind: Option<IOKind>, log: Deferred<OwnedLog>) -> Self;
+}
+
 use chrono::{DateTime, Utc};
 use std::sync::{Arc, Mutex};
 
-use crate::helpers::{Deferrable, Deferred};
-use crate::io::{Device, DeviceMetadata, IOKind, IdType, Input, InputDevice, InputType, Sensor};
-use crate::storage::{MappedCollection, OwnedLog};
 
 #[derive(Debug, Default)]
-pub struct MockPhSensor {
+pub struct GenericSensor {
     metadata: DeviceMetadata,
     pub log: Deferred<OwnedLog>,
 }
 
 /** Represents a mock pH sensor.
-*/
-impl Sensor for MockPhSensor {
+ */
+impl Sensor for GenericSensor {
     /// Creates a mock ph sensor which returns random values
     ///
     /// # Arguments
@@ -22,17 +27,16 @@ impl Sensor for MockPhSensor {
     /// * `sensor_id`: arbitrary, numeric ID to differentiate from other sensors
     ///
     /// returns: MockPhSensor
-    fn new(name: String, sensor_id: IdType, log: Deferred<OwnedLog>) -> Self {
-        let version_id = 0;
-        let kind = IOKind::PH;
+    fn new(name: String, sensor_id: IdType, kind: Option<IOKind>, log: Deferred<OwnedLog>) -> Self {
+        let kind = kind.unwrap_or_default();
 
-        let metadata: DeviceMetadata = DeviceMetadata::new(name, version_id, sensor_id, kind);
+        let metadata: DeviceMetadata = DeviceMetadata::new(name, sensor_id, kind);
 
-        MockPhSensor { metadata, log }
+        GenericSensor { metadata, log }
     }
 }
 
-impl Deferrable for MockPhSensor {
+impl Deferrable for GenericSensor {
     type Inner = InputType;
     /// Return wrapped Sensor in
     fn deferred(self) -> Deferred<Self::Inner> {
@@ -41,13 +45,13 @@ impl Deferrable for MockPhSensor {
 }
 
 // Implement traits
-impl Device for MockPhSensor {
+impl Device for GenericSensor {
     fn metadata(&self) -> &DeviceMetadata {
         &self.metadata
     }
 }
 
-impl Input for MockPhSensor {
+impl Input for GenericSensor {
     /// Return a mock value
     fn read(&self) -> f64 {
         1.2
@@ -60,4 +64,4 @@ impl Input for MockPhSensor {
     }
 }
 
-impl InputDevice for MockPhSensor {}
+impl InputDevice for GenericSensor {}

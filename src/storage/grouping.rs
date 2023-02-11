@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use crate::errors::Result;
 use crate::helpers::{check_results, input_log_builder};
-use crate::io::{Device, IdType, Input, InputContainer};
+use crate::io::{Device, IdType, Input, InputContainer, IOKind};
 use crate::settings::Settings;
 use crate::storage::{MappedCollection, Persistent, LogContainer};
 
@@ -66,21 +66,24 @@ impl PollGroup {
         }
     }
 
-    pub fn build_input(&mut self, name: &str, id: IdType) -> Result<()> {
+    pub fn build_input(&mut self, name: &str, id: &IdType, kind: &Option<IOKind>) -> Result<()> {
         // variable allowed to go out-of-scope because `poller` owns reference
-        let (log, input) = input_log_builder(name, id, Some(self.settings.clone()));
+        let settings = Some(self.settings.clone());
+
+        let (log, input) = input_log_builder(name, id, kind, settings);
         self.logs.push(log);
+
         let id = input.lock().unwrap().id();
         self.inputs.push(id, input)
     }
 
     /// Builds multiple input objects and respective `OwnedLog` containers.
     /// # Args:
-    /// Single array should be any sequence of tuples containing a name literal and an `IdType`
-    pub fn add_inputs(&mut self, arr: &[(&str, IdType)]) -> Result<()> {
+    /// Single array should be any sequence of tuples containing a name literal, an `IdType`, and an `IOKind`
+    pub fn add_inputs(&mut self, arr: &[(&str, IdType, IOKind)]) -> Result<()> {
         let mut results = Vec::new();
-        for (name, id) in arr {
-            let result = self.build_input(name, *id);
+        for (name, id, kind) in arr.into_iter() {
+            let result = self.build_input(name, id, &Some(*kind));
             results.push(result);
         }
         check_results(&results)

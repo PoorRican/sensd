@@ -11,6 +11,7 @@ mod units;
 use std::sync::Arc;
 
 use crate::errors::Result;
+use crate::io::IOKind;
 use crate::settings::Settings;
 use crate::storage::{Persistent, PollGroup};
 
@@ -25,7 +26,7 @@ fn init(name: &str) -> PollGroup {
 
 fn main() -> Result<()> {
     let mut poller = init("main");
-    let config = vec![("test name", 0), ("second sensor", 1)];
+    let config = vec![("test name", 0, IOKind::PH), ("second sensor", 1, IOKind::Flow)];
     poller.add_inputs(&config).unwrap();
 
     loop {

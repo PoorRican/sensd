@@ -9,7 +9,7 @@ mod device;
 mod event;
 mod input;
 mod metadata;
-mod sensors;
+mod sensor;
 
 use crate::helpers::Deferred;
 pub use calibrated::Calibrated;
@@ -17,7 +17,7 @@ pub use device::*;
 pub use event::IOEvent;
 pub use input::Input;
 pub use metadata::DeviceMetadata;
-pub use sensors::*;
+pub use sensor::*;
 
 use crate::storage::Container;
 
