@@ -10,6 +10,8 @@ mod event;
 mod input;
 mod metadata;
 mod sensor;
+mod observer;
+mod command;
 
 use crate::helpers::Deferred;
 pub use calibrated::Calibrated;
@@ -18,8 +20,19 @@ pub use event::IOEvent;
 pub use input::Input;
 pub use metadata::DeviceMetadata;
 pub use sensor::*;
+pub use observer::*;
+pub use command::*;
 
 use crate::storage::Container;
+
+pub type IOType = f64;
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub enum IODirection {
+    #[default]
+    Input,
+    Output,
+}
 
 /// Defines sensor type. Used to classify data along with `IOData`.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
@@ -70,37 +83,20 @@ impl std::fmt::Display for IOKind {
 // TODO: enum for `IODirection` when implementing control system
 
 /// Encapsulates sensor data. Provides a unified data type for returning data.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub struct IOData {
     pub kind: IOKind,
-    pub data: f64,
+    pub data: IOType,
 }
 
 /// Traits required to be implemented for a type to be usable as an `id`
 pub trait IdTraits: Eq + Hash + Default + Serialize {}
 
-pub trait InputDevice: Input + Device {}
+pub trait InputDevice: Input + Device + Publisher {}
 
 pub struct DeviceType(Box<dyn Device>);
 
 /// Facade for input objects
-pub struct InputType(Box<dyn InputDevice>);
-impl Device for InputType {
-    fn metadata(&self) -> &DeviceMetadata {
-        &self.0.metadata()
-    }
-}
-impl Input for InputType {
-    /// facade for input device implementation
-    /// Should eventually return `Result<f64>`
-    fn read(&self) -> f64 {
-        self.0.read()
-    }
-
-    /// facade for polling
-    fn poll(&mut self, time: DateTime<Utc>) -> crate::errors::Result<()> {
-        self.0.poll(time)
-    }
-}
+pub type InputType = Box<dyn InputDevice>;
 
 pub type InputContainer<K> = Container<Deferred<InputType>, K>;

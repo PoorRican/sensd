@@ -114,9 +114,11 @@ impl Persistent for OwnedLog {
             match serde_json::to_writer_pretty(writer, &self) {
                 Ok(_) => println!("Saved"),
                 Err(e) => {
+                    let msg = e.to_string();
+                    dbg!(msg.clone());
                     return Err(Error::new(
                         ErrorKind::SerializationError,
-                        e.to_string().as_str(),
+                        msg.as_str(),
                     ))
                 }
             }

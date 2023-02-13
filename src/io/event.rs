@@ -1,14 +1,15 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::io::{Device, IOData, IdTraits, IdType};
+use crate::io::{Device, IOData, IdTraits, IdType, IOType, SubscriberStrategy, IODirection, Direction};
 use crate::storage::{Container, Containerized, LogType};
 
 /// Encapsulates `IOData` alongside of timestamp and device data
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct IOEvent {
     pub sensor_id: IdType,
     pub timestamp: DateTime<Utc>,
+    pub direction: IODirection,
 
     #[serde(flatten)]
     pub data: IOData,
@@ -32,6 +33,7 @@ impl IOEvent {
     ///
     /// ```
     pub fn create(device: &(impl Device + ?Sized), timestamp: DateTime<Utc>, value: f64) -> Self {
+        let direction = IODirection::default();
         let info = device.metadata();
         let sensor_id = info.sensor_id;
         let data = IOData {
@@ -41,8 +43,19 @@ impl IOEvent {
         IOEvent {
             sensor_id,
             timestamp,
+            direction,
             data,
         }
+    }
+
+    pub fn invert(&self, value: IOType) -> Self {
+        let mut inverted = self.clone();
+        inverted.data.data = value;
+        inverted.direction = match inverted.direction {
+            IODirection::Input => IODirection::Output,
+            IODirection::Output => IODirection::Input,
+        };
+        inverted
     }
 }
 

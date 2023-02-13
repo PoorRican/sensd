@@ -1,6 +1,6 @@
 use crate::errors;
 use crate::helpers::Deferred;
-use crate::io::{event, Device, IdTraits, InputType};
+use crate::io::{event, Device, IdTraits, InputType, IOType};
 use crate::storage::{Container, Containerized};
 use chrono::{DateTime, Utc};
 use std::fmt::Formatter;
@@ -34,10 +34,10 @@ use std::fmt::Formatter;
 /// ```
 /// > Note how two different sensor types were stored in `container`.
 pub trait Input: Device {
-    fn read(&self) -> f64;
+    fn read(&self) -> IOType;
 
-    fn get_event(&self, dt: DateTime<Utc>) -> event::IOEvent {
-        event::IOEvent::create(self, dt, self.read())
+    fn get_event(&self, dt: DateTime<Utc>, value: Option<IOType>) -> event::IOEvent {
+        event::IOEvent::create(self, dt, value.unwrap_or_else(move || self.read()))
     }
 
     fn poll(&mut self, time: DateTime<Utc>) -> errors::Result<()>;

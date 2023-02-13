@@ -1,19 +1,23 @@
+use std::sync::{Arc, Mutex};
+
+use chrono::{DateTime, Utc};
+
+use crate::errors::Result;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{Device, DeviceMetadata, IOKind, IdType, Input, InputDevice, InputType};
+use crate::io::{Device, DeviceMetadata, IdType, Input, InputDevice, InputType, IOKind,
+                Publisher, SubscriberStrategy};
+use crate::io::IOType;
 use crate::storage::{MappedCollection, OwnedLog};
 
-pub trait Sensor: Default + InputDevice + Deferrable {
+pub trait Sensor: Default + InputDevice + Deferrable + Publisher {
     fn new(name: String, sensor_id: IdType, kind: Option<IOKind>, log: Deferred<OwnedLog>) -> Self;
 }
 
-use chrono::{DateTime, Utc};
-use std::sync::{Arc, Mutex};
-
-
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct GenericSensor {
     metadata: DeviceMetadata,
     pub log: Deferred<OwnedLog>,
+    subscribers: Vec<Deferred<Box<dyn SubscriberStrategy>>>,
 }
 
 /** Represents a mock pH sensor.
@@ -31,8 +35,9 @@ impl Sensor for GenericSensor {
         let kind = kind.unwrap_or_default();
 
         let metadata: DeviceMetadata = DeviceMetadata::new(name, sensor_id, kind);
+        let subscribers = Vec::default();
 
-        GenericSensor { metadata, log }
+        GenericSensor { metadata, log, subscribers }
     }
 }
 
@@ -40,7 +45,7 @@ impl Deferrable for GenericSensor {
     type Inner = InputType;
     /// Return wrapped Sensor in
     fn deferred(self) -> Deferred<Self::Inner> {
-        Arc::new(Mutex::new(InputType(Box::new(self))))
+        Arc::new(Mutex::new(Box::new(self)))
     }
 }
 
@@ -53,15 +58,28 @@ impl Device for GenericSensor {
 
 impl Input for GenericSensor {
     /// Return a mock value
-    fn read(&self) -> f64 {
+    fn read(&self) -> IOType {
         1.2
     }
 
     /// Call `get_event` and add to log
-    /// listeners would be asynchronously called here
-    fn poll(&mut self, time: DateTime<Utc>) -> crate::errors::Result<()> {
-        self.log.lock().unwrap().push(time, self.get_event(time))
+    /// Additionally, data is copied and propagated to subscribers
+    fn poll(&mut self, time: DateTime<Utc>) -> Result<()> {
+        let event = self.get_event(time, None);
+        self.notify(&event);
+        let result = self.log.lock().unwrap().push(time, event);
+        result
     }
 }
 
 impl InputDevice for GenericSensor {}
+
+impl Publisher for GenericSensor {
+    fn subscribers(&mut self) -> &mut [Deferred<Box<dyn SubscriberStrategy>>] {
+        &mut self.subscribers
+    }
+
+    fn subscribe(&mut self, subscriber: Deferred<Box<dyn SubscriberStrategy>>) {
+        self.subscribers.push(subscriber)
+    }
+}
