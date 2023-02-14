@@ -29,7 +29,7 @@ impl IdTraits for IdType {}
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub struct IOData {
     pub kind: IOKind,
-    pub data: IOType,
+    pub value: IOType,
 }
 
 /// Enum used to classify direction of data flow in relation to system.

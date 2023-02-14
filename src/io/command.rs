@@ -48,9 +48,9 @@ impl SubscriberStrategy for PIDMonitor {
 #[derive(Debug, Clone)]
 /// Enum used by `ThresholdMonitor` logic
 /// Controls when comparison of external value and threshold returns `true`.
-pub enum Direction {
-    Above,
-    Below,
+pub enum Comparison {
+    GT,
+    LT,
 }
 
 /// Notify if threshold is exceeded
@@ -60,20 +60,20 @@ pub struct ThresholdNotifier {
     threshold: IOType,
     publisher: Deferred<PublisherInstance>,
 
-    direction: Direction,
+    trigger: Comparison,
 }
 impl ThresholdNotifier {
     pub fn new(
         name: String,
         threshold: IOType,
         publisher: Deferred<PublisherInstance>,
-        direction: Direction,
+        direction: Comparison,
     ) -> Self {
         Self {
             name,
             threshold,
             publisher,
-            direction,
+            trigger: direction,
         }
     }
 }
@@ -88,15 +88,15 @@ impl ThresholdMonitor for ThresholdNotifier {
     }
 }
 impl SubscriberStrategy for ThresholdNotifier {
-    fn evaluate(&mut self, data: &IOEvent) -> Option<IOEvent> {
-        let exceed = match &self.direction {
-            &Direction::Above => data.data.data >= self.threshold,
-            &Direction::Below => data.data.data <= self.threshold,
+    fn evaluate(&mut self, event: &IOEvent) -> Option<IOEvent> {
+        let exceed = match &self.trigger {
+            &Comparison::GT => event.data.value >= self.threshold,
+            &Comparison::LT => event.data.value <= self.threshold,
         };
         if exceed {
             let msg = String::from("Value exceeded");
             self.send_notification(msg).unwrap();
-            Some(data.invert(1.0))
+            Some(event.invert(1.0))
         } else {
             None
         }

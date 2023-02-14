@@ -3,7 +3,7 @@ use std::ops::Deref;
 use std::sync::{Arc, Mutex};
 
 use crate::errors::Result;
-use crate::io::{Device, GenericInput, IOKind, IdType, InputType};
+use crate::io::{Device, GenericInput, IdType, InputType, IOKind};
 use crate::settings::Settings;
 use crate::storage::OwnedLog;
 
@@ -37,20 +37,4 @@ pub type Deferred<T> = Arc<Mutex<T>>;
 pub trait Deferrable {
     type Inner;
     fn deferred(self) -> Deferred<Self::Inner>;
-}
-
-/// Init sensor and `OwnedLog`, then set owner on log. Return log and sensor.
-pub fn input_log_builder(
-    name: &str,
-    id: &IdType,
-    kind: &Option<IOKind>,
-    settings: Option<Arc<Settings>>,
-) -> (Deferred<OwnedLog>, Deferred<InputType>) {
-    let log = Arc::new(Mutex::new(OwnedLog::new(*id, settings)));
-    let input = GenericInput::new(name.to_string(), *id, *kind, log.clone());
-
-    let wrapped = input.deferred();
-    log.lock().unwrap().set_owner(wrapped.clone());
-
-    (log, wrapped)
 }

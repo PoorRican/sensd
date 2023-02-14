@@ -39,7 +39,7 @@ impl IOEvent {
         let id = info.id;
         let data = IOData {
             kind: info.kind.clone(),
-            data: value,
+            value,
         };
         IOEvent {
             id,
@@ -53,7 +53,7 @@ impl IOEvent {
     /// This should be used for converting an `IOEvent` from input to output.
     pub fn invert(&self, value: IOType) -> Self {
         let mut inverted = self.clone();
-        inverted.data.data = value;
+        inverted.data.value = value;
         inverted.direction = match inverted.direction {
             IODirection::Input => IODirection::Output,
             IODirection::Output => IODirection::Input,
