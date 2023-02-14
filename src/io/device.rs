@@ -1,12 +1,8 @@
 /// Provide Low-level Device Functionality
-use crate::helpers::{Deferred};
-use crate::io::{IdTraits, IODirection, IOKind};
+use crate::helpers::Deferred;
+use crate::io::{IdType, IODirection, IOKind};
 use crate::io::metadata::DeviceMetadata;
 use crate::storage::OwnedLog;
-
-pub type IdType = u32;
-
-impl IdTraits for IdType {}
 
 /// Defines a minimum interface for interacting with GPIO devices.
 ///

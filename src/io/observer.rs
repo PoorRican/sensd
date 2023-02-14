@@ -1,7 +1,8 @@
 /// Implement observer design pattern to implement control system based off of polling of `Input` objects
-use std::fmt::{Debug};
-use crate::io::{Input, InputType, IOEvent};
-use crate::helpers::{Deferred};
+use std::fmt::Debug;
+use crate::io::{Input, IOEvent};
+use crate::helpers::Deferred;
+use crate::io::types::InputType;
 
 
 /// Trait to implement on Input objects

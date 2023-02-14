@@ -4,8 +4,9 @@ use chrono::{DateTime, Utc};
 
 use crate::errors::Result;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{Device, DeviceMetadata, IdType, Input, InputDevice, InputType, IODirection, IOKind, Publisher, SubscriberStrategy};
-use crate::io::IOType;
+use crate::io::{Device, DeviceMetadata, IdType, Input, IODirection, IOKind, Publisher, SubscriberStrategy};
+use crate::io::types::IOType;
+use crate::io::types::{InputDevice, InputType};
 use crate::storage::{MappedCollection, OwnedLog};
 
 #[derive(Default)]

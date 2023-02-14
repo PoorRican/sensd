@@ -9,10 +9,11 @@ mod storage;
 mod units;
 
 use std::sync::{Arc};
+use io::IOKind;
 use crate::helpers::{Deferrable};
 
 use crate::errors::Result;
-use crate::io::{Direction, IOKind, ThresholdNotifier};
+use crate::io::{Direction, ThresholdNotifier};
 use crate::settings::Settings;
 use crate::storage::{Persistent, PollGroup};
 

@@ -3,7 +3,7 @@ use std::ops::Deref;
 use std::sync::{Arc, Mutex};
 
 use crate::errors::Result;
-use crate::io::{IdType, InputType, IOKind, GenericSensor, Device};
+use crate::io::{Device, GenericSensor, IdType, IOKind, InputType};
 use crate::settings::Settings;
 use crate::storage::OwnedLog;
 

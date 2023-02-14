@@ -1,8 +1,9 @@
 use std::fmt::{Debug, Formatter};
 use std::sync::{Arc, Mutex};
-use crate::errors::{Result};
+use crate::errors::Result;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{IOEvent, IOType, SubscriberStrategy, InputType, DeviceType};
+use crate::io::{IOEvent, SubscriberStrategy};
+use crate::io::types::{DeviceType, InputType, IOType};
 
 /// Generic command that monitors a threshold
 pub trait ThresholdMonitor: SubscriberStrategy {

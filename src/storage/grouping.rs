@@ -3,9 +3,10 @@ use std::sync::Arc;
 
 use crate::errors::Result;
 use crate::helpers::{check_results, input_log_builder};
-use crate::io::{IdType, InputContainer, IOKind};
+use crate::io::{IdType, IOKind};
+use crate::io::InputContainer;
 use crate::settings::Settings;
-use crate::storage::{MappedCollection, Persistent, LogContainer};
+use crate::storage::{LogContainer, MappedCollection, Persistent};
 
 /// Mediator to periodically poll sensors of various types, and store the resulting `IOEvent` objects in a `Container`.
 ///

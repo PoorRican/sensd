@@ -1,6 +1,7 @@
 use crate::errors;
 use crate::helpers::Deferred;
-use crate::io::{event, Device, IdTraits, InputType, IOType};
+use crate::io::{Device, IOEvent};
+use crate::io::types::{IdTraits, InputType, IOType};
 use crate::storage::{Container, Containerized};
 use chrono::{DateTime, Utc};
 use std::fmt::Formatter;
@@ -28,8 +29,8 @@ use std::fmt::Formatter;
 pub trait Input: Device {
     fn rx(&self) -> IOType;
 
-    fn generate_event(&self, dt: DateTime<Utc>, value: Option<IOType>) -> event::IOEvent {
-        event::IOEvent::create(self, dt, value.unwrap_or_else(move || self.rx()))
+    fn generate_event(&self, dt: DateTime<Utc>, value: Option<IOType>) -> IOEvent {
+        IOEvent::create(self, dt, value.unwrap_or_else(move || self.rx()))
     }
 
     fn read(&mut self, time: DateTime<Utc>) -> errors::Result<()>;

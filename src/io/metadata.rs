@@ -1,5 +1,5 @@
 use crate::io;
-use crate::io::device::IdType;
+use crate::io::IdType;
 use serde::{Deserialize, Serialize};
 use std::fmt::Formatter;
 

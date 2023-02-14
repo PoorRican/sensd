@@ -1,7 +1,8 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::io::{Device, IOData, IdTraits, IdType, IOType, IODirection};
+use crate::io::{Device, IdType, IODirection};
+use crate::io::types::{IdTraits, IOData, IOType};
 use crate::storage::{Container, Containerized, LogType};
 
 /// Encapsulates `IOData` alongside of timestamp and device data
