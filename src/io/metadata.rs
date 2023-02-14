@@ -5,7 +5,7 @@ use std::fmt::Formatter;
 
 /// Encapsulation of individual device metadata
 ///
-/// This struct stores information about a device, including its name, version ID, sensor ID,
+/// This struct stores information about a device, including its name, ID,
 /// kind, minimum and maximum value, and resolution.
 ///
 /// # Example

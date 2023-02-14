@@ -18,7 +18,7 @@ pub struct IOEvent {
 
 // TODO: add kind to `IOEvent`
 impl IOEvent {
-    /// Generate sensor event.
+    /// Generate I/O event.
     ///
     /// # Arguments
     ///
@@ -33,7 +33,7 @@ impl IOEvent {
     /// ```
     ///
     /// ```
-    pub fn create(device: &(impl Device + ?Sized), timestamp: DateTime<Utc>, value: f64) -> Self {
+    pub fn generate(device: &(impl Device + ?Sized), timestamp: DateTime<Utc>, value: f64) -> Self {
         let direction = device.direction();
         let info = device.metadata();
         let id = info.id;
@@ -49,6 +49,8 @@ impl IOEvent {
         }
     }
 
+    /// Invert a copy of existing `IOEvent` and inject a new value.
+    /// This should be used for converting an `IOEvent` from input to output.
     pub fn invert(&self, value: IOType) -> Self {
         let mut inverted = self.clone();
         inverted.data.data = value;

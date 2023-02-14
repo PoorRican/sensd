@@ -40,16 +40,16 @@ fn main() -> Result<()> {
 
     // build subscribers/commands
     println!("\nBuilding subscribers ...");
-    for (id, &ref sensor) in poller.inputs.iter() {
+    for (id, &ref input) in poller.inputs.iter() {
         let notifier = ThresholdNotifier::new(
             format!("subscriber for {}", id),
             1.0,
-            sensor.clone(),
+            input.clone(),
             Direction::Above
         );
         dbg!(notifier.clone());
         let deferred = notifier.deferred();
-        sensor.try_lock().unwrap().subscribe(deferred);
+        input.try_lock().unwrap().subscribe(deferred);
     };
     println!("... Finished building\n");
 

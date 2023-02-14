@@ -3,7 +3,7 @@ use std::ops::Deref;
 use std::sync::{Arc, Mutex};
 
 use crate::errors::Result;
-use crate::io::{Device, GenericSensor, IdType, IOKind, InputType};
+use crate::io::{Device, IdType, InputType, IOKind, GenericInput};
 use crate::settings::Settings;
 use crate::storage::OwnedLog;
 
@@ -47,9 +47,9 @@ pub fn input_log_builder(
     settings: Option<Arc<Settings>>,
 ) -> (Deferred<OwnedLog>, Deferred<InputType>) {
     let log = Arc::new(Mutex::new(OwnedLog::new(*id, settings)));
-    let sensor = GenericSensor::new(name.to_string(), *id, *kind, log.clone());
+    let input = GenericInput::new(name.to_string(), *id, *kind, log.clone());
 
-    let wrapped = sensor.deferred();
+    let wrapped = input.deferred();
     log.lock().unwrap().set_owner(wrapped.clone());
 
     (log, wrapped)
