@@ -8,9 +8,9 @@ mod settings;
 mod storage;
 mod units;
 
-use std::sync::{Arc};
+use crate::helpers::Deferrable;
 use io::IOKind;
-use crate::helpers::{Deferrable};
+use std::sync::Arc;
 
 use crate::errors::Result;
 use crate::io::{Direction, ThresholdNotifier};
@@ -35,7 +35,10 @@ fn init(name: &str) -> PollGroup {
 
 fn main() -> Result<()> {
     let mut poller = init("main");
-    let config = vec![("test name", 0, IOKind::PH), ("second sensor", 1, IOKind::Flow)];
+    let config = vec![
+        ("test name", 0, IOKind::PH),
+        ("second sensor", 1, IOKind::Flow),
+    ];
     poller.add_inputs(&config).unwrap();
 
     // build subscribers/commands
@@ -45,12 +48,12 @@ fn main() -> Result<()> {
             format!("subscriber for {}", id),
             1.0,
             input.clone(),
-            Direction::Above
+            Direction::Above,
         );
         dbg!(notifier.clone());
         let deferred = notifier.deferred();
         input.try_lock().unwrap().subscribe(deferred);
-    };
+    }
     println!("... Finished building\n");
 
     // main event loop
@@ -63,8 +66,8 @@ fn main() -> Result<()> {
                 Ok(_) => (),
                 Err(t) => {
                     dbg!("Error");
-                    return Err(t)
-                },
+                    return Err(t);
+                }
             },
             _ => (),
         };

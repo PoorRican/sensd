@@ -1,7 +1,7 @@
-/// Implement observer design pattern to implement control system based off of polling of `Input` objects
-use crate::io::IOEvent;
 use crate::helpers::Deferred;
 use crate::io::types::InputType;
+/// Implement observer design pattern to implement control system based off of polling of `Input` objects
+use crate::io::IOEvent;
 
 pub trait NamedRoutine {
     fn name(&self) -> String;

@@ -1,12 +1,14 @@
-use std::fmt::Formatter;
-use std::sync::{Arc, Mutex};
-use chrono::{DateTime, Utc};
 use crate::errors;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{DeviceMetadata, IdTraits, IdType, IODirection, IOEvent, IOKind, IOType, SubscriberStrategy};
-use crate::storage::{Containerized, MappedCollection, OwnedLog};
 use crate::io::{Device, OutputType};
+use crate::io::{
+    DeviceMetadata, IODirection, IOEvent, IOKind, IOType, IdTraits, IdType, SubscriberStrategy,
+};
 use crate::storage::Container;
+use crate::storage::{Containerized, MappedCollection, OwnedLog};
+use chrono::{DateTime, Utc};
+use std::fmt::Formatter;
+use std::sync::{Arc, Mutex};
 
 /// Interface defining an output device
 /// Implementing output devices can be done through structs and can be stored in a container via
@@ -34,7 +36,7 @@ pub trait Output: Device {
 
 impl<K> Containerized<Deferred<OutputType>, K> for OutputType
 where
-    K: IdTraits
+    K: IdTraits,
 {
     fn container() -> Container<Deferred<OutputType>, K> {
         Container::<Deferred<OutputType>, K>::new()
@@ -59,7 +61,6 @@ pub struct GenericOutput {
     pub log: Deferred<OwnedLog>,
 }
 
-
 impl Deferrable for GenericOutput {
     type Inner = OutputType;
     /// Return wrapped `OutputType` in `Deferred`
@@ -78,7 +79,10 @@ impl Device for GenericOutput {
     /// * `id`: arbitrary, numeric ID to differentiate from other devices
     ///
     /// returns: GenericOutput
-    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Deferred<OwnedLog>) -> Self where Self: Sized {
+    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Deferred<OwnedLog>) -> Self
+    where
+        Self: Sized,
+    {
         let kind = kind.unwrap_or_default();
 
         let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Input);
@@ -102,6 +106,9 @@ impl Output for GenericOutput {
     fn write(&mut self, event: &IOEvent) -> errors::Result<()> {
         let event = self.tx(event);
         // add to log
-        self.log.lock().unwrap().push(event.timestamp, event.clone())
+        self.log
+            .lock()
+            .unwrap()
+            .push(event.timestamp, event.clone())
     }
 }

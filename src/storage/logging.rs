@@ -8,9 +8,9 @@ use std::ops::Deref;
 use std::sync::{Arc, Mutex, Weak};
 
 use crate::errors::{Error, ErrorKind, Result};
-use crate::helpers::{Deferred, writable_or_create};
-use crate::io::{IdType, IOEvent};
+use crate::helpers::{writable_or_create, Deferred};
 use crate::io::InputType;
+use crate::io::{IOEvent, IdType};
 use crate::settings::Settings;
 use crate::storage::{Container, MappedCollection, Persistent};
 
@@ -117,10 +117,7 @@ impl Persistent for OwnedLog {
                 Err(e) => {
                     let msg = e.to_string();
                     dbg!(msg.clone());
-                    return Err(Error::new(
-                        ErrorKind::SerializationError,
-                        msg.as_str(),
-                    ))
+                    return Err(Error::new(ErrorKind::SerializationError, msg.as_str()));
                 }
             }
             Ok(())

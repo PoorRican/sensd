@@ -1,6 +1,6 @@
 use chrono::Duration;
-use sensd::io::{Device, IOKind};
 use sensd::io::GenericSensor;
+use sensd::io::{Device, IOKind};
 use sensd::settings::Settings;
 use sensd::storage::{LogType, MappedCollection, PollGroup};
 use std::sync::Arc;
@@ -10,7 +10,10 @@ use std::sync::Mutex;
 fn test_add_device() {
     let mut poller: PollGroup = PollGroup::new("main", None);
 
-    let config = vec![("test name", 0, IOKind::PH), ("second sensor", 1, IOKind::EC)];
+    let config = vec![
+        ("test name", 0, IOKind::PH),
+        ("second sensor", 1, IOKind::EC),
+    ];
     poller.add_inputs(&config).unwrap();
 
     assert_eq!(poller.inputs.iter().count(), 2)
@@ -22,7 +25,10 @@ fn test_add_to_log() {
     settings.interval = Duration::nanoseconds(1);
     let mut poller: PollGroup = PollGroup::new("main", Some(Arc::new(settings)));
 
-    let config = vec![("test name", 0, IOKind::AmbientTemperature), ("second sensor", 1, IOKind::Color)];
+    let config = vec![
+        ("test name", 0, IOKind::AmbientTemperature),
+        ("second sensor", 1, IOKind::Color),
+    ];
     poller.add_inputs(&config).unwrap();
 
     // check that all logs are empty

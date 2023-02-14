@@ -50,6 +50,10 @@ impl DeviceMetadata {
 
 impl std::fmt::Display for DeviceMetadata {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Device Info {{ Kind: {}, Direction: {} }}", self.kind, self.direction,)
+        write!(
+            f,
+            "Device Info {{ Kind: {}, Direction: {} }}",
+            self.kind, self.direction,
+        )
     }
 }

@@ -1,7 +1,7 @@
 /// Provide Low-level Device Functionality
 use crate::helpers::Deferred;
-use crate::io::{IdType, IODirection, IOKind};
 use crate::io::metadata::DeviceMetadata;
+use crate::io::{IODirection, IOKind, IdType};
 use crate::storage::OwnedLog;
 
 /// Defines a minimum interface for interacting with GPIO devices.

@@ -3,7 +3,7 @@ use std::ops::Deref;
 use std::sync::{Arc, Mutex};
 
 use crate::errors::Result;
-use crate::io::{Device, IdType, InputType, IOKind, GenericInput};
+use crate::io::{Device, GenericInput, IOKind, IdType, InputType};
 use crate::settings::Settings;
 use crate::storage::OwnedLog;
 

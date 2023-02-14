@@ -1,10 +1,10 @@
-use std::fmt::{Debug, Formatter};
-use std::sync::{Arc, Mutex};
-use crate::io::NamedRoutine;
 use crate::errors::Result;
 use crate::helpers::{Deferrable, Deferred};
+use crate::io::types::{DeviceType, IOType, InputType};
+use crate::io::{NamedRoutine, OutputType};
 use crate::io::{IOEvent, SubscriberStrategy};
-use crate::io::types::{DeviceType, InputType, IOType};
+use std::fmt::{Debug, Formatter};
+use std::sync::{Arc, Mutex};
 
 /// Generic command that monitors a threshold
 pub trait ThresholdMonitor: SubscriberStrategy {
@@ -16,14 +16,13 @@ pub trait Notifier: SubscriberStrategy {
     fn send_notification(&mut self, msg: String) -> Result<()>;
 }
 
-
 /// Subscriber routine to actively maintain an arbitrary threshold using PID
 pub struct PIDMonitor {
     name: String,
     threshold: IOType,
     publisher: Deferred<InputType>,
 
-    output: Deferred<DeviceType>        // this should really `OutputType`
+    output: Deferred<OutputType>, // this should really `OutputType`
 }
 impl NamedRoutine for PIDMonitor {
     fn name(&self) -> String {
@@ -51,15 +50,13 @@ impl SubscriberStrategy for PIDMonitor {
     }
 }
 
-
 #[derive(Debug, Clone)]
 /// Enum used by `ThresholdMonitor` logic
 /// Controls when comparison of external value and threshold returns `true`.
 pub enum Direction {
     Above,
-    Below
+    Below,
 }
-
 
 /// Notify if threshold is exceeded
 #[derive(Clone)]
@@ -71,8 +68,18 @@ pub struct ThresholdNotifier {
     direction: Direction,
 }
 impl ThresholdNotifier {
-    pub fn new(name: String, threshold: IOType, publisher: Deferred<InputType>, direction: Direction) -> Self {
-        Self { name, threshold, publisher, direction }
+    pub fn new(
+        name: String,
+        threshold: IOType,
+        publisher: Deferred<InputType>,
+        direction: Direction,
+    ) -> Self {
+        Self {
+            name,
+            threshold,
+            publisher,
+            direction,
+        }
     }
 }
 impl NamedRoutine for ThresholdNotifier {
@@ -119,6 +126,6 @@ impl Deferrable for ThresholdNotifier {
     type Inner = Box<dyn SubscriberStrategy>;
 
     fn deferred(self) -> Deferred<Self::Inner> {
-        return Arc::new(Mutex::new(Box::new(self)))
+        return Arc::new(Mutex::new(Box::new(self)));
     }
 }

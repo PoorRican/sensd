@@ -1,6 +1,6 @@
 use chrono::Utc;
 use sensd::helpers::{input_log_builder, Deferred};
-use sensd::io::{Device, DeviceType, IOEvent, IdType, Input, InputType, GenericSensor, IOKind};
+use sensd::io::{Device, DeviceType, GenericSensor, IOEvent, IOKind, IdType, Input, InputType};
 use sensd::storage::{LogType, MappedCollection, OwnedLog, Persistent};
 use std::path::Path;
 use std::sync::{Arc, Mutex};

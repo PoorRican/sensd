@@ -1,7 +1,9 @@
 use crate::errors;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{Device, DeviceMetadata, IdType, IODirection, IOEvent, IOKind, Publisher, SubscriberStrategy};
-use crate::io::types::{IdTraits, InputType, IOType};
+use crate::io::types::{IOType, IdTraits, InputType};
+use crate::io::{
+    Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, Publisher, SubscriberStrategy,
+};
 use crate::storage::{Container, Containerized, MappedCollection, OwnedLog};
 use chrono::{DateTime, Utc};
 use std::fmt::Formatter;
@@ -67,7 +69,6 @@ pub struct GenericInput {
     subscribers: Vec<Deferred<Box<dyn SubscriberStrategy>>>,
 }
 
-
 impl Deferrable for GenericInput {
     type Inner = InputType;
     /// Return wrapped Sensor in
@@ -86,13 +87,20 @@ impl Device for GenericInput {
     /// * `id`: arbitrary, numeric ID to differentiate from other sensors
     ///
     /// returns: MockPhSensor
-    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Deferred<OwnedLog>) -> Self where Self: Sized {
+    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Deferred<OwnedLog>) -> Self
+    where
+        Self: Sized,
+    {
         let kind = kind.unwrap_or_default();
 
         let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Input);
         let subscribers = Vec::default();
 
-        GenericInput { metadata, log, subscribers }
+        GenericInput {
+            metadata,
+            log,
+            subscribers,
+        }
     }
 
     fn metadata(&self) -> &DeviceMetadata {

@@ -1,9 +1,9 @@
-use serde::{Deserialize, Serialize};
-use std::hash::Hash;
-use std::fmt::Formatter;
 use crate::helpers::Deferred;
 use crate::io::{Device, Input, Output};
 use crate::storage::Container;
+use serde::{Deserialize, Serialize};
+use std::fmt::Formatter;
+use std::hash::Hash;
 
 /// Type returned by input devices.
 ///
@@ -24,7 +24,6 @@ pub type IdType = u32;
 
 impl IdTraits for IdType {}
 
-
 /// Encapsulates I/O data. Provides a unified data type for returning data.
 /// Eventually Direction will be added as a value.
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
@@ -32,7 +31,6 @@ pub struct IOData {
     pub kind: IOKind,
     pub data: IOType,
 }
-
 
 /// Enum used to classify direction of data flow in relation to system.
 ///
@@ -112,4 +110,3 @@ pub type OutputType = Box<dyn Output>;
 
 /// Alias for using a deferred `InputType` in `Container`, indexed by `K`
 pub type InputContainer<K> = Container<Deferred<InputType>, K>;
-
