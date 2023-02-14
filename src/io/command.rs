@@ -1,10 +1,8 @@
 use std::fmt::{Debug, Formatter};
-use std::ops::{Deref, Sub};
-use std::sync::{Arc, Mutex, TryLockResult};
-use chrono::Utc;
+use std::sync::{Arc, Mutex};
 use crate::errors::{Result};
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{IOEvent, IOType, IOData, SubscriberStrategy, Publisher, InputType, Input, Device, DeviceType};
+use crate::io::{IOEvent, IOType, SubscriberStrategy, InputType, DeviceType};
 
 /// Generic command that monitors a threshold
 pub trait ThresholdMonitor: SubscriberStrategy {

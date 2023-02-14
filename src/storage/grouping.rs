@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use crate::errors::Result;
 use crate::helpers::{check_results, input_log_builder};
-use crate::io::{Device, IdType, Input, InputContainer, IOKind};
+use crate::io::{IdType, InputContainer, IOKind};
 use crate::settings::Settings;
 use crate::storage::{MappedCollection, Persistent, LogContainer};
 

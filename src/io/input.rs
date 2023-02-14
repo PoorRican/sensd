@@ -7,28 +7,20 @@ use std::fmt::Formatter;
 
 /// Interface for an input device
 /// It is used as a trait object and can be stored in a container using the `Containerized` trait.
-///
-/// # Type Parameters
-/// - `T`: The type of data that the sensor will produce.
+/// Any structs that implement this trait may be accessed by `InputType`
 ///
 /// # Functions
-/// - `read() -> T`: Reads the sensor and return the data as a value of type `T`.
-/// - `get_event() -> &IOEvent`: Create an `IOEvent` with current sensor data.
-///
-/// # Examples
-/// ```
-/// let sensor: &dyn crate::Sensor<f32> = TemperatureSensor::new(String::from("Temperature Sensor"), 1);
-/// let reading = sensor.read();
-/// let info = sensor.get_info();
-/// ```
+/// - `rx() -> IOType`: Low-level function for interacting with device.
+/// - `read() -> Result<()>`: Main interface function called during polling.
+/// - `generate_event() -> &IOEvent`: Create an `IOEvent` with data from `rx()`.
 ///
 /// # Notes:
-/// Since `Containerized` is implemented for the `Sensor` trait, any types that implement the `Sensor` trait
+/// Since `Containerized` is implemented for the `Input` trait, therefore types that implement the `Input` trait
 /// can be stored in a container using the `Containerized::container()` method. This way, multiple instances of
 /// differing types may be stored in the same `Container`.
 ///
 /// ```
-/// let mut container = Containerized::<Box<dyn crate::Sensor<f32>>, i32>::container();
+/// let mut container = Containerized::<Box<dyn crate::Input<f32>>, i32>::container();
 /// container.insert(1, Box::new(TemperatureSensor::new(String::from("Temperature Sensor"), 1)));
 /// container.insert(2, Box::new(HumiditySensor::new(String::from("Humidity Sensor"), 2)));
 /// ```
@@ -43,8 +35,8 @@ pub trait Input: Device {
     fn read(&mut self, time: DateTime<Utc>) -> errors::Result<()>;
 }
 
-/// Returns a new instance of `Container` for objects with `Sensor` trait indexed by `K`.
-/// Sensor traits are stored as `Box<dyn Sensor>`
+/// Returns a new instance of `Container` for `InputType` indexed by `K`.
+/// Input traits are stored as `Deferred<InputType>`
 impl<K> Containerized<Deferred<InputType>, K> for InputType
 where
     K: IdTraits,

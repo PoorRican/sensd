@@ -11,15 +11,11 @@ use std::fmt::Formatter;
 /// # Example
 ///
 /// ```
-/// let name = "PH Sensor".to_string();
-/// let version_id = 0;
-/// let sensor_id = 1;
+/// let name = "Device".to_string();
+/// let id = 1;
 /// let kind = crate::io::IOKind::PH;
-/// let min_value = 0.0;
-/// let max_value = 14.0;
-/// let resolution = 0.1;
 ///
-/// let info = crate::DeviceInfo::new(name, version_id, sensor_id, kind, min_value, max_value, resolution);
+/// let info = crate::DeviceInfo::new(name, id, kind, None);
 /// ```
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceMetadata {
@@ -35,12 +31,9 @@ impl DeviceMetadata {
     /// # Arguments
     ///
     /// * `name`: name of device
-    /// * `version_id`: driver or interface version ID
-    /// * `sensor_id`: sensor ID of the device (should be arbitrary)
+    /// * `id`: ID of the device (user provided)
     /// * `kind`: IOKind representing device type
-    /// * `min_value`: measurable or theoretical minimum value (in SI units)
-    /// * `max_value`: measurable or theoretical maximum value (in SI units)
-    /// * `resolution`: measurable resolution of the device
+    /// * `direction`: IODirection representing device type
     ///
     /// # Returns
     ///

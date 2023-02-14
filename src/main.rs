@@ -8,9 +8,8 @@ mod settings;
 mod storage;
 mod units;
 
-use std::sync::{Arc, Mutex};
-use crate::helpers::{Deferrable, Deferred};
-use crate::io::SubscriberStrategy;
+use std::sync::{Arc};
+use crate::helpers::{Deferrable};
 
 use crate::errors::Result;
 use crate::io::{Direction, IOKind, ThresholdNotifier};

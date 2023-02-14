@@ -1,5 +1,4 @@
 /// Encapsulate IO for devices
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::fmt::Formatter;
 use std::hash::Hash;

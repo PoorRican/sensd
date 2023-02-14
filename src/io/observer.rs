@@ -1,11 +1,8 @@
-use std::fmt::{Debug, Formatter};
-use std::ops::Sub;
-use std::sync::Arc;
-use crate::io::{Input, InputType, IOData, IOEvent};
-use crate::errors::Result;
-use crate::helpers::{Deferred, check_results};
-
 /// Implement observer design pattern to implement control system based off of polling of `Input` objects
+use std::fmt::{Debug};
+use crate::io::{Input, InputType, IOEvent};
+use crate::helpers::{Deferred};
+
 
 /// Trait to implement on Input objects
 pub trait Publisher: Input {
@@ -14,7 +11,7 @@ pub trait Publisher: Input {
 
     fn notify(&mut self, data: &IOEvent) {
         for subscriber in self.subscribers().iter_mut() {
-            /// TODO: `IOEvent` shall be sent to `OutputDevice` and shall be logged
+            // TODO: `IOEvent` shall be sent to `OutputDevice` and shall be logged
             subscriber.lock().unwrap().evaluate(data);
         }
     }

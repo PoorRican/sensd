@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex, Weak};
 
 use crate::errors::{Error, ErrorKind, Result};
 use crate::helpers::{writable_or_create, Deferred};
-use crate::io::{Device, IOEvent, IdType, InputType};
+use crate::io::{IOEvent, IdType, InputType};
 use crate::settings::Settings;
 use crate::storage::{Container, MappedCollection, Persistent};
 
