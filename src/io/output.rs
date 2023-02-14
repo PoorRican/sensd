@@ -1,7 +1,10 @@
 use std::fmt::Formatter;
-use crate::helpers::Deferred;
-use crate::io::{IdTraits, IOEvent};
-use crate::storage::Containerized;
+use std::sync::{Arc, Mutex};
+use chrono::{DateTime, Utc};
+use crate::errors;
+use crate::helpers::{Deferrable, Deferred};
+use crate::io::{DeviceMetadata, IdTraits, IdType, IODirection, IOEvent, IOKind, IOType, SubscriberStrategy};
+use crate::storage::{Containerized, MappedCollection, OwnedLog};
 use crate::io::{Device, OutputType};
 use crate::storage::Container;
 
@@ -26,7 +29,7 @@ use crate::storage::Container;
 /// > Note how two different output device types were stored in `container`.
 pub trait Output: Device {
     fn tx(&self, event: &IOEvent) -> IOEvent;
-    fn write(&self, event: &IOEvent) -> IOEvent;
+    fn write(&mut self, event: &IOEvent) -> errors::Result<()>;
 }
 
 impl<K> Containerized<Deferred<OutputType>, K> for OutputType
@@ -47,5 +50,58 @@ impl std::fmt::Debug for OutputType {
             self.id(),
             self.metadata().kind
         )
+    }
+}
+
+#[derive(Default)]
+pub struct GenericOutput {
+    metadata: DeviceMetadata,
+    pub log: Deferred<OwnedLog>,
+}
+
+
+impl Deferrable for GenericOutput {
+    type Inner = OutputType;
+    /// Return wrapped `OutputType` in `Deferred`
+    fn deferred(self) -> Deferred<Self::Inner> {
+        Arc::new(Mutex::new(Box::new(self)))
+    }
+}
+
+// Implement traits
+impl Device for GenericOutput {
+    /// Creates a generic output device
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: user given name of device
+    /// * `id`: arbitrary, numeric ID to differentiate from other devices
+    ///
+    /// returns: GenericOutput
+    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Deferred<OwnedLog>) -> Self where Self: Sized {
+        let kind = kind.unwrap_or_default();
+
+        let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Input);
+
+        GenericOutput { metadata, log }
+    }
+
+    fn metadata(&self) -> &DeviceMetadata {
+        &self.metadata
+    }
+}
+
+impl Output for GenericOutput {
+    /// Return a mock value
+    fn tx(&self, event: &IOEvent) -> IOEvent {
+        event.clone().invert(1.0)
+    }
+
+    /// Primary interface method during polling.
+    /// Calls `tx()` and saves to log.
+    fn write(&mut self, event: &IOEvent) -> errors::Result<()> {
+        let event = self.tx(event);
+        // add to log
+        self.log.lock().unwrap().push(event.timestamp, event.clone())
     }
 }
