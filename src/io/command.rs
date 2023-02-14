@@ -1,7 +1,7 @@
 use crate::errors::Result;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::types::{DeviceType, IOType, InputType};
-use crate::io::{NamedRoutine, OutputType};
+use crate::io::{NamedRoutine, OutputType, PublisherInstance};
 use crate::io::{IOEvent, SubscriberStrategy};
 use std::fmt::{Debug, Formatter};
 use std::sync::{Arc, Mutex};
@@ -20,18 +20,13 @@ pub trait Notifier: SubscriberStrategy {
 pub struct PIDMonitor {
     name: String,
     threshold: IOType,
-    publisher: Deferred<InputType>,
+    publisher: Deferred<PublisherInstance>,
 
     output: Deferred<OutputType>, // this should really `OutputType`
 }
 impl NamedRoutine for PIDMonitor {
     fn name(&self) -> String {
         self.name.clone()
-    }
-}
-impl Debug for PIDMonitor {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.info())
     }
 }
 impl ThresholdMonitor for PIDMonitor {
@@ -45,7 +40,7 @@ impl SubscriberStrategy for PIDMonitor {
         // maintain PID
     }
 
-    fn publisher(&self) -> Deferred<InputType> {
+    fn publisher(&self) -> Deferred<PublisherInstance> {
         self.publisher.clone()
     }
 }
@@ -63,7 +58,7 @@ pub enum Direction {
 pub struct ThresholdNotifier {
     name: String,
     threshold: IOType,
-    publisher: Deferred<InputType>,
+    publisher: Deferred<PublisherInstance>,
 
     direction: Direction,
 }
@@ -71,7 +66,7 @@ impl ThresholdNotifier {
     pub fn new(
         name: String,
         threshold: IOType,
-        publisher: Deferred<InputType>,
+        publisher: Deferred<PublisherInstance>,
         direction: Direction,
     ) -> Self {
         Self {
@@ -92,11 +87,6 @@ impl ThresholdMonitor for ThresholdNotifier {
         self.threshold
     }
 }
-impl Debug for ThresholdNotifier {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.info())
-    }
-}
 impl SubscriberStrategy for ThresholdNotifier {
     fn evaluate(&mut self, data: &IOEvent) -> Option<IOEvent> {
         let exceed = match &self.direction {
@@ -112,7 +102,7 @@ impl SubscriberStrategy for ThresholdNotifier {
         }
     }
 
-    fn publisher(&self) -> Deferred<InputType> {
+    fn publisher(&self) -> Deferred<PublisherInstance> {
         self.publisher.clone()
     }
 }

@@ -13,7 +13,7 @@ use io::IOKind;
 use std::sync::Arc;
 
 use crate::errors::Result;
-use crate::io::{Direction, ThresholdNotifier};
+use crate::io::{Direction, Publisher, PublisherInstance, ThresholdNotifier};
 use crate::settings::Settings;
 use crate::storage::{Persistent, PollGroup};
 
@@ -44,15 +44,20 @@ fn main() -> Result<()> {
     // build subscribers/commands
     println!("\nBuilding subscribers ...");
     for (id, &ref input) in poller.inputs.iter() {
+        let binding = PublisherInstance::default();
+        let publisher = binding.deferred();
+
+        input.try_lock().unwrap().add_publisher(publisher.clone()).unwrap();
+
         let notifier = ThresholdNotifier::new(
             format!("subscriber for {}", id),
             1.0,
-            input.clone(),
+            publisher.clone(),
             Direction::Above,
         );
-        dbg!(notifier.clone());
         let deferred = notifier.deferred();
-        input.try_lock().unwrap().subscribe(deferred);
+        let mut binding = publisher.try_lock().unwrap();
+        binding.subscribe(deferred);
     }
     println!("... Finished building\n");
 

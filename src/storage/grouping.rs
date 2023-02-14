@@ -1,9 +1,9 @@
 use chrono::{DateTime, Duration, Utc};
 use std::sync::Arc;
-
+use crate::helpers::Deferred;
 use crate::errors::Result;
 use crate::helpers::{check_results, input_log_builder};
-use crate::io::InputContainer;
+use crate::io::{InputContainer, PublisherInstance};
 use crate::io::{IOKind, IdType};
 use crate::settings::Settings;
 use crate::storage::{LogContainer, MappedCollection, Persistent};
@@ -26,6 +26,7 @@ pub struct PollGroup {
     // internal containers
     pub logs: LogContainer,
     pub inputs: InputContainer<IdType>,
+    pub publishers: Vec<Deferred<PublisherInstance>>,
 }
 
 impl PollGroup {
@@ -55,6 +56,7 @@ impl PollGroup {
 
         let inputs = <InputContainer<IdType>>::default();
         let logs = Vec::default();
+        let publishers = Vec::default();
 
         Self {
             name: String::from(name),
@@ -62,6 +64,7 @@ impl PollGroup {
             last_execution,
             logs,
             inputs,
+            publishers
         }
     }
 

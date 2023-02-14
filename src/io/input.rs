@@ -1,9 +1,7 @@
 use crate::errors;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::types::{IOType, IdTraits, InputType};
-use crate::io::{
-    Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, Publisher, SubscriberStrategy,
-};
+use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, Publisher, SubscriberStrategy, PublisherInstance};
 use crate::storage::{Container, Containerized, MappedCollection, OwnedLog};
 use chrono::{DateTime, Utc};
 use std::fmt::Formatter;
@@ -29,7 +27,7 @@ use std::sync::{Arc, Mutex};
 /// container.insert(2, Box::new(HumiditySensor::new(String::from("Humidity Sensor"), 2)));
 /// ```
 /// > Note how two different sensor types were stored in `container`.
-pub trait Input: Device + Publisher {
+pub trait Input: Device {
     fn rx(&self) -> IOType;
 
     fn generate_event(&self, dt: DateTime<Utc>, value: Option<IOType>) -> IOEvent {
@@ -37,6 +35,8 @@ pub trait Input: Device + Publisher {
     }
 
     fn read(&mut self, time: DateTime<Utc>) -> errors::Result<()>;
+
+    fn add_publisher(&mut self, publisher: Deferred<PublisherInstance>) -> Result<(), ()>;
 }
 
 /// Returns a new instance of `Container` for `InputType` indexed by `K`.
@@ -66,7 +66,7 @@ impl std::fmt::Debug for dyn Input {
 pub struct GenericInput {
     metadata: DeviceMetadata,
     pub log: Deferred<OwnedLog>,
-    subscribers: Vec<Deferred<Box<dyn SubscriberStrategy>>>,
+    publisher: Option<Deferred<PublisherInstance>>,
 }
 
 impl Deferrable for GenericInput {
@@ -94,12 +94,12 @@ impl Device for GenericInput {
         let kind = kind.unwrap_or_default();
 
         let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Input);
-        let subscribers = Vec::default();
+        let publisher = None;
 
         GenericInput {
             metadata,
             log,
-            subscribers,
+            publisher,
         }
     }
 
@@ -114,28 +114,31 @@ impl Input for GenericInput {
         1.2
     }
 
-    /// Get IOEvent, add to log, and propagate to subscribers
+    /// Get IOEvent, add to log, and propagate to publisher/subscribers
     /// Primary interface method during polling.
     fn read(&mut self, time: DateTime<Utc>) -> errors::Result<()> {
         // get IOEvent
         let event = self.generate_event(time, None);
 
-        // propagate to subscribers
-        self.notify(&event);
+        // propagate to publisher/subscribers
+        match &self.publisher {
+            Some(publisher) => publisher.lock().unwrap().notify(&event),
+            _ => ()
+        }
 
         // add to log
         let result = self.log.lock().unwrap().push(time, event);
 
         result
     }
-}
 
-impl Publisher for GenericInput {
-    fn subscribers(&mut self) -> &mut [Deferred<Box<dyn SubscriberStrategy>>] {
-        &mut self.subscribers
-    }
-
-    fn subscribe(&mut self, subscriber: Deferred<Box<dyn SubscriberStrategy>>) {
-        self.subscribers.push(subscriber)
+    fn add_publisher(&mut self, publisher: Deferred<PublisherInstance>) -> Result<(), ()> {
+        match self.publisher {
+            None => {
+                self.publisher = Some(publisher);
+                Ok(())
+            },
+            _ => Err(())
+        }
     }
 }
