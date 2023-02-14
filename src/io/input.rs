@@ -34,13 +34,13 @@ use std::fmt::Formatter;
 /// ```
 /// > Note how two different sensor types were stored in `container`.
 pub trait Input: Device {
-    fn read(&self) -> IOType;
+    fn rx(&self) -> IOType;
 
-    fn get_event(&self, dt: DateTime<Utc>, value: Option<IOType>) -> event::IOEvent {
-        event::IOEvent::create(self, dt, value.unwrap_or_else(move || self.read()))
+    fn generate_event(&self, dt: DateTime<Utc>, value: Option<IOType>) -> event::IOEvent {
+        event::IOEvent::create(self, dt, value.unwrap_or_else(move || self.rx()))
     }
 
-    fn poll(&mut self, time: DateTime<Utc>) -> errors::Result<()>;
+    fn read(&mut self, time: DateTime<Utc>) -> errors::Result<()>;
 }
 
 /// Returns a new instance of `Container` for objects with `Sensor` trait indexed by `K`.
@@ -58,7 +58,7 @@ impl std::fmt::Debug for dyn Input {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Sensor {{ name: {}, id: {}, kind: {}",
+            "Input {{ name: {}, id: {}, kind: {}",
             self.name(),
             self.id(),
             self.metadata().kind

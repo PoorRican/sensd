@@ -38,7 +38,7 @@ impl PollGroup {
 
         if next_execution <= Utc::now() {
             for (_, sensor) in self.inputs.iter_mut() {
-                let result = sensor.lock().unwrap().poll(next_execution);
+                let result = sensor.lock().unwrap().read(next_execution);
                 results.push(result);
             }
             self.last_execution = next_execution;

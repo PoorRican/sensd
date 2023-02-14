@@ -27,11 +27,21 @@ use crate::storage::Container;
 
 pub type IOType = f64;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, Default, PartialEq)]
 pub enum IODirection {
     #[default]
     Input,
     Output,
+}
+
+impl std::fmt::Display for IODirection {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let name = match self {
+            IODirection::Input => "Input",
+            IODirection::Output => "Output",
+        };
+        write!(f, "{}", name)
+    }
 }
 
 /// Defines sensor type. Used to classify data along with `IOData`.

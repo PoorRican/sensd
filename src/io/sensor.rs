@@ -4,14 +4,9 @@ use chrono::{DateTime, Utc};
 
 use crate::errors::Result;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{Device, DeviceMetadata, IdType, Input, InputDevice, InputType, IOKind,
-                Publisher, SubscriberStrategy};
+use crate::io::{Device, DeviceMetadata, IdType, Input, InputDevice, InputType, IODirection, IOKind, Publisher, SubscriberStrategy};
 use crate::io::IOType;
 use crate::storage::{MappedCollection, OwnedLog};
-
-pub trait Sensor: Default + InputDevice + Deferrable + Publisher {
-    fn new(name: String, sensor_id: IdType, kind: Option<IOKind>, log: Deferred<OwnedLog>) -> Self;
-}
 
 #[derive(Default)]
 pub struct GenericSensor {
@@ -20,26 +15,6 @@ pub struct GenericSensor {
     subscribers: Vec<Deferred<Box<dyn SubscriberStrategy>>>,
 }
 
-/** Represents a mock pH sensor.
- */
-impl Sensor for GenericSensor {
-    /// Creates a mock ph sensor which returns random values
-    ///
-    /// # Arguments
-    ///
-    /// * `name`: arbitrary name of sensor
-    /// * `sensor_id`: arbitrary, numeric ID to differentiate from other sensors
-    ///
-    /// returns: MockPhSensor
-    fn new(name: String, sensor_id: IdType, kind: Option<IOKind>, log: Deferred<OwnedLog>) -> Self {
-        let kind = kind.unwrap_or_default();
-
-        let metadata: DeviceMetadata = DeviceMetadata::new(name, sensor_id, kind);
-        let subscribers = Vec::default();
-
-        GenericSensor { metadata, log, subscribers }
-    }
-}
 
 impl Deferrable for GenericSensor {
     type Inner = InputType;
@@ -51,6 +26,23 @@ impl Deferrable for GenericSensor {
 
 // Implement traits
 impl Device for GenericSensor {
+    /// Creates a mock sensor which returns a value
+    ///
+    /// # Arguments
+    ///
+    /// * `name`: arbitrary name of sensor
+    /// * `id`: arbitrary, numeric ID to differentiate from other sensors
+    ///
+    /// returns: MockPhSensor
+    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Deferred<OwnedLog>) -> Self where Self: Sized {
+        let kind = kind.unwrap_or_default();
+
+        let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Input);
+        let subscribers = Vec::default();
+
+        GenericSensor { metadata, log, subscribers }
+    }
+
     fn metadata(&self) -> &DeviceMetadata {
         &self.metadata
     }
@@ -58,16 +50,22 @@ impl Device for GenericSensor {
 
 impl Input for GenericSensor {
     /// Return a mock value
-    fn read(&self) -> IOType {
+    fn rx(&self) -> IOType {
         1.2
     }
 
-    /// Call `get_event` and add to log
-    /// Additionally, data is copied and propagated to subscribers
-    fn poll(&mut self, time: DateTime<Utc>) -> Result<()> {
-        let event = self.get_event(time, None);
+    /// Get IOEvent, add to log, and propagate to subscribers
+    /// Primary interface method during polling.
+    fn read(&mut self, time: DateTime<Utc>) -> Result<()> {
+        // get IOEvent
+        let event = self.generate_event(time, None);
+
+        // propagate to subscribers
         self.notify(&event);
+
+        // add to log
         let result = self.log.lock().unwrap().push(time, event);
+
         result
     }
 }

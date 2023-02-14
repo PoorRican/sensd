@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex, TryLockResult};
 use chrono::Utc;
 use crate::errors::{Result};
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{IOEvent, IOType, IOData, SubscriberStrategy, Publisher, InputType, Input, DeviceType, Device};
+use crate::io::{IOEvent, IOType, IOData, SubscriberStrategy, Publisher, InputType, Input, Device, DeviceType};
 
 /// Generic command that monitors a threshold
 pub trait ThresholdMonitor: SubscriberStrategy {

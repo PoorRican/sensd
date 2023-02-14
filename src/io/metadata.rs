@@ -24,8 +24,9 @@ use std::fmt::Formatter;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceMetadata {
     pub name: String,
-    pub sensor_id: IdType,
+    pub id: IdType,
     pub kind: io::IOKind,
+    pub direction: io::IODirection,
 }
 
 impl DeviceMetadata {
@@ -44,17 +45,18 @@ impl DeviceMetadata {
     /// # Returns
     ///
     /// A new instance with given specified parameters
-    pub fn new(name: String, sensor_id: IdType, kind: io::IOKind) -> Self {
+    pub fn new(name: String, id: IdType, kind: io::IOKind, direction: io::IODirection) -> Self {
         DeviceMetadata {
             name,
-            sensor_id,
+            id,
             kind,
+            direction,
         }
     }
 }
 
 impl std::fmt::Display for DeviceMetadata {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Device Info {{ Kind: {} }}", self.kind,)
+        write!(f, "Device Info {{ Kind: {}, Direction: {} }}", self.kind, self.direction,)
     }
 }

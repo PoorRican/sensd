@@ -7,7 +7,7 @@ use crate::storage::{Container, Containerized, LogType};
 /// Encapsulates `IOData` alongside of timestamp and device data
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct IOEvent {
-    pub sensor_id: IdType,
+    pub id: IdType,
     pub timestamp: DateTime<Utc>,
     pub direction: IODirection,
 
@@ -33,15 +33,15 @@ impl IOEvent {
     ///
     /// ```
     pub fn create(device: &(impl Device + ?Sized), timestamp: DateTime<Utc>, value: f64) -> Self {
-        let direction = IODirection::default();
+        let direction = device.direction();
         let info = device.metadata();
-        let sensor_id = info.sensor_id;
+        let id = info.id;
         let data = IOData {
             kind: info.kind.clone(),
             data: value,
         };
         IOEvent {
-            sensor_id,
+            id,
             timestamp,
             direction,
             data,
