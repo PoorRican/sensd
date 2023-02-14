@@ -1,12 +1,15 @@
 /// Implement observer design pattern to implement control system based off of polling of `Input` objects
 use std::fmt::Debug;
-use crate::io::{Input, IOEvent};
+use crate::io::IOEvent;
 use crate::helpers::Deferred;
 use crate::io::types::InputType;
 
+pub trait NamedRoutine {
+    fn name(&self) -> String;
+}
 
 /// Trait to implement on Input objects
-pub trait Publisher: Input {
+pub trait Publisher {
     fn subscribers(&mut self) -> &mut [Deferred<Box<dyn SubscriberStrategy>>];
     fn subscribe(&mut self, subscriber: Deferred<Box<dyn SubscriberStrategy>>);
 
@@ -19,7 +22,7 @@ pub trait Publisher: Input {
 }
 
 /// Subscriber to Publisher which enacts a dynamic strategy
-pub trait SubscriberStrategy: Debug {
+pub trait SubscriberStrategy: NamedRoutine {
     /// Primary method to evaluate incoming data
     /// Returned IOEvent should be logged
     fn evaluate(&mut self, data: &IOEvent) -> Option<IOEvent>;

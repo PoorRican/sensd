@@ -6,7 +6,7 @@ use crate::errors::Result;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{Device, DeviceMetadata, IdType, Input, IODirection, IOKind, Publisher, SubscriberStrategy};
 use crate::io::types::IOType;
-use crate::io::types::{InputDevice, InputType};
+use crate::io::types::InputType;
 use crate::storage::{MappedCollection, OwnedLog};
 
 #[derive(Default)]
@@ -70,8 +70,6 @@ impl Input for GenericSensor {
         result
     }
 }
-
-impl InputDevice for GenericSensor {}
 
 impl Publisher for GenericSensor {
     fn subscribers(&mut self) -> &mut [Deferred<Box<dyn SubscriberStrategy>>] {

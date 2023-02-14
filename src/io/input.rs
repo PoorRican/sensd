@@ -1,12 +1,12 @@
 use crate::errors;
 use crate::helpers::Deferred;
-use crate::io::{Device, IOEvent};
+use crate::io::{Device, IOEvent, Publisher};
 use crate::io::types::{IdTraits, InputType, IOType};
 use crate::storage::{Container, Containerized};
 use chrono::{DateTime, Utc};
 use std::fmt::Formatter;
 
-/// Interface for an input device
+/// Interface defining an input device
 /// It is used as a trait object and can be stored in a container using the `Containerized` trait.
 /// Any structs that implement this trait may be accessed by `InputType`
 ///
@@ -16,7 +16,7 @@ use std::fmt::Formatter;
 /// - `generate_event() -> &IOEvent`: Create an `IOEvent` with data from `rx()`.
 ///
 /// # Notes:
-/// Since `Containerized` is implemented for the `Input` trait, therefore types that implement the `Input` trait
+/// Since `Containerized` is implemented for the `Input` trait, types that implement the `Input` trait
 /// can be stored in a container using the `Containerized::container()` method. This way, multiple instances of
 /// differing types may be stored in the same `Container`.
 ///
@@ -26,7 +26,7 @@ use std::fmt::Formatter;
 /// container.insert(2, Box::new(HumiditySensor::new(String::from("Humidity Sensor"), 2)));
 /// ```
 /// > Note how two different sensor types were stored in `container`.
-pub trait Input: Device {
+pub trait Input: Device + Publisher {
     fn rx(&self) -> IOType;
 
     fn generate_event(&self, dt: DateTime<Utc>, value: Option<IOType>) -> IOEvent {

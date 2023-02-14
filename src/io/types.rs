@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::hash::Hash;
 use std::fmt::Formatter;
 use crate::helpers::Deferred;
-use crate::io::{Device, Input, Publisher};
+use crate::io::{Device, Input, Output};
 use crate::storage::Container;
 
 /// Type returned by input devices.
@@ -106,11 +106,9 @@ impl std::fmt::Display for IOKind {
 
 pub struct DeviceType(Box<dyn Device>);
 
-/// Alias wrapping up Input + Device
-pub trait InputDevice: Input + Device + Publisher {}
-
-/// Facade for input objects
-pub type InputType = Box<dyn InputDevice>;
+/// hack to work around using `Box<dyn Input + Device
+pub type InputType = Box<dyn Input>;
+pub type OutputType = Box<dyn Output>;
 
 /// Alias for using a deferred `InputType` in `Container`, indexed by `K`
 pub type InputContainer<K> = Container<Deferred<InputType>, K>;

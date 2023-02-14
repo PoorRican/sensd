@@ -1,5 +1,6 @@
 use std::fmt::{Debug, Formatter};
 use std::sync::{Arc, Mutex};
+use crate::io::NamedRoutine;
 use crate::errors::Result;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{IOEvent, SubscriberStrategy};
@@ -18,10 +19,16 @@ pub trait Notifier: SubscriberStrategy {
 
 /// Subscriber routine to actively maintain an arbitrary threshold using PID
 pub struct PIDMonitor {
+    name: String,
     threshold: IOType,
     publisher: Deferred<InputType>,
 
     output: Deferred<DeviceType>        // this should really `OutputType`
+}
+impl NamedRoutine for PIDMonitor {
+    fn name(&self) -> String {
+        self.name.clone()
+    }
 }
 impl Debug for PIDMonitor {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -57,14 +64,20 @@ pub enum Direction {
 /// Notify if threshold is exceeded
 #[derive(Clone)]
 pub struct ThresholdNotifier {
+    name: String,
     threshold: IOType,
     publisher: Deferred<InputType>,
 
     direction: Direction,
 }
 impl ThresholdNotifier {
-    pub fn new(threshold: IOType, publisher: Deferred<InputType>, direction: Direction) -> Self {
-        Self { threshold, publisher, direction }
+    pub fn new(name: String, threshold: IOType, publisher: Deferred<InputType>, direction: Direction) -> Self {
+        Self { name, threshold, publisher, direction }
+    }
+}
+impl NamedRoutine for ThresholdNotifier {
+    fn name(&self) -> String {
+        self.name.clone()
     }
 }
 impl ThresholdMonitor for ThresholdNotifier {
