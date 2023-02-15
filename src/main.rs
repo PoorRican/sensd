@@ -9,13 +9,12 @@ mod settings;
 mod storage;
 mod units;
 
-use crate::helpers::Deferrable;
 use io::IOKind;
 use std::sync::Arc;
 use crate::builders::pubsub_builder;
 
 use crate::errors::Result;
-use crate::io::{Comparison, Publisher, PublisherInstance, ThresholdNotifier};
+use crate::io::Comparison;
 use crate::settings::Settings;
 use crate::storage::{Persistent, PollGroup};
 

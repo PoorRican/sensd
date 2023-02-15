@@ -102,8 +102,6 @@ impl std::fmt::Display for IOKind {
     }
 }
 
-pub struct DeviceType(Box<dyn Device>);
-
 /// hack to work around using `Box<dyn Input + Device
 pub type InputType = Box<dyn Input>;
 pub type OutputType = Box<dyn Output>;

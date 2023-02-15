@@ -1,7 +1,7 @@
 use crate::errors;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::types::{IOType, IdTraits, InputType};
-use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, Publisher, SubscriberStrategy, PublisherInstance};
+use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, Publisher, PublisherInstance};
 use crate::storage::{Container, Containerized, MappedCollection, OwnedLog};
 use chrono::{DateTime, Utc};
 use std::fmt::Formatter;

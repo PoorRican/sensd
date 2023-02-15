@@ -2,11 +2,10 @@ use crate::errors;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{Device, OutputType};
 use crate::io::{
-    DeviceMetadata, IODirection, IOEvent, IOKind, IOType, IdTraits, IdType, SubscriberStrategy,
+    DeviceMetadata, IODirection, IOEvent, IOKind, IdTraits, IdType,
 };
 use crate::storage::Container;
 use crate::storage::{Containerized, MappedCollection, OwnedLog};
-use chrono::{DateTime, Utc};
 use std::fmt::Formatter;
 use std::sync::{Arc, Mutex};
 

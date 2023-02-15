@@ -3,9 +3,6 @@ use std::ops::Deref;
 use std::sync::{Arc, Mutex};
 
 use crate::errors::Result;
-use crate::io::{Device, GenericInput, IdType, InputType, IOKind};
-use crate::settings::Settings;
-use crate::storage::OwnedLog;
 
 /// Return a writable `File` from a given path.
 /// File does not exist, then an attempt is made to create the file.

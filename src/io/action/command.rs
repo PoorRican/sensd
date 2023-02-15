@@ -1,9 +1,9 @@
 use crate::errors::Result;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::types::{DeviceType, IOType, InputType};
+use crate::io::types::IOType;
 use crate::io::{NamedRoutine, OutputType, PublisherInstance};
 use crate::io::{IOEvent, SubscriberStrategy};
-use std::fmt::{Debug, Formatter};
+use std::fmt::Debug;
 use std::sync::{Arc, Mutex};
 
 /// Generic command that monitors a threshold
