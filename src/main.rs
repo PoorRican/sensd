@@ -11,10 +11,10 @@ mod units;
 
 use io::IOKind;
 use std::sync::Arc;
-use crate::builders::pubsub_builder;
 
+use crate::builders::pubsub_builder;
 use crate::errors::Result;
-use crate::io::Comparison;
+use crate::io::{Comparison, SimpleNotifier};
 use crate::settings::Settings;
 use crate::storage::{Persistent, PollGroup};
 
@@ -46,7 +46,15 @@ fn main() -> Result<()> {
     println!("\nBuilding subscribers ...");
     for (id, input) in poller.inputs.iter() {
         let name = format!("Subscriber for Input:{}", id);
-        pubsub_builder(input.clone(), name, 1.0, Comparison::GT)
+        pubsub_builder(
+            input.clone(),
+            name,
+            1.0,
+            Comparison::GT,
+            (|value, threshold| {
+                SimpleNotifier::command(format!("{} exceeded {}", value, threshold))
+            }),
+        )
     }
     println!("... Finished building\n");
 

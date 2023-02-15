@@ -1,7 +1,7 @@
 use crate::errors::Result;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::types::IOType;
-use crate::io::OutputType;
+use crate::io::{CommandType, OutputType, BaseCommandFactory};
 use crate::io::{IOEvent, SubscriberStrategy};
 use std::fmt::Debug;
 use std::sync::{Arc, Mutex};
@@ -20,11 +20,20 @@ impl SimpleNotifier {
     fn new(msg: String) -> Self {
         Self { msg }
     }
+    pub fn command(msg: String) -> CommandType {
+        Box::new(Self::new(msg))
+    }
 }
 impl Command for SimpleNotifier {
     fn execute(&self) -> Option<IOEvent> {
         println!("{}", self.msg);
         None
+    }
+}
+impl Deferrable for SimpleNotifier {
+    type Inner = CommandType;
+    fn deferred(self) -> Deferred<Self::Inner> {
+        Arc::new(Mutex::new(Box::new(self)))
     }
 }
 
@@ -78,6 +87,7 @@ pub struct ThresholdNotifier {
     publisher: Deferred<PublisherInstance>,
 
     trigger: Comparison,
+    factory: BaseCommandFactory<IOType, IOType>,
 }
 impl ThresholdNotifier {
     pub fn new(
@@ -85,12 +95,14 @@ impl ThresholdNotifier {
         threshold: IOType,
         publisher: Deferred<PublisherInstance>,
         trigger: Comparison,
+        factory: BaseCommandFactory<IOType, IOType>
     ) -> Self {
         Self {
             name,
             threshold,
             publisher,
             trigger,
+            factory,
         }
     }
 }
