@@ -1,11 +1,12 @@
 use crate::errors;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::types::{IOType, IdTraits, InputType};
-use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, Publisher, PublisherInstance};
+use crate::io::types::{IdTraits, InputType, IOType};
+use crate::io::{Device, DeviceMetadata, IdType, IODirection, IOEvent, IOKind};
 use crate::storage::{Container, Containerized, MappedCollection, OwnedLog};
 use chrono::{DateTime, Utc};
 use std::fmt::Formatter;
 use std::sync::{Arc, Mutex};
+use crate::io::action::{Publisher, PublisherInstance};
 
 /// Interface defining an input device
 /// It is used as a trait object and can be stored in a container using the `Containerized` trait.

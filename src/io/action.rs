@@ -1,5 +1,7 @@
 mod command;
-mod observer;
+mod subscriber;
+mod publisher;
 
 pub use command::*;
-pub use observer::*;
+pub use subscriber::*;
+pub use publisher::*;

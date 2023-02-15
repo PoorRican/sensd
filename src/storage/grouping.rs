@@ -4,8 +4,8 @@ use crate::builders::input_log_builder;
 use crate::helpers::Deferred;
 use crate::errors::Result;
 use crate::helpers::check_results;
-use crate::io::{InputContainer, PublisherInstance};
-use crate::io::{IdType, IOKind};
+use crate::io::InputContainer;
+use crate::io::{IdType, IOKind, PublisherInstance};
 use crate::settings::Settings;
 use crate::storage::{LogContainer, MappedCollection, Persistent};
 

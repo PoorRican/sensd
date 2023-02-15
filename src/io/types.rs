@@ -1,5 +1,5 @@
 use crate::helpers::Deferred;
-use crate::io::{Device, Input, Output};
+use crate::io::{Input, Output};
 use crate::storage::Container;
 use serde::{Deserialize, Serialize};
 use std::fmt::Formatter;

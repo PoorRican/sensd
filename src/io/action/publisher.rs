@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::IOEvent;
+use crate::io::{IOEvent, SubscriberType};
+
 /// Implement observer design pattern to implement control system based off of polling of `Input` objects
 
 pub trait NamedRoutine {
@@ -42,14 +43,4 @@ impl Deferrable for PublisherInstance {
     fn deferred(self) -> Deferred<Self::Inner> {
         Arc::new(Mutex::new(self))
     }
-}
-
-pub type SubscriberType = Box<dyn SubscriberStrategy>;
-
-/// Subscriber to Publisher which enacts a dynamic strategy
-pub trait SubscriberStrategy: NamedRoutine {
-    /// Primary method to evaluate incoming data
-    /// Returned IOEvent should be logged
-    fn evaluate(&mut self, data: &IOEvent) -> Option<IOEvent>;
-    fn publisher(&self) -> Deferred<PublisherInstance>;
 }
