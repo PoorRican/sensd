@@ -7,14 +7,30 @@ use std::fmt::Debug;
 use std::sync::{Arc, Mutex};
 use crate::io::action::{NamedRoutine, PublisherInstance};
 
+/// Abstraction for single atomic output operation
+pub trait Command {
+    fn execute(&self) -> Option<IOEvent>;
+}
+
+/// Simple command for printing a message to stdout
+pub struct SimpleNotifier {
+    msg: String
+}
+impl SimpleNotifier {
+    fn new(msg: String) -> Self {
+        Self { msg }
+    }
+}
+impl Command for SimpleNotifier {
+    fn execute(&self) -> Option<IOEvent> {
+        println!("{}", self.msg);
+        None
+    }
+}
+
 /// Generic command that monitors a threshold
 pub trait ThresholdMonitor: SubscriberStrategy {
     fn threshold(&self) -> IOType;
-}
-
-/// Interface for sending a notification
-pub trait Notifier: SubscriberStrategy {
-    fn send_notification(&mut self, msg: String) -> Result<()>;
 }
 
 /// Subscriber routine to actively maintain an arbitrary threshold using PID
@@ -68,13 +84,13 @@ impl ThresholdNotifier {
         name: String,
         threshold: IOType,
         publisher: Deferred<PublisherInstance>,
-        direction: Comparison,
+        trigger: Comparison,
     ) -> Self {
         Self {
             name,
             threshold,
             publisher,
-            trigger: direction,
+            trigger,
         }
     }
 }
@@ -90,14 +106,17 @@ impl ThresholdMonitor for ThresholdNotifier {
 }
 impl SubscriberStrategy for ThresholdNotifier {
     fn evaluate(&mut self, event: &IOEvent) -> Option<IOEvent> {
+        let value = event.data.value;
         let exceed = match &self.trigger {
-            &Comparison::GT => event.data.value >= self.threshold,
-            &Comparison::LT => event.data.value <= self.threshold,
+            &Comparison::GT => value >= self.threshold,
+            &Comparison::LT => value <= self.threshold,
         };
         if exceed {
-            let msg = String::from("Value exceeded");
-            self.send_notification(msg).unwrap();
-            Some(event.invert(1.0))
+            // insert command here
+            let msg = format!("{} exceeded {}", value, self.threshold);
+            let command = SimpleNotifier::new(msg);
+            // Some(event.invert(1.0))  // re-enable this when dynamic IOTypes have been implemented
+            command.execute()
         } else {
             None
         }
@@ -105,12 +124,6 @@ impl SubscriberStrategy for ThresholdNotifier {
 
     fn publisher(&self) -> Deferred<PublisherInstance> {
         self.publisher.clone()
-    }
-}
-impl Notifier for ThresholdNotifier {
-    fn send_notification(&mut self, msg: String) -> Result<()> {
-        println!("{}", msg);
-        Ok(())
     }
 }
 impl Deferrable for ThresholdNotifier {
