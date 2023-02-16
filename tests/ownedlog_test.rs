@@ -1,6 +1,7 @@
 use chrono::Utc;
-use sensd::helpers::{input_log_builder, Deferred};
-use sensd::io::{Device, DeviceType, GenericSensor, IOEvent, IOKind, IdType, Input, InputType};
+use sensd::builders::input_log_builder;
+use sensd::helpers::Deferred;
+use sensd::io::{Device, GenericInput, IOEvent, IOKind, IdType, Input, InputType};
 use sensd::storage::{LogType, MappedCollection, OwnedLog, Persistent};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -9,7 +10,7 @@ use std::{fs, thread};
 
 fn add_to_log(device: &Deferred<InputType>, log: &Deferred<OwnedLog>, count: usize) {
     for _ in 0..count {
-        let event = device.lock().unwrap().get_event(Utc::now());
+        let event = device.lock().unwrap().generate_event(Utc::now(), None);
         log.lock().unwrap().push(event.timestamp, event).unwrap();
         thread::sleep(Duration::from_nanos(1)); // add delay so that we don't finish too quickly
     }

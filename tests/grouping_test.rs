@@ -1,5 +1,5 @@
 use chrono::Duration;
-use sensd::io::GenericSensor;
+use sensd::io::GenericInput;
 use sensd::io::{Device, IOKind};
 use sensd::settings::Settings;
 use sensd::storage::{LogType, MappedCollection, PollGroup};
