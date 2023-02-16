@@ -14,8 +14,9 @@ use std::sync::{Arc, Mutex};
 /// `Containerized` trait. Any structs that implement this trait may be accessed by `OutputType`
 ///
 /// # Functions
-/// - `tx() -> IOType`: Low-level function for interacting with device.
-/// - `write() -> Result<()>`: Main interface function output device.
+/// - `tx() -> IOEvent`: Low-level function for passing object to device.
+/// - `write() -> Result<()>`: Main interface function output device. Should update cached state.
+/// - `state() -> IOType`: Get cached state of output device. Facade for `state` field that gets updated by `write()`.
 ///
 /// # Notes:
 /// Since `Containerized` is implemented for the `Output` trait, types that implement the `Output` trait
@@ -31,6 +32,7 @@ use std::sync::{Arc, Mutex};
 pub trait Output: Device {
     fn tx(&self, event: &IOEvent) -> IOEvent;
     fn write(&mut self, event: &IOEvent) -> errors::Result<()>;
+    fn state(&self) -> &IOType;
 }
 
 impl<K> Containerized<Deferred<OutputType>, K> for OutputType
@@ -57,6 +59,8 @@ impl std::fmt::Debug for OutputType {
 #[derive(Default)]
 pub struct GenericOutput {
     metadata: DeviceMetadata,
+    // cached state
+    state: IOType,
     pub log: Deferred<OwnedLog>,
 }
 
@@ -83,10 +87,10 @@ impl Device for GenericOutput {
         Self: Sized,
     {
         let kind = kind.unwrap_or_default();
-
+        let state = IOType::default();
         let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Input);
 
-        GenericOutput { metadata, log }
+        GenericOutput { metadata, state, log }
     }
 
     fn metadata(&self) -> &DeviceMetadata {
@@ -102,13 +106,23 @@ impl Output for GenericOutput {
     }
 
     /// Primary interface method during polling.
-    /// Calls `tx()` and saves to log.
+    /// Calls `tx()`, updates state, and saves to log.
     fn write(&mut self, event: &IOEvent) -> errors::Result<()> {
         let event = self.tx(event);
+
+        // update cached state
+        self.state = event.data.value;
+
         // add to log
         self.log
             .lock()
             .unwrap()
             .push(event.timestamp, event.clone())
+    }
+
+    /// Immutable reference to cached state
+    /// `state` field should be updated by `write()`
+    fn state(&self) -> &IOType {
+        &self.state
     }
 }

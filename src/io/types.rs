@@ -24,6 +24,11 @@ pub enum IOType {
     Int(i32),
     Float(f32),
 }
+impl Default for IOType {
+    fn default() -> Self {
+        IOType::Float(f32::default())
+    }
+}
 
 impl Display for IOType {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
