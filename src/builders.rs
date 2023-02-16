@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
+use crate::action::{BaseCommandFactory, Comparison, ThresholdNotifier, SimpleNotifier, Publisher, PublisherInstance};
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{BaseCommandFactory, Device, GenericInput, IdType, InputType, IOKind, IOType};
-use crate::io::{Comparison, ThresholdNotifier, SimpleNotifier, Publisher, PublisherInstance};
+use crate::io::{Device, GenericInput, IdType, InputType, IOKind, IOType};
 use crate::settings::Settings;
 use crate::storage::OwnedLog;
 

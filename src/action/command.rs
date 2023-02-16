@@ -1,11 +1,9 @@
+use crate::action::{BaseCommandFactory, SubscriberStrategy, CommandType, NamedRoutine, PublisherInstance};
 use crate::errors::Result;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::types::IOType;
-use crate::io::{BaseCommandFactory, CommandType, OutputType};
-use crate::io::{IOEvent, SubscriberStrategy};
+use crate::io::{IOEvent, OutputType, IOType};
 use std::fmt::Debug;
 use std::sync::{Arc, Mutex};
-use crate::io::action::{NamedRoutine, PublisherInstance};
 
 /// Abstraction for single atomic output operation
 pub trait Command {

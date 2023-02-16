@@ -6,7 +6,7 @@ use crate::storage::{Container, Containerized, MappedCollection, OwnedLog};
 use chrono::{DateTime, Utc};
 use std::fmt::Formatter;
 use std::sync::{Arc, Mutex};
-use crate::io::action::{Publisher, PublisherInstance};
+use crate::action::{Publisher, PublisherInstance};
 
 /// Interface defining an input device
 /// It is used as a trait object and can be stored in a container using the `Containerized` trait.

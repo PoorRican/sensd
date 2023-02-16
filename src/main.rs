@@ -1,6 +1,7 @@
 extern crate chrono;
 extern crate serde;
 
+mod action;
 mod builders;
 mod errors;
 mod helpers;
@@ -11,9 +12,10 @@ mod units;
 
 use std::sync::Arc;
 
+use crate::action::{Comparison, SimpleNotifier};
 use crate::builders::pubsub_builder;
 use crate::errors::Result;
-use crate::io::{Comparison, IOKind, IOType, SimpleNotifier};
+use crate::io::{IOKind, IOType};
 use crate::settings::Settings;
 use crate::storage::{Persistent, PollGroup};
 

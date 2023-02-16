@@ -9,8 +9,9 @@
 //! between `Input` and `Subscriber` to serve as a mediator.
 
 use std::sync::{Arc, Mutex};
+use crate::action::SubscriberType;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{IOEvent, SubscriberType};
+use crate::io::IOEvent;
 
 pub trait NamedRoutine {
     fn name(&self) -> String;

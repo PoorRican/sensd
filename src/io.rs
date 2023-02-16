@@ -6,9 +6,7 @@ mod input;
 mod metadata;
 mod output;
 mod types;
-mod action;
 
-pub use action::*;
 pub use calibrated::Calibrated;
 pub use device::*;
 pub use event::IOEvent;

@@ -1,6 +1,6 @@
+use crate::action::{ThresholdMonitor, PublisherInstance, SubscriberStrategy};
 use crate::helpers::Deferred;
-use crate::io::{IOEvent, IOType, OutputType, PublisherInstance, SubscriberStrategy};
-use crate::io::action::subscribers::threshold::ThresholdMonitor;
+use crate::io::{IOEvent, IOType, OutputType, };
 
 /// Subscriber routine to actively maintain an arbitrary threshold using PID
 pub struct PIDMonitor {

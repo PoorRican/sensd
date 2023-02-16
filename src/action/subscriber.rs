@@ -1,5 +1,5 @@
 use crate::helpers::Deferred;
-use crate::io::action::PublisherInstance;
+use crate::action::PublisherInstance;
 use crate::io::IOEvent;
 
 pub type SubscriberType = Box<dyn SubscriberStrategy>;

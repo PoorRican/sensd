@@ -1,5 +1,6 @@
+use crate::action::Command;
 use crate::helpers::Deferred;
-use crate::io::{Command, IOType};
+use crate::io::IOType;
 
 pub type CommandType = Box<dyn Command>;
 

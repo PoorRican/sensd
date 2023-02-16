@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
+use crate::action::{BaseCommandFactory, Command, SimpleNotifier, PublisherInstance, SubscriberStrategy};
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{BaseCommandFactory, Command, IOEvent, IOType, PublisherInstance, SubscriberStrategy};
-use crate::io::action::commands::SimpleNotifier;
+use crate::io::{IOEvent, IOType};
 
 /// Generic command that monitors a threshold
 pub trait ThresholdMonitor: SubscriberStrategy {

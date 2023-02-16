@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
+use crate::action::{Command, CommandType};
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{Command, CommandType, IOEvent};
+use crate::io::IOEvent;
 
 /// Simple command for printing a message to stdout
 pub struct SimpleNotifier {

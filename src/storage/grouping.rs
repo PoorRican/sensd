@@ -1,11 +1,11 @@
 use chrono::{DateTime, Duration, Utc};
 use std::sync::Arc;
+use crate::action::PublisherInstance;
 use crate::builders::input_log_builder;
 use crate::helpers::Deferred;
 use crate::errors::Result;
 use crate::helpers::check_results;
-use crate::io::InputContainer;
-use crate::io::{IdType, IOKind, PublisherInstance};
+use crate::io::{IdType, IOKind, InputContainer};
 use crate::settings::Settings;
 use crate::storage::{LogContainer, MappedCollection, Persistent};
 
