@@ -9,7 +9,8 @@ use std::sync::{Arc, Mutex, Weak};
 
 use crate::errors::{Error, ErrorKind, Result};
 use crate::helpers::{writable_or_create, Deferred};
-use crate::io::{Device, IOEvent, IdType, InputType};
+use crate::io::InputType;
+use crate::io::{IOEvent, IdType};
 use crate::settings::Settings;
 use crate::storage::{Container, MappedCollection, Persistent};
 
@@ -114,10 +115,9 @@ impl Persistent for OwnedLog {
             match serde_json::to_writer_pretty(writer, &self) {
                 Ok(_) => println!("Saved"),
                 Err(e) => {
-                    return Err(Error::new(
-                        ErrorKind::SerializationError,
-                        e.to_string().as_str(),
-                    ))
+                    let msg = e.to_string();
+                    dbg!(msg.clone());
+                    return Err(Error::new(ErrorKind::SerializationError, msg.as_str()));
                 }
             }
             Ok(())

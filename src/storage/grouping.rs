@@ -1,21 +1,21 @@
 use chrono::{DateTime, Duration, Utc};
 use std::sync::Arc;
-
+use crate::action::PublisherInstance;
+use crate::builders::input_log_builder;
+use crate::helpers::Deferred;
 use crate::errors::Result;
-use crate::helpers::{check_results, input_log_builder};
-use crate::io::{Device, IdType, Input, InputContainer};
+use crate::helpers::check_results;
+use crate::io::{IdType, IOKind, InputContainer};
 use crate::settings::Settings;
-use crate::storage::{MappedCollection, Persistent, LogContainer};
+use crate::storage::{LogContainer, MappedCollection, Persistent};
 
-/// Mediator to periodically poll sensors of various types, and store the resulting `IOEvent` objects in a `Container`.
+/// Mediator to periodically poll input devices of various types, and store the resulting `IOEvent` objects in a `Container`.
 ///
-/// `poll()` is the primary callable and iterates through the `Sensor` container to call `get_event()` on each sensor.
+/// `poll()` is the primary callable and iterates through `InputContainers` to call `read()` on each input device.
 /// Resulting `IOEvent` objects are then added to the `log` container.
 ///
-/// The `interval` field indicates the duration between each poll and the `last_execution` field indicates the last time the poll method was executed
-///
-/// TODO: multithreaded polling. Implement `RwLock` or `Mutex` to synchronize access to the sensors and
-///       log containers in order to make the poll() function thread-safe.
+/// `interval` dictates the duration between each poll,
+/// and `last_execution` field is working memory to store the time of the last successful poll.
 pub struct PollGroup {
     name: String,
     last_execution: DateTime<Utc>,
@@ -27,6 +27,7 @@ pub struct PollGroup {
     // internal containers
     pub logs: LogContainer,
     pub inputs: InputContainer<IdType>,
+    pub publishers: Vec<Deferred<PublisherInstance>>,
 }
 
 impl PollGroup {
@@ -37,8 +38,8 @@ impl PollGroup {
         let next_execution = self.last_execution + self.settings.interval;
 
         if next_execution <= Utc::now() {
-            for (_, sensor) in self.inputs.iter_mut() {
-                let result = sensor.lock().unwrap().poll(next_execution);
+            for (_, input) in self.inputs.iter_mut() {
+                let result = input.lock().unwrap().read(next_execution);
                 results.push(result);
             }
             self.last_execution = next_execution;
@@ -54,33 +55,38 @@ impl PollGroup {
         let settings = settings.unwrap_or_else(|| Arc::new(Settings::default()));
         let last_execution = Utc::now() - settings.interval;
 
-        let sensors = <InputContainer<IdType>>::default();
+        let inputs = <InputContainer<IdType>>::default();
         let logs = Vec::default();
+        let publishers = Vec::default();
 
         Self {
             name: String::from(name),
             settings,
             last_execution,
             logs,
-            inputs: sensors,
+            inputs,
+            publishers
         }
     }
 
-    pub fn build_input(&mut self, name: &str, id: IdType) -> Result<()> {
+    pub fn build_input(&mut self, name: &str, id: &IdType, kind: &Option<IOKind>) -> Result<()> {
         // variable allowed to go out-of-scope because `poller` owns reference
-        let (log, input) = input_log_builder(name, id, Some(self.settings.clone()));
+        let settings = Some(self.settings.clone());
+
+        let (log, input) = input_log_builder(name, id, kind, settings);
         self.logs.push(log);
+
         let id = input.lock().unwrap().id();
         self.inputs.push(id, input)
     }
 
     /// Builds multiple input objects and respective `OwnedLog` containers.
     /// # Args:
-    /// Single array should be any sequence of tuples containing a name literal and an `IdType`
-    pub fn add_inputs(&mut self, arr: &[(&str, IdType)]) -> Result<()> {
+    /// Single array should be any sequence of tuples containing a name literal, an `IdType`, and an `IOKind`
+    pub fn add_inputs(&mut self, arr: &[(&str, IdType, IOKind)]) -> Result<()> {
         let mut results = Vec::new();
-        for (name, id) in arr {
-            let result = self.build_input(name, *id);
+        for (name, id, kind) in arr.into_iter() {
+            let result = self.build_input(name, id, &Some(*kind));
             results.push(result);
         }
         check_results(&results)
@@ -94,7 +100,7 @@ impl PollGroup {
     /// Load each individual log
     /// # Notes
     /// This works because each log container should have it's own name upon initialization
-    /// from hardcoded sensors.
+    /// from hardcoded input devices.
     fn load_logs(&self, path: &Option<String>) -> Result<()> {
         let mut results = Vec::new();
         for log in self.logs.iter() {
@@ -107,7 +113,7 @@ impl PollGroup {
     /// Save each individual log
     /// # Notes
     /// This works because each log container should have it's own name upon initialization
-    /// from hardcoded sensors.
+    /// from hardcoded input devices.
     fn save_logs(&self, path: &Option<String>) -> Result<()> {
         let mut results = Vec::new();
         for log in self.logs.iter() {

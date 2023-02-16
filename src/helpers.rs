@@ -3,9 +3,6 @@ use std::ops::Deref;
 use std::sync::{Arc, Mutex};
 
 use crate::errors::Result;
-use crate::io::{IdType, InputType, MockPhSensor, Sensor};
-use crate::settings::Settings;
-use crate::storage::OwnedLog;
 
 /// Return a writable `File` from a given path.
 /// File does not exist, then an attempt is made to create the file.
@@ -37,19 +34,4 @@ pub type Deferred<T> = Arc<Mutex<T>>;
 pub trait Deferrable {
     type Inner;
     fn deferred(self) -> Deferred<Self::Inner>;
-}
-
-/// Init sensor and `OwnedLog`, then set owner on log. Return log and sensor.
-pub fn input_log_builder(
-    name: &str,
-    id: IdType,
-    settings: Option<Arc<Settings>>,
-) -> (Deferred<OwnedLog>, Deferred<InputType>) {
-    let log = Arc::new(Mutex::new(OwnedLog::new(id, settings)));
-    let sensor = MockPhSensor::new(name.to_string(), id, log.clone());
-
-    let wrapped = sensor.deferred();
-    log.lock().unwrap().set_owner(wrapped.clone());
-
-    (log, wrapped)
 }

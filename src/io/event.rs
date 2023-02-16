@@ -1,15 +1,16 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::io::{Device, IOData, IdTraits, IdType};
+use crate::io::types::{IOData, IOType, IdTraits};
+use crate::io::{Device, IODirection, IdType};
 use crate::storage::{Container, Containerized, LogType};
 
 /// Encapsulates `IOData` alongside of timestamp and device data
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct IOEvent {
-    pub version_id: i32,
-    pub sensor_id: IdType,
+    pub id: IdType,
     pub timestamp: DateTime<Utc>,
+    pub direction: IODirection,
 
     #[serde(flatten)]
     pub data: IOData,
@@ -17,7 +18,7 @@ pub struct IOEvent {
 
 // TODO: add kind to `IOEvent`
 impl IOEvent {
-    /// Generate sensor event.
+    /// Generate I/O event.
     ///
     /// # Arguments
     ///
@@ -32,20 +33,32 @@ impl IOEvent {
     /// ```
     ///
     /// ```
-    pub fn create(device: &(impl Device + ?Sized), timestamp: DateTime<Utc>, value: f64) -> Self {
+    pub fn generate(device: &(impl Device + ?Sized), timestamp: DateTime<Utc>, value: IOType) -> Self {
+        let direction = device.direction();
         let info = device.metadata();
-        let version_id = info.version_id;
-        let sensor_id = info.sensor_id;
+        let id = info.id;
         let data = IOData {
             kind: info.kind.clone(),
-            data: value,
+            value,
         };
         IOEvent {
-            version_id,
-            sensor_id,
+            id,
             timestamp,
+            direction,
             data,
         }
+    }
+
+    /// Invert a copy of existing `IOEvent` and inject a new value.
+    /// This should be used for converting an `IOEvent` from input to output.
+    pub fn invert(&self, value: IOType) -> Self {
+        let mut inverted = self.clone();
+        inverted.data.value = value;
+        inverted.direction = match inverted.direction {
+            IODirection::Input => IODirection::Output,
+            IODirection::Output => IODirection::Input,
+        };
+        inverted
     }
 }
 

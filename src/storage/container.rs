@@ -2,16 +2,16 @@
 ///
 /// The main workhorses that provide functionality are `Containerized` and `Container`. The `Containerized`
 /// trait is used to define a container type, `Container`, that can store a collection of objects of a specific
-/// type. The trait is implemented for various types, such as `dyn Sensor<T>` and `IOEvent<T>`.
+/// type. The trait is implemented for various types, such as `dyn input<T>` and `IOEvent<T>`.
 ///
 /// The `Containerized` trait defines a single method, `container()`, which returns a new instance of the
 /// `Container` struct, specific to the type that the trait is implemented for. For example, when the trait is
-/// implemented for `dyn Sensor<T>` (any object that implements `Sensor<T>`), the `container()` method returns a
-/// new instance of `Container<Box<dyn Sensor<T>>, K>`.
+/// implemented for `dyn input<T>` (any object that implements `input<T>`), the `container()` method returns a
+/// new instance of `Container<Box<dyn input<T>>, K>`.
 ///
 /// The `Container` struct is generic over two types, `T` and `K`. `T` represents the type of the objects that
 /// will be stored within the container, and `K` represents the type of the key used to identify the objects
-/// within the container. In the case of the `dyn Sensor<T>` implementation, `T` is `Box<dyn Sensor<T>>` and `K`
+/// within the container. In the case of the `dyn input<T>` implementation, `T` is `Box<dyn input<T>>` and `K`
 /// is an arbitrary type.
 ///
 /// In summary, the `Containerized` trait allows for the creation of a `Container` which can
@@ -32,46 +32,46 @@ use std::collections::HashMap;
 /// code and minimize type definitions.
 ///
 /// # See Also
-/// Reference implementations for `io::IOEvent<T>` and `dyn Sensor<T>`
+/// Reference implementations for `io::IOEvent<T>` and `dyn input<T>`
 ///
 /// Provide a specialized key-value container for agnostic to type of objects stored or key-value type.
-/// Such stored objects are `Sensor` or `IOEvent` objects. The `Containerized` trait provides a wrapper around a
+/// Such stored objects are `input` or `IOEvent` objects. The `Containerized` trait provides a wrapper around a
 /// `HashMap` intended to reduce boilerplate code and minimize type definitions.
 ///
 /// # Notes:
 ///     - Any objects that will be stored _shall_ implement the `Containerized` trait
-///     - It is important to note that for objects that implement the `Sensor` trait, the objects should be stored as
-///         `dyn Sensor<T>` in order to maintain their dynamic nature. It might also be necessary to use `Box<dyn Sensor<T>`.
-///         This allows for a single container to store multiple types of sensors while still being able to call the trait's
+///     - It is important to note that for objects that implement the `input` trait, the objects should be stored as
+///         `dyn input<T>` in order to maintain their dynamic nature. It might also be necessary to use `Box<dyn input<T>`.
+///         This allows for a single container to store multiple types of inputs while still being able to call the trait's
 ///         methods on them.
 ///
 /// # Type Parameters
 ///
-/// * `T`: the type of the objects being stored in the container. This can be any type that implements the `Sensor` trait.
+/// * `T`: the type of the objects being stored in the container. This can be any type that implements the `input` trait.
 /// * `K`: the type of the keys used to index the objects in the container. This can be any type that implements the `Eq` and `Hash` traits.
 ///
 /// # Examples
 ///
 /// ```
-/// struct MySensor {
+/// struct MyInput {
 ///     // fields here
 /// }
 ///
-/// impl crate::Sensor for MySensor {
+/// impl crate::input for MyInput {
 ///     // implementation here
 /// }
 ///
-/// // Create a container to store MySensor objects
-/// let container: crate::Container<Box<dyn crate::Sensor<T>>, String> = Containerized::container();
+/// // Create a container to store MyInput objects
+/// let container: crate::Container<Box<dyn crate::input<T>>, String> = Containerized::container();
 ///
-/// // Insert a MySensor object into the container
-/// let sensor = MySensor { /* fields */ };
-/// container.insert("sensor1", Box::new(sensor));
+/// // Insert a MyInput object into the container
+/// let input = MyInput { /* fields */ };
+/// container.insert("input1", Box::new(input));
 ///
-/// // Get a reference to the MySensor object in the container
-/// let stored_sensor = container.get("sensor1").unwrap();
+/// // Get a reference to the MyInput object in the container
+/// let stored_input = container.get("input1").unwrap();
 ///
-/// // Since Containerized is implemented for Sensor, any derived objects should be stored as `dyn Sensor<T>`
+/// // Since Containerized is implemented for input, any derived objects should be stored as `dyn input<T>`
 /// ```
 pub trait Containerized<T, K>
 where
