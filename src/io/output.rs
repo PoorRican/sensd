@@ -1,6 +1,6 @@
 use crate::errors;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{Device, OutputType};
+use crate::io::{Device, IOType, OutputType};
 use crate::io::{
     DeviceMetadata, IODirection, IOEvent, IOKind, IdTraits, IdType,
 };
@@ -97,7 +97,8 @@ impl Device for GenericOutput {
 impl Output for GenericOutput {
     /// Return a mock value
     fn tx(&self, event: &IOEvent) -> IOEvent {
-        event.clone().invert(1.0)
+        let val = IOType::Float(1.2);
+        event.clone().invert(val)
     }
 
     /// Primary interface method during polling.

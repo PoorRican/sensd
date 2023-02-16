@@ -112,7 +112,7 @@ impl Device for GenericInput {
 impl Input for GenericInput {
     /// Return a mock value
     fn rx(&self) -> IOType {
-        1.2
+        IOType::Float(1.2)
     }
 
     /// Get IOEvent, add to log, and propagate to publisher/subscribers

@@ -33,7 +33,7 @@ impl IOEvent {
     /// ```
     ///
     /// ```
-    pub fn generate(device: &(impl Device + ?Sized), timestamp: DateTime<Utc>, value: f64) -> Self {
+    pub fn generate(device: &(impl Device + ?Sized), timestamp: DateTime<Utc>, value: IOType) -> Self {
         let direction = device.direction();
         let info = device.metadata();
         let id = info.id;

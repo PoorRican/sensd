@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 use crate::builders::pubsub_builder;
 use crate::errors::Result;
-use crate::io::{Comparison, IOKind, SimpleNotifier};
+use crate::io::{Comparison, IOKind, IOType, SimpleNotifier};
 use crate::settings::Settings;
 use crate::storage::{Persistent, PollGroup};
 
@@ -48,7 +48,7 @@ fn main() -> Result<()> {
         pubsub_builder(
             input.clone(),
             name,
-            1.0,
+            IOType::Float(1.0),
             Comparison::GT,
             (|value, threshold| {
                 SimpleNotifier::command(format!("{} exceeded {}", value, threshold))
