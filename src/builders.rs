@@ -1,5 +1,10 @@
+mod action;
+
+pub use action::*;
+
 use std::sync::{Arc, Mutex};
-use crate::action::{BaseCommandFactory, Comparison, ThresholdNotifier, SimpleNotifier, Publisher, PublisherInstance};
+use crate::action::{BaseCommandFactory, Comparison, ThresholdNotifier, SimpleNotifier, Publisher,
+                    PublisherInstance};
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{Device, GenericInput, IdType, InputType, IOKind, IOType};
 use crate::settings::Settings;
@@ -21,7 +26,8 @@ pub fn input_log_builder(
     (log, wrapped)
 }
 
-pub fn pubsub_builder(input: Deferred<InputType>, name: String, threshold: IOType, trigger: Comparison, factory: BaseCommandFactory<IOType, IOType>) {
+pub fn pubsub_builder(input: Deferred<InputType>, name: String, threshold: IOType, trigger: Comparison,
+                      factory: BaseCommandFactory) {
     let binding = PublisherInstance::default();
     let publisher = binding.deferred();
 
@@ -31,7 +37,6 @@ pub fn pubsub_builder(input: Deferred<InputType>, name: String, threshold: IOTyp
     let notifier = ThresholdNotifier::new(
         name.clone(),
         threshold,
-        publisher.clone(),
         trigger,
         factory,
     );

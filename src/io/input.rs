@@ -38,6 +38,7 @@ pub trait Input: Device {
     fn read(&mut self, time: DateTime<Utc>) -> errors::Result<()>;
 
     fn add_publisher(&mut self, publisher: Deferred<PublisherInstance>) -> Result<(), ()>;
+    fn has_publisher(&self) -> bool;
 }
 
 /// Returns a new instance of `Container` for `InputType` indexed by `K`.
@@ -140,6 +141,12 @@ impl Input for GenericInput {
                 Ok(())
             },
             _ => Err(())
+        }
+    }
+    fn has_publisher(&self) -> bool {
+        match self.publisher {
+            Some(_) => true,
+            None => false
         }
     }
 }

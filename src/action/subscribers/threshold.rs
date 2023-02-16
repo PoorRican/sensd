@@ -1,5 +1,5 @@
 use std::sync::{Arc, Mutex};
-use crate::action::{BaseCommandFactory, Command, SimpleNotifier, PublisherInstance, SubscriberStrategy};
+use crate::action::{BaseCommandFactory, Command, SimpleNotifier, PublisherInstance, SubscriberStrategy, SubscriberType};
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{IOEvent, IOType};
 
@@ -21,24 +21,23 @@ pub enum Comparison {
 pub struct ThresholdNotifier {
     name: String,
     threshold: IOType,
-    publisher: Deferred<PublisherInstance>,
+    publisher: Option<Deferred<PublisherInstance>>,
 
     trigger: Comparison,
-    factory: BaseCommandFactory<IOType, IOType>,
+    factory: BaseCommandFactory,
 }
 
 impl ThresholdNotifier {
     pub fn new(
         name: String,
         threshold: IOType,
-        publisher: Deferred<PublisherInstance>,
         trigger: Comparison,
-        factory: BaseCommandFactory<IOType, IOType>
+        factory: BaseCommandFactory
     ) -> Self {
         Self {
             name,
             threshold,
-            publisher,
+            publisher: None,
             trigger,
             factory,
         }
@@ -73,13 +72,20 @@ impl SubscriberStrategy for ThresholdNotifier {
         }
     }
 
-    fn publisher(&self) -> Deferred<PublisherInstance> {
-        self.publisher.clone()
+    fn publisher(&self) -> &Option<Deferred<PublisherInstance>> {
+        &self.publisher
+    }
+
+    fn add_publisher(&mut self, publisher: Deferred<PublisherInstance>) {
+        match self.publisher {
+            None => self.publisher = Some(publisher),
+            Some(_) => ()
+        }
     }
 }
 
 impl Deferrable for ThresholdNotifier {
-    type Inner = Box<dyn SubscriberStrategy>;
+    type Inner = SubscriberType;
 
     fn deferred(self) -> Deferred<Self::Inner> {
         return Arc::new(Mutex::new(Box::new(self)));

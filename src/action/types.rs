@@ -1,7 +1,15 @@
-use crate::action::Command;
+//! Type aliases for functions and closures to assist `ActionBuilder`.
+//! These aliases allow for strongly structuring the dynamic initialization of subscriber/command instances.
+use crate::action::{Command, Comparison, PublisherInstance, SubscriberType, CommandType};
 use crate::helpers::Deferred;
 use crate::io::IOType;
 
-pub type CommandType = Box<dyn Command>;
+// Command Factories
+pub type BaseCommandFactory = fn(IOType, IOType) -> CommandType;
 
-pub type BaseCommandFactory<T, Z> = fn(T, Z) -> CommandType;
+// **********************
+// Subscriber Factories *
+// **********************
+
+/// Type alias for a function or closure that returns a `ThresholdNotifier` instance
+pub type ThresholdNotifierFactory = fn(String, IOType, Comparison, BaseCommandFactory) -> Deferred<SubscriberType>;

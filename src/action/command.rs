@@ -1,9 +1,7 @@
-use crate::action::{BaseCommandFactory, SubscriberStrategy, CommandType, NamedRoutine, PublisherInstance};
-use crate::errors::Result;
-use crate::helpers::{Deferrable, Deferred};
-use crate::io::{IOEvent, OutputType, IOType};
-use std::fmt::Debug;
-use std::sync::{Arc, Mutex};
+use crate::io::IOEvent;
+
+
+pub type CommandType = Box<dyn Command>;
 
 /// Abstraction for single atomic output operation
 pub trait Command {

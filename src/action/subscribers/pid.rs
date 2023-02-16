@@ -6,7 +6,7 @@ use crate::io::{IOEvent, IOType, OutputType, };
 pub struct PIDMonitor {
     name: String,
     threshold: IOType,
-    publisher: Deferred<PublisherInstance>,
+    publisher: Option<Deferred<PublisherInstance>>,
 
     output: Deferred<OutputType>,
 }
@@ -26,7 +26,14 @@ impl SubscriberStrategy for PIDMonitor {
         // maintain PID
     }
 
-    fn publisher(&self) -> Deferred<PublisherInstance> {
-        self.publisher.clone()
+    fn publisher(&self) -> &Option<Deferred<PublisherInstance>> {
+        &self.publisher
+    }
+
+    fn add_publisher(&mut self, publisher: Deferred<PublisherInstance>) {
+        match self.publisher {
+            None => self.publisher = Some(publisher),
+            Some(_) => ()
+        }
     }
 }
