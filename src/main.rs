@@ -9,12 +9,11 @@ mod settings;
 mod storage;
 mod units;
 
-use io::IOKind;
 use std::sync::Arc;
 
 use crate::builders::pubsub_builder;
 use crate::errors::Result;
-use crate::io::{Comparison, SimpleNotifier};
+use crate::io::{Comparison, IOKind, SimpleNotifier};
 use crate::settings::Settings;
 use crate::storage::{Persistent, PollGroup};
 
@@ -62,7 +61,6 @@ fn main() -> Result<()> {
     println!("... Beginning polling ...\n");
     loop {
         let polled = poller.poll();
-        println!("...polled");
         match polled {
             Ok(_) => match poller.save(&None) {
                 Ok(_) => (),
