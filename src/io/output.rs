@@ -8,6 +8,7 @@ use crate::storage::Container;
 use crate::storage::{Containerized, MappedCollection, OwnedLog};
 use std::fmt::Formatter;
 use std::sync::{Arc, Mutex};
+use chrono::{DateTime, Utc};
 
 /// Interface defining an output device
 /// Implementing output devices can be done through structs and can be stored in a container via
@@ -30,8 +31,8 @@ use std::sync::{Arc, Mutex};
 /// ```
 /// > Note how two different output device types were stored in `container`.
 pub trait Output: Device {
-    fn tx(&self, event: &IOEvent) -> IOEvent;
-    fn write(&mut self, event: &IOEvent) -> errors::Result<IOEvent>;
+    fn tx(&self, value: &IOType) -> IOEvent;
+    fn write(&mut self, event: &IOType) -> errors::Result<IOEvent>;
     fn state(&self) -> &IOType;
 }
 
@@ -56,12 +57,22 @@ impl std::fmt::Debug for OutputType {
     }
 }
 
-#[derive(Default)]
 pub struct GenericOutput {
     metadata: DeviceMetadata,
     // cached state
     state: IOType,
     pub log: Deferred<OwnedLog>,
+}
+impl Default for GenericOutput {
+    /// Overwrite default value for `IODirection` in `DeviceMetadata`
+    fn default() -> Self {
+        let mut metadata = DeviceMetadata::default();
+        metadata.direction = IODirection::Output;
+
+        let state = IOType::default();
+        let log = Arc::new(Mutex::new(OwnedLog::default()));
+        Self { metadata, state, log }
+    }
 }
 
 impl Deferrable for GenericOutput {
@@ -96,19 +107,24 @@ impl Device for GenericOutput {
     fn metadata(&self) -> &DeviceMetadata {
         &self.metadata
     }
+
+    /// Generate an `IOEvent` instance from provided value or `::tx()`
+    fn generate_event(&self, dt: DateTime<Utc>, value: Option<IOType>) -> IOEvent {
+        IOEvent::generate(self, dt, value.unwrap())
+    }
 }
 
 impl Output for GenericOutput {
     /// Return a mock value
-    fn tx(&self, event: &IOEvent) -> IOEvent {
-        let val = IOType::Float(1.2);
-        event.clone().invert(val)
+    fn tx(&self, value: &IOType) -> IOEvent {
+        /** low-level functionality goes here **/
+        self.generate_event(Utc::now(), Some(*value))
     }
 
     /// Primary interface method during polling.
-    /// Calls `tx()`, updates state, and saves to log.
-    fn write(&mut self, event: &IOEvent) -> errors::Result<IOEvent> {
-        let event = self.tx(event);
+    /// Calls `tx()`, updates cached state, and saves to log.
+    fn write(&mut self, value: &IOType) -> errors::Result<IOEvent> {
+        let event = self.tx(value);
 
         // update cached state
         self.state = event.data.value;
@@ -125,5 +141,37 @@ impl Output for GenericOutput {
     /// `state` field should be updated by `write()`
     fn state(&self) -> &IOType {
         &self.state
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use chrono::{DateTime, Utc};
+    use crate::io::{GenericOutput, IdType, IOData, IODirection, IOEvent, IOType, Output};
+
+    const DUMMY_VALUE: IOType = IOType::Float(1.2);
+
+    fn generate_event(id: IdType, timestamp: DateTime<Utc>, value: IOType) -> IOEvent {
+        let direction = IODirection::Input;
+        let mut data = IOData::default();
+        data.value = value;
+        IOEvent { id, timestamp, direction, data }
+    }
+
+    #[test]
+    fn test_tx() {
+        let id: IdType = 3;
+        let timestamp = Utc::now();
+        let value = IOType::Binary(true);
+        let event = generate_event(id, timestamp, value);
+
+        let output = GenericOutput::default();
+
+        let new = output.tx(&value);
+
+        assert_eq!(new.data.value, value);
+        assert_eq!(new.data.kind, event.data.kind);
+        assert_ne!(new.direction, event.direction);
     }
 }

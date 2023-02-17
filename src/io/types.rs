@@ -1,7 +1,8 @@
 //! Low-level type and interface definitions for I/O with the filesystem, memory, and other resources.
 
-use crate::helpers::Deferred;
-use crate::io::{Input, Output};
+use std::any::Any;
+use crate::helpers::{Deferred, Deferrable};
+use crate::io::{Device, Input, Output};
 use crate::storage::Container;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
@@ -63,7 +64,7 @@ impl IdTraits for IdType {}
 
 /// Encapsulates I/O data. Provides a unified data type for returning data.
 /// Eventually Direction will be added as a value.
-#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, Default)]
 pub struct IOData {
     pub kind: IOKind,
     pub value: IOType,
@@ -139,7 +140,6 @@ impl std::fmt::Display for IOKind {
     }
 }
 
-/// hack to work around using `Box<dyn Input + Device
 pub type InputType = Box<dyn Input>;
 pub type OutputType = Box<dyn Output>;
 

@@ -51,9 +51,11 @@ impl IOEvent {
 
     /// Invert a copy of existing `IOEvent` and inject a new value.
     /// This should be used for converting an `IOEvent` from input to output.
-    pub fn invert(&self, value: IOType) -> Self {
+    pub fn invert(&self, value: Option<IOType>) -> Self {
         let mut inverted = self.clone();
-        inverted.data.value = value;
+        if value.is_some() {
+            inverted.data.value = value.unwrap();
+        }
         inverted.direction = match inverted.direction {
             IODirection::Input => IODirection::Output,
             IODirection::Output => IODirection::Input,

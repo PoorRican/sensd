@@ -1,7 +1,8 @@
+use chrono::{DateTime, Utc};
 /// Provide Low-level Device Functionality
 use crate::helpers::Deferred;
 use crate::io::metadata::DeviceMetadata;
-use crate::io::{IODirection, IOKind, IdType};
+use crate::io::{IODirection, IOKind, IdType, IOType, IOEvent};
 use crate::storage::OwnedLog;
 
 /// Defines a minimum interface for interacting with GPIO devices.
@@ -43,4 +44,7 @@ pub trait Device {
     fn kind(&self) -> IOKind {
         self.metadata().kind
     }
+
+    /// Generate an `IOEvent` instance from provided value or `::rx()`
+    fn generate_event(&self, dt: DateTime<Utc>, value: Option<IOType>) -> IOEvent;
 }

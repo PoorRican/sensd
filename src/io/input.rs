@@ -31,11 +31,6 @@ use crate::action::{Publisher, PublisherInstance};
 pub trait Input: Device {
     fn rx(&self) -> IOType;
 
-    /// Generate an `IOEvent` instance from provided value or `::rx()`
-    fn generate_event(&self, dt: DateTime<Utc>, value: Option<IOType>) -> IOEvent {
-        IOEvent::generate(self, dt, value.unwrap_or_else(move || self.rx()))
-    }
-
     fn read(&mut self, time: DateTime<Utc>) -> errors::Result<IOEvent>;
 
     fn add_publisher(&mut self, publisher: Deferred<PublisherInstance>) -> Result<(), ()>;
@@ -109,6 +104,11 @@ impl Device for GenericInput {
     fn metadata(&self) -> &DeviceMetadata {
         &self.metadata
     }
+
+    /// Generate an `IOEvent` instance from provided value or `::rx()`
+    fn generate_event(&self, dt: DateTime<Utc>, value: Option<IOType>) -> IOEvent {
+        IOEvent::generate(self, dt, value.unwrap_or_else(move || self.rx()))
+    }
 }
 
 impl Input for GenericInput {
@@ -150,6 +150,7 @@ impl Input for GenericInput {
             None => false
         }
     }
+
 }
 
 

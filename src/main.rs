@@ -49,7 +49,7 @@ fn main() -> Result<()> {
     // build subscribers/commands
     println!("\nBuilding subscribers ...");
     for (id, input) in poller.inputs.iter() {
-        println!("- Setting up builder ...");
+        println!("\n- Setting up builder ...");
         let mut builder = ActionBuilder::new(input.clone());
 
         println!("- Initializing subscriber ...");
@@ -60,7 +60,7 @@ fn main() -> Result<()> {
             |value, threshold| SimpleNotifier::command(format!("{} exceeded {}", value, threshold));
         builder.add_threshold(&name, threshold, trigger, factory);
     }
-    println!("... Finished building\n");
+    println!("\n... Finished building\n");
 
     // main event loop
     println!("... Beginning polling ...\n");
