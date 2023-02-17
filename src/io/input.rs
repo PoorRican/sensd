@@ -31,11 +31,12 @@ use crate::action::{Publisher, PublisherInstance};
 pub trait Input: Device {
     fn rx(&self) -> IOType;
 
+    /// Generate an `IOEvent` instance from provided value or `::rx()`
     fn generate_event(&self, dt: DateTime<Utc>, value: Option<IOType>) -> IOEvent {
         IOEvent::generate(self, dt, value.unwrap_or_else(move || self.rx()))
     }
 
-    fn read(&mut self, time: DateTime<Utc>) -> errors::Result<()>;
+    fn read(&mut self, time: DateTime<Utc>) -> errors::Result<IOEvent>;
 
     fn add_publisher(&mut self, publisher: Deferred<PublisherInstance>) -> Result<(), ()>;
     fn has_publisher(&self) -> bool;
@@ -118,7 +119,7 @@ impl Input for GenericInput {
 
     /// Get IOEvent, add to log, and propagate to publisher/subscribers
     /// Primary interface method during polling.
-    fn read(&mut self, time: DateTime<Utc>) -> errors::Result<()> {
+    fn read(&mut self, time: DateTime<Utc>) -> errors::Result<IOEvent> {
         // get IOEvent
         let event = self.generate_event(time, None);
 
@@ -126,12 +127,12 @@ impl Input for GenericInput {
         match &self.publisher {
             Some(publisher) => publisher.lock().unwrap().notify(&event),
             _ => ()
-        }
+        };
 
         // add to log
-        let result = self.log.lock().unwrap().push(time, event);
-
-        result
+        let mut binding = self.log.lock().unwrap();
+        binding.push(time, event)?;
+        Ok(event)
     }
 
     fn add_publisher(&mut self, publisher: Deferred<PublisherInstance>) -> Result<(), ()> {
@@ -148,5 +149,50 @@ impl Input for GenericInput {
             Some(_) => true,
             None => false
         }
+    }
+}
+
+
+// Testing
+#[cfg(test)]
+mod tests {
+    use chrono::{DateTime, Utc};
+    use crate::action::PublisherInstance;
+    use crate::helpers::Deferrable;
+    use crate::io::{Device, GenericInput};
+    use crate::io::{Input, IOType};
+
+    const DUMMY_OUTPUT: IOType = IOType::Float(1.2);
+
+    #[test]
+    fn test_rx() {
+        let input = GenericInput::default();
+        assert_eq!(input.rx(), DUMMY_OUTPUT);
+    }
+
+    #[test]
+    fn test_read() {
+        let mut input = GenericInput::default();
+
+        let time = Utc::now();
+        let event = input.read(time).unwrap();
+        assert_eq!(event.data.value, DUMMY_OUTPUT);
+        assert_eq!(event.timestamp, time);
+        assert_eq!(event.data.kind, input.kind());
+
+        // TODO: attach log and assert that IOEvent has been added to log
+    }
+
+    /// Test `::add_publisher()` and `::has_publisher()`
+    #[test]
+    fn test_add_publisher() {
+        let mut input = GenericInput::default();
+
+        assert_eq!(false, input.has_publisher());
+
+        let publisher = PublisherInstance::default();
+        input.add_publisher(publisher.deferred()).unwrap();
+
+        assert_eq!(true, input.has_publisher());
     }
 }

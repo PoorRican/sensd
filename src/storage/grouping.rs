@@ -5,7 +5,7 @@ use crate::builders::input_log_builder;
 use crate::helpers::Deferred;
 use crate::errors::Result;
 use crate::helpers::check_results;
-use crate::io::{IdType, IOKind, InputContainer};
+use crate::io::{IdType, IOKind, InputContainer, IOEvent, InputType};
 use crate::settings::Settings;
 use crate::storage::{LogContainer, MappedCollection, Persistent};
 
@@ -33,8 +33,8 @@ pub struct PollGroup {
 impl PollGroup {
     /// Iterate through container once. Call `get_event()` on each value.
     /// Update according to the lowest rate.
-    pub fn poll(&mut self) -> std::result::Result<Vec<Result<()>>, ()> {
-        let mut results: Vec<Result<()>> = Vec::new();
+    pub fn poll(&mut self) -> std::result::Result<Vec<Result<IOEvent>>, ()> {
+        let mut results: Vec<Result<IOEvent>> = Vec::new();
         let next_execution = self.last_execution + self.settings.interval;
 
         if next_execution <= Utc::now() {
@@ -69,26 +69,29 @@ impl PollGroup {
         }
     }
 
-    pub fn build_input(&mut self, name: &str, id: &IdType, kind: &Option<IOKind>) -> Result<()> {
+    pub fn build_input(&mut self, name: &str, id: &IdType, kind: &Option<IOKind>) -> Result<Deferred<InputType>> {
         // variable allowed to go out-of-scope because `poller` owns reference
         let settings = Some(self.settings.clone());
 
         let (log, input) = input_log_builder(name, id, kind, settings);
         self.logs.push(log);
 
-        let id = input.lock().unwrap().id();
-        self.inputs.push(id, input)
+        match self.inputs.push(*id, input.clone()) {
+            Err(error) => eprintln!("{}", error.to_string()),
+            _ => ()
+        }
+        Ok(input)
     }
 
     /// Builds multiple input objects and respective `OwnedLog` containers.
     /// # Args:
     /// Single array should be any sequence of tuples containing a name literal, an `IdType`, and an `IOKind`
     pub fn add_inputs(&mut self, arr: &[(&str, IdType, IOKind)]) -> Result<()> {
-        let mut results = Vec::new();
-        for (name, id, kind) in arr.into_iter() {
+        let mut results = Vec::default();
+        for (name, id, kind) in arr.iter().to_owned() {
             let result = self.build_input(name, id, &Some(*kind));
             results.push(result);
-        }
+        };
         check_results(&results)
     }
 

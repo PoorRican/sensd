@@ -39,7 +39,7 @@ use std::collections::HashMap;
 /// `HashMap` intended to reduce boilerplate code and minimize type definitions.
 ///
 /// # Notes:
-///     - Any objects that will be stored _shall_ implement the `Containerized` trait
+///     - Any objects that will be stored _shall_ implement the crate::storage::Containerized trait
 ///     - It is important to note that for objects that implement the `input` trait, the objects should be stored as
 ///         `dyn input<T>` in order to maintain their dynamic nature. It might also be necessary to use `Box<dyn input<T>`.
 ///         This allows for a single container to store multiple types of inputs while still being able to call the trait's
@@ -53,23 +53,11 @@ use std::collections::HashMap;
 /// # Examples
 ///
 /// ```
-/// struct MyInput {
-///     // fields here
-/// }
-///
-/// impl crate::input for MyInput {
-///     // implementation here
-/// }
+/// use sensd::io::{GenericInput, InputContainer, IdType};
+/// use sensd::storage::Container;
 ///
 /// // Create a container to store MyInput objects
-/// let container: crate::Container<Box<dyn crate::input<T>>, String> = Containerized::container();
-///
-/// // Insert a MyInput object into the container
-/// let input = MyInput { /* fields */ };
-/// container.insert("input1", Box::new(input));
-///
-/// // Get a reference to the MyInput object in the container
-/// let stored_input = container.get("input1").unwrap();
+/// let container = <InputContainer<IdType>>::default();
 ///
 /// // Since Containerized is implemented for input, any derived objects should be stored as `dyn input<T>`
 /// ```
@@ -125,14 +113,13 @@ impl<T, K: IdTraits> MappedCollection<T, K> for Container<T, K> {
     /// Using `entry` method on the inner HashMap to check if the key already exists in the HashMap
     ///  - If the key already exists, the returned value is `std::collections::hash_map::Entry::Occupied`, which returns false.
     ///  - If the key does not exist, the returned value is `std::collections::hash_map::Entry::Vacant`, which inserts the key-value pair into the HashMap and returns true.
-    fn push(&mut self, key: K, data: T) -> Result<()> {
+    fn push(&mut self, key: K, data: T) -> Result<&mut T> {
         match self.inner.entry(key) {
             std::collections::hash_map::Entry::Occupied(_) => {
                 Err(Error::new(ErrorKind::ContainerError, "Key already exists"))
             }
             std::collections::hash_map::Entry::Vacant(entry) => {
-                entry.insert(data);
-                Ok(())
+                Ok(entry.insert(data))
             }
         }
     }

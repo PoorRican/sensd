@@ -79,7 +79,7 @@ impl OwnedLog {
 }
 
 impl MappedCollection<IOEvent, DateTime<Utc>> for OwnedLog {
-    fn push(&mut self, key: DateTime<Utc>, data: IOEvent) -> Result<()> {
+    fn push(&mut self, key: DateTime<Utc>, data: IOEvent) -> Result<&mut IOEvent> {
         self.log.push(key, data)
     }
 

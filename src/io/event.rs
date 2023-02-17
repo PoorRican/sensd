@@ -6,7 +6,7 @@ use crate::io::{Device, IODirection, IdType};
 use crate::storage::{Container, Containerized, LogType};
 
 /// Encapsulates `IOData` alongside of timestamp and device data
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub struct IOEvent {
     pub id: IdType,
     pub timestamp: DateTime<Utc>,

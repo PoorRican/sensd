@@ -31,7 +31,7 @@ use std::sync::{Arc, Mutex};
 /// > Note how two different output device types were stored in `container`.
 pub trait Output: Device {
     fn tx(&self, event: &IOEvent) -> IOEvent;
-    fn write(&mut self, event: &IOEvent) -> errors::Result<()>;
+    fn write(&mut self, event: &IOEvent) -> errors::Result<IOEvent>;
     fn state(&self) -> &IOType;
 }
 
@@ -107,7 +107,7 @@ impl Output for GenericOutput {
 
     /// Primary interface method during polling.
     /// Calls `tx()`, updates state, and saves to log.
-    fn write(&mut self, event: &IOEvent) -> errors::Result<()> {
+    fn write(&mut self, event: &IOEvent) -> errors::Result<IOEvent> {
         let event = self.tx(event);
 
         // update cached state
@@ -117,7 +117,8 @@ impl Output for GenericOutput {
         self.log
             .lock()
             .unwrap()
-            .push(event.timestamp, event.clone())
+            .push(event.timestamp, event.clone())?;
+        Ok(event)
     }
 
     /// Immutable reference to cached state
