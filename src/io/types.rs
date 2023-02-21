@@ -1,12 +1,15 @@
 //! Low-level type and interface definitions for I/O with the filesystem, memory, and other resources.
 
 use std::any::Any;
+use crate::errors::{Error, ErrorKind, Result};
 use crate::helpers::{Deferred, Deferrable};
-use crate::io::{Device, Input, Output};
-use crate::storage::Container;
+use crate::io::{Device, DeviceMetadata, GenericInput, GenericOutput, IOEvent};
+use crate::storage::{Container, OwnedLog};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::hash::Hash;
+use std::sync::{Arc, Mutex, Weak};
+use chrono::{DateTime, Utc};
 
 /// Type used for passing between IO abstractions.
 ///
@@ -81,7 +84,7 @@ pub enum IODirection {
     Output,
 }
 
-impl std::fmt::Display for IODirection {
+impl Display for IODirection {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let name = match self {
             IODirection::Input => "Input",
@@ -116,7 +119,7 @@ pub enum IOKind {
     PH,
 }
 
-impl std::fmt::Display for IOKind {
+impl Display for IOKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let name = match self {
             IOKind::Unassigned => "Unassigned",
@@ -140,8 +143,82 @@ impl std::fmt::Display for IOKind {
     }
 }
 
-pub type InputType = Box<dyn Input>;
-pub type OutputType = Box<dyn Output>;
+pub trait DeviceWrapper {
+    fn is_input(&self) -> bool;
+    fn is_output(&self) -> bool;
+}
 
-/// Alias for using a deferred `InputType` in `Container`, indexed by `K`
-pub type InputContainer<K> = Container<Deferred<InputType>, K>;
+pub trait DeviceTraits {
+    fn name(&self) -> String;
+    fn id(&self) -> IdType;
+    fn kind(&self) -> IOKind;
+}
+
+pub enum DeviceType {
+    Input(GenericInput),
+    Output(GenericOutput)
+}
+impl DeviceWrapper for DeviceType {
+    fn is_input(&self) -> bool {
+        match self {
+            Self::Input(_) => true,
+            Self::Output(_) => false,
+        }
+    }
+    fn is_output(&self) -> bool {
+        match self {
+            Self::Input(_) => false,
+            Self::Output(_) => true,
+        }
+    }
+}
+impl DeviceTraits for DeviceType {
+    fn name(&self) -> String {
+        match self {
+            Self::Output(inner) => inner.name(),
+            Self::Input(inner) => inner.name(),
+        }
+    }
+
+    fn id(&self) -> IdType {
+        match self {
+            Self::Output(inner) => inner.id(),
+            Self::Input(inner) => inner.id(),
+        }
+    }
+
+    fn kind(&self) -> IOKind {
+        match self {
+            Self::Output(inner) => inner.kind(),
+            Self::Input(inner) => inner.kind(),
+        }
+    }
+}
+
+pub type DeferredDevice = Deferred<DeviceType>;
+impl DeviceWrapper for DeferredDevice {
+    fn is_input(&self) -> bool {
+        let binding = self.lock().unwrap();
+        binding.is_input()
+    }
+    fn is_output(&self) -> bool {
+        let binding = self.lock().unwrap();
+        binding.is_input()
+    }
+}
+impl DeviceTraits for DeferredDevice {
+    fn name(&self) -> String {
+        self.lock().unwrap().name()
+    }
+
+    fn id(&self) -> IdType {
+        self.lock().unwrap().id()
+    }
+
+    fn kind(&self) -> IOKind {
+        self.lock().unwrap().kind()
+    }
+}
+
+/// Alias for using a deferred devices in `Container`, indexed by `K`
+pub type DeviceContainer<K> = Container<DeferredDevice, K>;

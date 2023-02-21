@@ -1,12 +1,13 @@
 mod action;
 
+use std::ops::{Deref, DerefMut};
 pub use action::*;
 
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, Weak};
 use crate::action::{BaseCommandFactory, Comparison, ThresholdNotifier, SimpleNotifier, Publisher,
                     PublisherInstance};
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{Device, GenericInput, IdType, InputType, IOKind, IOType};
+use crate::io::{DeferredDevice, Device, DeviceType, GenericInput, IdType, IOKind, IOType, DeviceWrapper};
 use crate::settings::Settings;
 use crate::storage::OwnedLog;
 
@@ -16,23 +17,26 @@ pub fn input_log_builder(
     id: &IdType,
     kind: &Option<IOKind>,
     settings: Option<Arc<Settings>>,
-) -> (Deferred<OwnedLog>, Deferred<InputType>) {
+) -> (Deferred<OwnedLog>, Deferred<DeviceType>) {
     let log = Arc::new(Mutex::new(OwnedLog::new(*id, settings)));
     let input = GenericInput::new(name.to_string(), *id, *kind, log.clone());
 
     let wrapped = input.deferred();
-    log.lock().unwrap().set_owner(wrapped.clone());
+    let downgraded: Weak<Mutex<DeviceType>> = Arc::downgrade(&wrapped.clone());
+    log.lock().unwrap().set_owner(downgraded);
 
     (log, wrapped)
 }
 
-pub fn pubsub_builder(input: Deferred<InputType>, name: String, threshold: IOType, trigger: Comparison,
+pub fn pubsub_builder(input: DeferredDevice, name: String, threshold: IOType, trigger: Comparison,
                       factory: BaseCommandFactory) {
     let binding = PublisherInstance::default();
     let publisher = binding.deferred();
 
     // attempt to add publisher. Existing publisher is not overwritten.
-    let _ = input.try_lock().unwrap().add_publisher(publisher.clone());
+    if let DeviceType::Input(inner) = input.lock().unwrap().deref_mut() {
+        let _ = inner.add_publisher(publisher.clone());
+    }
 
     let notifier = ThresholdNotifier::new(
         name.clone(),

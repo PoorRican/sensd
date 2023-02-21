@@ -1,3 +1,4 @@
+use std::ops::{Deref, DerefMut};
 use chrono::{DateTime, Duration, Utc};
 use std::sync::Arc;
 use crate::action::PublisherInstance;
@@ -5,7 +6,7 @@ use crate::builders::input_log_builder;
 use crate::helpers::Deferred;
 use crate::errors::Result;
 use crate::helpers::check_results;
-use crate::io::{IdType, IOKind, InputContainer, IOEvent, InputType};
+use crate::io::{IdType, IOKind, DeviceContainer, IOEvent, DeviceType, DeviceWrapper};
 use crate::settings::Settings;
 use crate::storage::{LogContainer, MappedCollection, Persistent};
 
@@ -26,7 +27,7 @@ pub struct PollGroup {
 
     // internal containers
     pub logs: LogContainer,
-    pub inputs: InputContainer<IdType>,
+    pub inputs: DeviceContainer<IdType>,
     pub publishers: Vec<Deferred<PublisherInstance>>,
 }
 
@@ -39,8 +40,11 @@ impl PollGroup {
 
         if next_execution <= Utc::now() {
             for (_, input) in self.inputs.iter_mut() {
-                let result = input.lock().unwrap().read(next_execution);
-                results.push(result);
+                let mut device = input.lock().unwrap();
+                if let DeviceType::Input(inner) = device.deref_mut() {
+                    let result = inner.read(next_execution);
+                    results.push(result);
+                }
             }
             self.last_execution = next_execution;
             Ok(results)
@@ -55,7 +59,7 @@ impl PollGroup {
         let settings = settings.unwrap_or_else(|| Arc::new(Settings::default()));
         let last_execution = Utc::now() - settings.interval;
 
-        let inputs = <InputContainer<IdType>>::default();
+        let inputs = <DeviceContainer<IdType>>::default();
         let logs = Vec::default();
         let publishers = Vec::default();
 
@@ -69,7 +73,7 @@ impl PollGroup {
         }
     }
 
-    pub fn build_input(&mut self, name: &str, id: &IdType, kind: &Option<IOKind>) -> Result<Deferred<InputType>> {
+    pub fn build_input(&mut self, name: &str, id: &IdType, kind: &Option<IOKind>) -> Result<Deferred<DeviceType>> {
         // variable allowed to go out-of-scope because `poller` owns reference
         let settings = Some(self.settings.clone());
 

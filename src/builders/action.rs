@@ -1,7 +1,9 @@
+use std::ops::{Deref, DerefMut};
 use crate::action::{BaseCommandFactory, Comparison, Publisher, PublisherInstance, SubscriberType,
                     ThresholdNotifier, ThresholdNotifierFactory};
+use crate::errors::{ErrorKind, Error, Result};
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{IOType, InputType};
+use crate::io::{DeferredDevice, DeviceType, IOType, DeviceWrapper};
 
 /// Assist the user in dynamically initializing a single publisher for a single input.
 /// Since an abstract input only uses a single publisher, helper functions help build
@@ -10,14 +12,18 @@ use crate::io::{IOType, InputType};
 /// # Notes
 /// Return types should be checked here, if anywhere.
 pub struct ActionBuilder {
-    input: Deferred<InputType>,
+    // TODO: check that device is input
+    input: DeferredDevice,
     publisher: Deferred<PublisherInstance>,
     // TODO: add reference to `PollGroup`
 }
 impl ActionBuilder {
-    pub fn new(input: Deferred<InputType>) -> Self {
+    pub fn new(device: DeferredDevice) -> Result<Self> {
+        if device.is_output() {
+            return Err(Error::new(ErrorKind::DeviceError, "Passed device is output. Expected input."))
+        }
         let publisher = Self::build_publisher();
-        Self { input, publisher }
+        Ok(Self { input: device, publisher })
     }
 
     /// Initialize and return a deferred `PublisherInstance`
@@ -33,10 +39,12 @@ impl ActionBuilder {
     /// necessary for instances built with `ActionBuilder`.
     fn check_publisher(&mut self) {
         let mut binding = self.input.lock().unwrap();
-        if binding.has_publisher() == false {
-            let publisher: Deferred<PublisherInstance> = self.publisher.clone();
+        if let DeviceType::Input(inner) = binding.deref_mut() {
+            if inner.has_publisher() == false {
+                let publisher: Deferred<PublisherInstance> = self.publisher.clone();
 
-            binding.add_publisher(publisher).unwrap()
+                inner.add_publisher(publisher).unwrap()
+            }
         }
     }
 

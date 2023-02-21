@@ -58,7 +58,7 @@ fn main() -> Result<()> {
         let trigger = Comparison::GT;
         let factory: BaseCommandFactory =
             |value, threshold| SimpleNotifier::command(format!("{} exceeded {}", value, threshold));
-        builder.add_threshold(&name, threshold, trigger, factory);
+        builder?.add_threshold(&name, threshold, trigger, factory);
     }
     println!("\n... Finished building\n");
 

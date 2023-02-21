@@ -9,8 +9,7 @@ use std::sync::{Arc, Mutex, Weak};
 
 use crate::errors::{Error, ErrorKind, Result};
 use crate::helpers::{writable_or_create, Deferred};
-use crate::io::InputType;
-use crate::io::{IOEvent, IdType};
+use crate::io::{IOEvent, IdType, DeviceType, DeferredDevice, DeviceTraits};
 use crate::settings::Settings;
 use crate::storage::{Container, MappedCollection, Persistent};
 
@@ -27,7 +26,7 @@ const FILETYPE: &str = ".json";
 pub struct OwnedLog {
     id: IdType,
     #[serde(skip)]
-    owner: Option<Weak<Mutex<InputType>>>,
+    owner: Option<Weak<Mutex<DeviceType>>>,
     #[serde(skip)]
     settings: Arc<Settings>,
 
@@ -35,13 +34,13 @@ pub struct OwnedLog {
 }
 
 impl OwnedLog {
-    pub fn owner(&self) -> Deferred<InputType> {
+    pub fn owner(&self) -> DeferredDevice {
         // TODO: handle error if owner is None or if Weak has no Strong
         self.owner.clone().unwrap().upgrade().unwrap()
     }
 
-    pub fn set_owner(&mut self, owner: Deferred<InputType>) {
-        self.owner = Some(Arc::downgrade(&owner));
+    pub fn set_owner(&mut self, owner: Weak<Mutex<DeviceType>>) {
+        self.owner = Some(owner);
     }
 
     /// Append filename to path
@@ -63,11 +62,11 @@ impl OwnedLog {
     }
 
     pub fn filename(&self) -> String {
-        let owner: Deferred<InputType> = self.owner();
+        let owner = self.owner();
         format!(
             "{}_{}_{}{}",
             self.settings.log_fn_prefix.clone(),
-            owner.lock().unwrap().name().as_str(),
+            owner.name().as_str(),
             self.id.to_string().as_str(),
             FILETYPE
         )
