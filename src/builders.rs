@@ -1,13 +1,13 @@
 mod action;
 
-use std::ops::{Deref, DerefMut};
+use std::ops::DerefMut;
 pub use action::*;
 
 use std::sync::{Arc, Mutex, Weak};
-use crate::action::{BaseCommandFactory, Comparison, ThresholdNotifier, SimpleNotifier, Publisher,
+use crate::action::{BaseCommandFactory, Comparison, ThresholdNotifier, Publisher,
                     PublisherInstance};
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{DeferredDevice, Device, DeviceType, GenericInput, IdType, IOKind, IOType, DeviceWrapper};
+use crate::io::{DeferredDevice, Device, DeviceType, GenericInput, IdType, IOKind, IOType};
 use crate::settings::Settings;
 use crate::storage::OwnedLog;
 

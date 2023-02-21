@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::io::types::{IOData, IOType, IdTraits};
 use crate::io::{Device, IODirection, IdType};
-use crate::storage::{Container, LogType};
 
 /// Encapsulates `IOData` alongside of timestamp and device data
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
@@ -65,7 +64,3 @@ impl IOEvent {
 }
 
 impl IdTraits for DateTime<Utc> {}
-
-pub fn new_log_container() -> LogType {
-    Container::<IOEvent, DateTime<Utc>>::new()
-}

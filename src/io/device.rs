@@ -1,10 +1,9 @@
 //! Provide Low-level Device Functionality
 use std::fmt::Formatter;
-use std::sync::{Mutex, Weak};
 use chrono::{DateTime, Utc};
 use crate::helpers::Deferred;
 use crate::io::metadata::DeviceMetadata;
-use crate::io::{IODirection, IOKind, IdType, IOType, IOEvent, DeviceType};
+use crate::io::{IODirection, IOKind, IdType, IOType, IOEvent};
 use crate::storage::OwnedLog;
 
 /// Defines a minimum interface for interacting with GPIO devices.

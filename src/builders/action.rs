@@ -1,6 +1,6 @@
-use std::ops::{Deref, DerefMut};
-use crate::action::{BaseCommandFactory, Comparison, Publisher, PublisherInstance, SubscriberType,
-                    ThresholdNotifier, ThresholdNotifierFactory};
+use std::ops::DerefMut;
+use crate::action::{BaseCommandFactory, Comparison, Publisher, PublisherInstance,
+                    ThresholdNotifier};
 use crate::errors::{ErrorKind, Error, Result};
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{DeferredDevice, DeviceType, IOType, DeviceWrapper};

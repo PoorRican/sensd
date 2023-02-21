@@ -12,12 +12,9 @@ mod units;
 
 use std::sync::Arc;
 
-use crate::action::{
-    BaseCommandFactory, Comparison, SimpleNotifier, ThresholdNotifier, ThresholdNotifierFactory,
-};
-use crate::builders::{pubsub_builder, ActionBuilder};
+use crate::action::{BaseCommandFactory, Comparison, SimpleNotifier};
+use crate::builders::ActionBuilder;
 use crate::errors::Result;
-use crate::helpers::Deferrable;
 use crate::io::{IOKind, IOType};
 use crate::settings::Settings;
 use crate::storage::{Persistent, PollGroup};
@@ -50,7 +47,7 @@ fn main() -> Result<()> {
     println!("\nBuilding subscribers ...");
     for (id, input) in poller.inputs.iter() {
         println!("\n- Setting up builder ...");
-        let mut builder = ActionBuilder::new(input.clone());
+        let builder = ActionBuilder::new(input.clone());
 
         println!("- Initializing subscriber ...");
         let name = format!("Subscriber for Input:{}", id);

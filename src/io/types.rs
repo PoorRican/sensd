@@ -1,15 +1,11 @@
 //! Low-level type and interface definitions for I/O with the filesystem, memory, and other resources.
 
-use std::any::Any;
-use crate::errors::{Error, ErrorKind, Result};
-use crate::helpers::{Deferred, Deferrable};
-use crate::io::{Device, DeviceMetadata, GenericInput, GenericOutput, IOEvent};
-use crate::storage::{Container, OwnedLog};
+use crate::helpers::{Deferred};
+use crate::io::{Device, GenericInput, GenericOutput};
+use crate::storage::{Container};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::hash::Hash;
-use std::sync::{Arc, Mutex, Weak};
-use chrono::{DateTime, Utc};
 
 /// Type used for passing between IO abstractions.
 ///

@@ -1,6 +1,6 @@
 //! Type aliases for functions and closures to assist `ActionBuilder`.
 //! These aliases allow for strongly structuring the dynamic initialization of subscriber/command instances.
-use crate::action::{Command, Comparison, PublisherInstance, SubscriberType, CommandType};
+use crate::action::{Comparison, SubscriberType, CommandType};
 use crate::helpers::Deferred;
 use crate::io::IOType;
 

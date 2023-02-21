@@ -1,8 +1,8 @@
 use crate::errors;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::types::{IdTraits, IOType, DeviceType};
-use crate::io::{Device, DeviceMetadata, IdType, DeviceContainer, IODirection, IOEvent, IOKind};
-use crate::storage::{Container, MappedCollection, OwnedLog};
+use crate::io::types::{IOType, DeviceType};
+use crate::io::{Device, DeviceMetadata, IdType, IODirection, IOEvent, IOKind};
+use crate::storage::{MappedCollection, OwnedLog};
 use chrono::{DateTime, Utc};
 use std::sync::{Arc, Mutex};
 use crate::action::{Publisher, PublisherInstance};

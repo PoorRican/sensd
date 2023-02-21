@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut};
+use std::ops::DerefMut;
 use chrono::{DateTime, Duration, Utc};
 use std::sync::Arc;
 use crate::action::PublisherInstance;
@@ -6,7 +6,7 @@ use crate::builders::input_log_builder;
 use crate::helpers::Deferred;
 use crate::errors::Result;
 use crate::helpers::check_results;
-use crate::io::{IdType, IOKind, DeviceContainer, IOEvent, DeviceType, DeviceWrapper};
+use crate::io::{IdType, IOKind, DeviceContainer, IOEvent, DeviceType};
 use crate::settings::Settings;
 use crate::storage::{LogContainer, MappedCollection, Persistent};
 

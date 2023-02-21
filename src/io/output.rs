@@ -2,11 +2,9 @@ use crate::errors;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{Device, IOType, DeviceType};
 use crate::io::{
-    DeviceMetadata, IODirection, IOEvent, IOKind, IdTraits, IdType,
+    DeviceMetadata, IODirection, IOEvent, IOKind, IdType,
 };
-use crate::storage::Container;
 use crate::storage::{MappedCollection, OwnedLog};
-use std::fmt::Formatter;
 use std::sync::{Arc, Mutex};
 use chrono::{DateTime, Utc};
 
@@ -71,7 +69,7 @@ impl Device for GenericOutput {
 impl GenericOutput {
     /// Return a mock value
     pub fn tx(&self, value: &IOType) -> IOEvent {
-        /** low-level functionality goes here **/
+        /* low-level functionality goes here */
         self.generate_event(Utc::now(), Some(*value))
     }
 
