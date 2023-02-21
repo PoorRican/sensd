@@ -99,31 +99,39 @@ impl GenericOutput {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{DateTime, Utc};
-    use crate::io::{GenericOutput, IdType, IOData, IODirection, IOEvent, IOType};
-
-    const DUMMY_VALUE: IOType = IOType::Float(1.2);
-
-    fn generate_event(id: IdType, timestamp: DateTime<Utc>, value: IOType) -> IOEvent {
-        let direction = IODirection::Input;
-        let mut data = IOData::default();
-        data.value = value;
-        IOEvent { id, timestamp, direction, data }
-    }
+    use crate::io::{Device, GenericOutput, IdType, IOData, IODirection, IOEvent, IOType};
 
     #[test]
     fn test_tx() {
-        let id: IdType = 3;
-        let timestamp = Utc::now();
         let value = IOType::Binary(true);
-        let event = generate_event(id, timestamp, value);
-
         let output = GenericOutput::default();
 
         let new = output.tx(&value);
 
-        assert_eq!(new.data.value, value);
-        assert_eq!(new.data.kind, event.data.kind);
-        assert_ne!(new.direction, event.direction);
+        assert_eq!(value, new.data.value);
+        assert_eq!(output.kind(), new.data.kind);
+        assert_eq!(output.direction(), new.direction);
+    }
+
+    #[test]
+    /// Test that `tx()` was called, cached state was updated, and IOEvent added to log.
+    fn test_write() {
+        let value = IOType::Binary(true);
+        let mut output = GenericOutput::default();
+
+        // check `state` before `::write()`
+        assert_ne!(value, output.state);
+
+        let new = output.write(&value).expect("Unknown error returned by `::write()`");
+
+        // check state after `::write()`
+        assert_eq!(value, output.state);
+
+        // check returned `IOEvent`
+        assert_eq!(value, new.data.value);
+        assert_eq!(output.kind(), new.data.kind);
+        assert_eq!(output.direction(), new.direction);
+
+        // TODO: attach log and assert that event was added to log
     }
 }

@@ -103,7 +103,7 @@ impl GenericInput {
 // Testing
 #[cfg(test)]
 mod tests {
-    use chrono::{DateTime, Utc};
+    use chrono::Utc;
     use crate::action::PublisherInstance;
     use crate::helpers::Deferrable;
     use crate::io::{Device, GenericInput, IOType};
