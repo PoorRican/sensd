@@ -45,12 +45,6 @@ impl<T, K: IdTraits> Default for Container<T, K> {
 }
 
 impl<T, K: IdTraits> Container<T, K> {
-    // A new Container struct is created with an empty HashMap
-    pub fn new() -> Self {
-        let inner: HashMap<K, T> = Default::default();
-        Container { inner }
-    }
-
     /// Return a readonly reference to stored HashMap
     pub fn iter(&self) -> Iter<'_, K, T> {
         self.inner.iter()

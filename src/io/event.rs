@@ -47,20 +47,6 @@ impl IOEvent {
             data,
         }
     }
-
-    /// Invert a copy of existing `IOEvent` and inject a new value.
-    /// This should be used for converting an `IOEvent` from input to output.
-    pub fn invert(&self, value: Option<IOType>) -> Self {
-        let mut inverted = self.clone();
-        if value.is_some() {
-            inverted.data.value = value.unwrap();
-        }
-        inverted.direction = match inverted.direction {
-            IODirection::Input => IODirection::Output,
-            IODirection::Output => IODirection::Input,
-        };
-        inverted
-    }
 }
 
 impl IdTraits for DateTime<Utc> {}

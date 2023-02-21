@@ -199,7 +199,7 @@ impl DeviceWrapper for DeferredDevice {
     }
     fn is_output(&self) -> bool {
         let binding = self.lock().unwrap();
-        binding.is_input()
+        binding.is_output()
     }
 }
 impl DeviceTraits for DeferredDevice {

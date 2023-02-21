@@ -18,6 +18,11 @@ pub struct ActionBuilder {
     // TODO: add reference to `PollGroup`
 }
 impl ActionBuilder {
+    /// Create a new builder for a given device
+    /// This starts the process of adding pubs/subscribers
+    /// `Err` is returned if passed device is not input.
+    /// # Args
+    /// - device: Device to add pub/subs. Should be Input
     pub fn new(device: DeferredDevice) -> Result<Self> {
         if device.is_output() {
             return Err(Error::new(ErrorKind::DeviceError, "Passed device is output. Expected input."))
@@ -33,8 +38,8 @@ impl ActionBuilder {
         // TODO: add publisher to `PollGroup`
     }
 
-    /// Silently add to publisher.
-    /// Existing publisher is not overwritten, however any returned error is muted.
+    /// Silently add publisher to input device.
+    /// Existing publisher is not overwritten as any returned error is ignored.
     /// Future updates will return a reference to the existing publisher. However, this shouldn't be
     /// necessary for instances built with `ActionBuilder`.
     fn check_publisher(&mut self) {
@@ -58,14 +63,14 @@ impl ActionBuilder {
     ) {
         self.check_publisher();
 
-        let subscriber = ThresholdNotifier::new(name.to_string(), threshold, trigger, factory);
-        let deferred = subscriber.deferred();
+        let _subscriber = ThresholdNotifier::new(name.to_string(), threshold, trigger, factory);
+        let subscriber = _subscriber.deferred();
 
         // add subscriber to publisher
-        self.publisher.lock().unwrap().subscribe(deferred.clone());
+        self.publisher.lock().unwrap().subscribe(subscriber.clone());
 
         // add reverse reference to publisher from subscriber
-        deferred
+        subscriber
             .lock()
             .unwrap()
             .add_publisher(self.publisher.clone());

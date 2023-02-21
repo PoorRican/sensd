@@ -1,5 +1,5 @@
 use std::sync::{Arc, Mutex};
-use crate::action::{BaseCommandFactory, Command, SimpleNotifier, PublisherInstance, SubscriberStrategy, SubscriberType};
+use crate::action::{BaseCommandFactory, PublisherInstance, SubscriberStrategy, SubscriberType};
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{IOEvent, IOType};
 
@@ -57,16 +57,12 @@ impl SubscriberStrategy for ThresholdNotifier {
 
     fn evaluate(&mut self, event: &IOEvent) -> Option<IOEvent> {
         let value = event.data.value;
-        let exceed = match &self.trigger {
+        let exceeded = match &self.trigger {
             &Comparison::GT => value >= self.threshold,
             &Comparison::LT => value <= self.threshold,
         };
-        if exceed {
-            // insert command here
-            let msg = format!("{} exceeded {}", value, self.threshold);
-            let command = SimpleNotifier::new(msg);
-            // Some(event.invert(1.0))  // re-enable this when dynamic IOTypes have been implemented
-            command.execute()
+        if exceeded {
+            (self.factory)(value, self.threshold).execute()
         } else {
             None
         }
