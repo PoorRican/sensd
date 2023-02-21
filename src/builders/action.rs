@@ -42,7 +42,7 @@ impl ActionBuilder {
     /// Existing publisher is not overwritten as any returned error is ignored.
     /// Future updates will return a reference to the existing publisher. However, this shouldn't be
     /// necessary for instances built with `ActionBuilder`.
-    fn check_publisher(&mut self) {
+    fn check_publisher(&self) {
         let mut binding = self.input.lock().unwrap();
         if let DeviceType::Input(inner) = binding.deref_mut() {
             if inner.has_publisher() == false {

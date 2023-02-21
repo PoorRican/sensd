@@ -100,7 +100,7 @@ impl GenericOutput {
 #[cfg(test)]
 mod tests {
     use chrono::{DateTime, Utc};
-    use crate::io::{GenericOutput, IdType, IOData, IODirection, IOEvent, IOType, Output};
+    use crate::io::{GenericOutput, IdType, IOData, IODirection, IOEvent, IOType};
 
     const DUMMY_VALUE: IOType = IOType::Float(1.2);
 

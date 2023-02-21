@@ -45,11 +45,14 @@ fn main() -> Result<()> {
 
     // build subscribers/commands
     println!("\nBuilding subscribers ...");
+
     for (id, input) in poller.inputs.iter() {
         println!("\n- Setting up builder ...");
+
         let builder = ActionBuilder::new(input.clone());
 
         println!("- Initializing subscriber ...");
+
         let name = format!("Subscriber for Input:{}", id);
         let threshold = IOType::Float(1.0);
         let trigger = Comparison::GT;
@@ -57,6 +60,7 @@ fn main() -> Result<()> {
             |value, threshold| SimpleNotifier::command(format!("{} exceeded {}", value, threshold));
         builder?.add_threshold(&name, threshold, trigger, factory);
     }
+
     println!("\n... Finished building\n");
 
     // main event loop
@@ -67,7 +71,6 @@ fn main() -> Result<()> {
             Ok(_) => match poller.save(&None) {
                 Ok(_) => (),
                 Err(t) => {
-                    dbg!("Error");
                     return Err(t);
                 }
             },
