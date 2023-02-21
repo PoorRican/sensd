@@ -18,7 +18,7 @@ use crate::storage::{LogContainer, MappedCollection, Persistent};
 /// `interval` dictates the duration between each poll,
 /// and `last_execution` field is working memory to store the time of the last successful poll.
 pub struct PollGroup {
-    name: String,
+    _name: String,
     last_execution: DateTime<Utc>,
 
     /// Non-mutable storage of runtime settings
@@ -64,7 +64,7 @@ impl PollGroup {
         let publishers = Vec::default();
 
         Self {
-            name: String::from(name),
+            _name: String::from(name),
             settings,
             last_execution,
             logs,

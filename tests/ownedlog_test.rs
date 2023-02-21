@@ -1,10 +1,9 @@
 use chrono::Utc;
 use sensd::builders::input_log_builder;
 use sensd::helpers::Deferred;
-use sensd::io::{Device, GenericInput, IOEvent, IOKind, IdType, DeviceType};
-use sensd::storage::{LogType, MappedCollection, OwnedLog, Persistent};
+use sensd::io::{Device, IOKind, IdType, DeviceType};
+use sensd::storage::{MappedCollection, OwnedLog, Persistent};
 use std::path::Path;
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{fs, thread};
 use std::ops::Deref;
@@ -47,7 +46,7 @@ fn test_load_save() {
     // test load
     // build back up then load
     {
-        let (log, device) = input_log_builder(SENSOR_NAME, &ID, &Some(IOKind::Flow), None);
+        let (log, _device) = input_log_builder(SENSOR_NAME, &ID, &Some(IOKind::Flow), None);
         let mut _log = log.lock().unwrap();
         _log.load(&None).unwrap();
 

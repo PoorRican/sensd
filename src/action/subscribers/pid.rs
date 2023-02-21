@@ -9,7 +9,7 @@ pub struct PIDMonitor {
     publisher: Option<Deferred<PublisherInstance>>,
 
     // TODO: check that device is output
-    output: Deferred<DeviceType>,
+    _output: Deferred<DeviceType>,
 }
 
 impl ThresholdMonitor for PIDMonitor {
@@ -22,7 +22,7 @@ impl SubscriberStrategy for PIDMonitor {
     fn name(&self) -> String {
         self.name.clone()
     }
-    fn evaluate(&mut self, data: &IOEvent) -> Option<IOEvent> {
+    fn evaluate(&mut self, _data: &IOEvent) -> Option<IOEvent> {
         todo!()
         // maintain PID
     }

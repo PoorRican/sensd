@@ -1,10 +1,8 @@
 use chrono::Duration;
-use sensd::io::GenericInput;
-use sensd::io::{Device, IOKind};
+use sensd::io::IOKind;
 use sensd::settings::Settings;
-use sensd::storage::{LogType, MappedCollection, PollGroup};
+use sensd::storage::PollGroup;
 use std::sync::Arc;
-use std::sync::Mutex;
 
 #[test]
 fn test_add_device() {

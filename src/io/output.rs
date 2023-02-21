@@ -99,7 +99,7 @@ impl GenericOutput {
 
 #[cfg(test)]
 mod tests {
-    use crate::io::{Device, GenericOutput, IdType, IOData, IODirection, IOEvent, IOType};
+    use crate::io::{Device, GenericOutput, IOType};
 
     #[test]
     fn test_tx() {
@@ -120,12 +120,12 @@ mod tests {
         let mut output = GenericOutput::default();
 
         // check `state` before `::write()`
-        assert_ne!(value, output.state);
+        assert_ne!(value, *output.state());
 
         let new = output.write(&value).expect("Unknown error returned by `::write()`");
 
         // check state after `::write()`
-        assert_eq!(value, output.state);
+        assert_eq!(value, *output.state());
 
         // check returned `IOEvent`
         assert_eq!(value, new.data.value);
