@@ -1,8 +1,8 @@
 use std::ops::Deref;
 use sensd::action::{BaseCommandFactory, Comparison, SimpleNotifier};
 use sensd::helpers::*;
-use sensd::builders::ActionBuilder;
-use sensd::io::{DeviceType, GenericInput, IOType};
+use sensd::builders::{ActionBuilder, DeviceLogBuilder};
+use sensd::io::{DeviceType, GenericInput, IdType, IODirection, IOKind, IOType, DeviceTraits};
 
 #[test]
 fn test_action_builder() {
@@ -28,6 +28,21 @@ fn test_action_builder() {
 }
 
 #[test]
-fn test_pub_sub_builder() {
-    unimplemented!()
+fn test_device_log_builder() {
+    const NAME: &str = "device name";
+    const ID: IdType = 0;
+    const DIRECTION: IODirection = IODirection::Input;
+    const KIND: IOKind = IOKind::Unassigned;
+
+    let builder = DeviceLogBuilder::new(
+        NAME,
+        &ID,
+        &Some(KIND),
+        &DIRECTION,
+        None
+    );
+    let (device, log) = builder.get();
+
+    assert_eq!(false, log.lock().unwrap().orphan());
+    assert!(log.lock().unwrap().filename().contains(&device.lock().unwrap().name()));
 }
