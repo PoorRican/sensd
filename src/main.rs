@@ -15,7 +15,7 @@ use std::sync::Arc;
 use crate::action::{BaseCommandFactory, Comparison, SimpleNotifier};
 use crate::builders::ActionBuilder;
 use crate::errors::Result;
-use crate::io::{IOKind, IOType};
+use crate::io::{IODirection, IOKind, IOType};
 use crate::settings::Settings;
 use crate::storage::{Persistent, PollGroup};
 
@@ -38,10 +38,10 @@ fn init(name: &str) -> PollGroup {
 fn main() -> Result<()> {
     let mut poller = init("main");
     let config = vec![
-        ("test name", 0, IOKind::PH),
-        ("second sensor", 1, IOKind::Flow),
+        ("test name", 0, IOKind::PH, IODirection::Input),
+        ("second sensor", 1, IOKind::Flow, IODirection::Input),
     ];
-    poller.add_inputs(&config).unwrap();
+    poller.add_devices(&config).unwrap();
 
     // build subscribers/commands
     println!("\nBuilding subscribers ...");

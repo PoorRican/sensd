@@ -2,11 +2,11 @@ use std::ops::DerefMut;
 use chrono::{DateTime, Duration, Utc};
 use std::sync::Arc;
 use crate::action::PublisherInstance;
-use crate::builders::input_log_builder;
+use crate::builders::DeviceLogBuilder;
 use crate::helpers::Deferred;
 use crate::errors::Result;
 use crate::helpers::check_results;
-use crate::io::{IdType, IOKind, DeviceContainer, IOEvent, DeviceType};
+use crate::io::{IdType, IOKind, DeviceContainer, IOEvent, DeviceType, IODirection};
 use crate::settings::Settings;
 use crate::storage::{LogContainer, MappedCollection, Persistent};
 
@@ -73,27 +73,38 @@ impl PollGroup {
         }
     }
 
-    pub fn build_input(&mut self, name: &str, id: &IdType, kind: &Option<IOKind>) -> Result<Deferred<DeviceType>> {
+    /// Build device interface and log.
+    ///
+    /// Add device to store
+    pub fn build_device(&mut self, name: &str, id: &IdType, kind: &Option<IOKind>, direction: &IODirection) -> Result<Deferred<DeviceType>> {
         // variable allowed to go out-of-scope because `poller` owns reference
         let settings = Some(self.settings.clone());
 
-        let (log, input) = input_log_builder(name, id, kind, settings);
+        let builder = DeviceLogBuilder::new(name, id, kind, direction, settings);
+        let (device, log) = builder.get();
         self.logs.push(log);
 
-        match self.inputs.push(*id, input.clone()) {
-            Err(error) => eprintln!("{}", error.to_string()),
-            _ => ()
+        match direction {
+            IODirection::Input => {
+                match self.inputs.push(*id, device.clone()) {
+                    Err(error) => eprintln!("{}", error.to_string()),
+                    _ => ()
+                }
+            },
+            IODirection::Output => {
+                unimplemented!()
+            }
         }
-        Ok(input)
+        Ok(device)
     }
 
     /// Builds multiple input objects and respective `OwnedLog` containers.
     /// # Args:
     /// Single array should be any sequence of tuples containing a name literal, an `IdType`, and an `IOKind`
-    pub fn add_inputs(&mut self, arr: &[(&str, IdType, IOKind)]) -> Result<()> {
+    pub fn add_devices(&mut self, arr: &[(&str, IdType, IOKind, IODirection)]) -> Result<()> {
         let mut results = Vec::default();
-        for (name, id, kind) in arr.iter().to_owned() {
-            let result = self.build_input(name, id, &Some(*kind));
+        for (name, id, kind, direction) in arr.iter().to_owned() {
+            let result = self.build_device(name, id, &Some(*kind), direction);
             results.push(result);
         };
         check_results(&results)

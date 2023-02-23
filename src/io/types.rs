@@ -1,11 +1,12 @@
 //! Low-level type and interface definitions for I/O with the filesystem, memory, and other resources.
 
-use crate::helpers::{Deferred};
+use crate::helpers::{Deferrable, Deferred};
 use crate::io::{Device, GenericInput, GenericOutput};
 use crate::storage::{Container};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::hash::Hash;
+use std::sync::{Arc, Mutex};
 
 /// Type used for passing between IO abstractions.
 ///
@@ -153,6 +154,13 @@ pub trait DeviceTraits {
 pub enum DeviceType {
     Input(GenericInput),
     Output(GenericOutput)
+}
+impl Deferrable for DeviceType {
+    type Inner = DeviceType;
+
+    fn deferred(self) -> Deferred<Self::Inner> {
+        Arc::new(Mutex::new(self))
+    }
 }
 impl DeviceWrapper for DeviceType {
     fn is_input(&self) -> bool {
