@@ -1,17 +1,17 @@
+use crate::action::{Command, GPIOCommand, Publisher, PublisherInstance};
 use crate::errors;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::types::{IOType, DeviceType};
-use crate::io::{Device, DeviceMetadata, IdType, IODirection, IOEvent, IOKind};
+use crate::io::types::DeviceType;
+use crate::io::{Device, DeviceMetadata, IdType, IODirection, IOEvent, IOKind, no_internal_closure};
 use crate::storage::{MappedCollection, OwnedLog};
-use chrono::{DateTime, Utc};
 use std::sync::{Arc, Mutex};
-use crate::action::{Publisher, PublisherInstance};
 
 #[derive(Default)]
 pub struct GenericInput {
     metadata: DeviceMetadata,
     pub log: Deferred<OwnedLog>,
     publisher: Option<Deferred<PublisherInstance>>,
+    command: Option<GPIOCommand>,
 }
 
 impl Deferrable for GenericInput {
@@ -40,11 +40,13 @@ impl Device for GenericInput {
 
         let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Input);
         let publisher = None;
+        let command = None;
 
-        GenericInput {
+        Self {
             metadata,
             log,
             publisher,
+            command,
         }
     }
 
@@ -52,33 +54,45 @@ impl Device for GenericInput {
         &self.metadata
     }
 
-    /// Generate an `IOEvent` instance from provided value or `::rx()`
-    fn generate_event(&self, dt: DateTime<Utc>, value: Option<IOType>) -> IOEvent {
-        IOEvent::generate(self, dt, value.unwrap_or_else(move || self.rx()))
+    fn add_command(&mut self, command: GPIOCommand) {
+        self.command = Some(command);
     }
 }
 
 impl GenericInput {
     /// Return a mock value
-    pub fn rx(&self) -> IOType {
-        IOType::Float(1.2)
+    pub fn rx(&self) -> errors::Result<IOEvent> {
+        // Execute GPIO command
+        let read_value = if let Some(command) = &self.command {
+            let result = command.execute(None).unwrap();
+            result.unwrap()
+        } else { return Err(no_internal_closure()) };
+
+        Ok(self.generate_event(read_value))
+    }
+
+    /// Propagate `IOEvent` to all subscribers.
+    ///
+    /// No error is raised when there is no associated publisher.
+    fn propagate(&mut self, event: &IOEvent) {
+        if let Some(publisher) = &self.publisher {
+            publisher.lock().unwrap().notify(&event);
+        };
     }
 
     /// Get IOEvent, add to log, and propagate to publisher/subscribers
+    ///
     /// Primary interface method during polling.
-    pub fn read(&mut self, time: DateTime<Utc>) -> errors::Result<IOEvent> {
-        // get IOEvent
-        let event = self.generate_event(time, None);
+    pub fn read(&mut self) -> errors::Result<IOEvent> {
 
-        // propagate to publisher/subscribers
-        match &self.publisher {
-            Some(publisher) => publisher.lock().unwrap().notify(&event),
-            _ => ()
-        };
+        let event = self.rx().expect("Error returned by `rx()`");
+
+        self.propagate(&event);
 
         // add to log
         let mut binding = self.log.lock().unwrap();
-        binding.push(time, event)?;
+        binding.push(event.timestamp, event)?;
+
         Ok(event)
     }
 
@@ -121,7 +135,7 @@ mod tests {
         let mut input = GenericInput::default();
 
         let time = Utc::now();
-        let event = input.read(time).unwrap();
+        let event = input.read().unwrap();
         assert_eq!(event.data.value, DUMMY_OUTPUT);
         assert_eq!(event.timestamp, time);
         assert_eq!(event.data.kind, input.kind());

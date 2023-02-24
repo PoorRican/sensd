@@ -18,7 +18,7 @@ pub trait SubscriberStrategy {
     fn name(&self) -> String;
     /// Primary method to evaluate incoming data
     /// Returned IOEvent should be logged
-    fn evaluate(&mut self, data: &IOEvent) -> Option<IOEvent>;
+    fn evaluate(&mut self, data: &IOEvent);
 
     fn publisher(&self) -> &Option<Deferred<PublisherInstance>>;
     fn add_publisher(&mut self, publisher: Deferred<PublisherInstance>);

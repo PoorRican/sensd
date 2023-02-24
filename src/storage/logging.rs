@@ -205,7 +205,7 @@ mod tests {
         // test save
         {
             let builder = DeviceLogBuilder::new(SENSOR_NAME, &ID, &Some(IOKind::Flow),
-                                                &IODirection::Input, None);
+                                                &IODirection::Input, &None, None);
             let (device, log) = builder.get();
             add_to_log(&device, &log, COUNT);
             let _log = log.lock().unwrap();
@@ -221,7 +221,7 @@ mod tests {
         // build back up then load
         {
             let builder = DeviceLogBuilder::new(SENSOR_NAME, &ID, &Some(IOKind::Flow),
-                                                &IODirection::Input, None);
+                                                &IODirection::Input, &None, None);
             let (_device, log) = builder.get();
             let mut _log = log.lock().unwrap();
             _log.load(&None).unwrap();

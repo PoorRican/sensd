@@ -149,6 +149,7 @@ pub trait DeviceTraits {
     fn name(&self) -> String;
     fn id(&self) -> IdType;
     fn kind(&self) -> IOKind;
+    fn direction(&self) -> IODirection;
 }
 
 pub enum DeviceType {
@@ -197,6 +198,13 @@ impl DeviceTraits for DeviceType {
             Self::Input(inner) => inner.kind(),
         }
     }
+
+    fn direction(&self) -> IODirection {
+        match self {
+            Self::Output(inner) => inner.direction(),
+            Self::Input(inner) => inner.direction(),
+        }
+    }
 }
 
 pub type DeferredDevice = Deferred<DeviceType>;
@@ -212,15 +220,19 @@ impl DeviceWrapper for DeferredDevice {
 }
 impl DeviceTraits for DeferredDevice {
     fn name(&self) -> String {
-        self.lock().unwrap().name()
+        self.try_lock().unwrap().name()
     }
 
     fn id(&self) -> IdType {
-        self.lock().unwrap().id()
+        self.try_lock().unwrap().id()
     }
 
     fn kind(&self) -> IOKind {
-        self.lock().unwrap().kind()
+        self.try_lock().unwrap().kind()
+    }
+
+    fn direction(&self) -> IODirection {
+        self.try_lock().unwrap().direction()
     }
 }
 

@@ -1,9 +1,10 @@
 //! Provide Low-level Device Functionality
 use std::fmt::Formatter;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
+use crate::action::GPIOCommand;
+use crate::errors::*;
 use crate::helpers::Deferred;
-use crate::io::metadata::DeviceMetadata;
-use crate::io::{IODirection, IOKind, IdType, IOType, IOEvent};
+use crate::io::{IODirection, IOKind, IdType, IOType, IOEvent, DeviceMetadata};
 use crate::storage::OwnedLog;
 
 /// Defines a minimum interface for interacting with GPIO devices.
@@ -13,7 +14,9 @@ use crate::storage::OwnedLog;
 /// device name, id, direction, and kind. Therefore, implementing structs shall implement a field
 /// `metadata` that is mutably accessed through the reciprocal getter method.
 pub trait Device {
+
     /// Creates a new instance of the device with the given parameters.
+    ///
     /// `name`: name of device.
     /// `id`: device ID.
     /// `kind`: kind of I/O device. Optional argument.
@@ -46,8 +49,24 @@ pub trait Device {
         self.metadata().kind
     }
 
-    /// Generate an `IOEvent` instance from provided value or `::rx()`
-    fn generate_event(&self, dt: DateTime<Utc>, value: Option<IOType>) -> IOEvent;
+    /// Generate an `IOEvent` instance from provided value
+    ///
+    /// This is used by internal `command` for building events from given data.
+    /// Input devices pass read value; output devices pass write value.
+    ///
+    /// # Notes
+    /// Utc time is generated within this function. This allows each call to be more accurately
+    /// recorded instead of using a single time when polling. Accurate record keeping is more
+    /// valuable than a slight hit to performance.
+    ///
+    /// Additionally, internally generating timestamp adds a layer of separation between
+    /// device trait objects and any of it's owners (i.e.: `PollGroup`).
+    fn generate_event(&self, value: IOType) -> IOEvent {
+        let dt = Utc::now();
+        IOEvent::generate(self, dt, value)
+    }
+
+    fn add_command(&mut self, command: GPIOCommand);
 }
 
 impl std::fmt::Debug for dyn Device {
@@ -63,3 +82,6 @@ impl std::fmt::Debug for dyn Device {
     }
 }
 
+pub fn no_internal_closure() -> Box<dyn std::error::Error> {
+    Error::new(ErrorKind::CommandError, "Device has no internal closure")
+}

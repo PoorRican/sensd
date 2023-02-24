@@ -1,12 +1,9 @@
+use crate::action::{Command, GPIOCommand};
 use crate::errors;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{Device, IOType, DeviceType};
-use crate::io::{
-    DeviceMetadata, IODirection, IOEvent, IOKind, IdType,
-};
+use crate::io::{DeviceMetadata, IODirection, IOEvent, IOKind, IdType, Device, IOType, DeviceType, no_internal_closure};
 use crate::storage::{MappedCollection, OwnedLog};
 use std::sync::{Arc, Mutex};
-use chrono::{DateTime, Utc};
 
 
 pub struct GenericOutput {
@@ -14,6 +11,7 @@ pub struct GenericOutput {
     // cached state
     state: IOType,
     pub log: Deferred<OwnedLog>,
+    command: Option<GPIOCommand>,
 }
 impl Default for GenericOutput {
     /// Overwrite default value for `IODirection` in `DeviceMetadata`
@@ -23,7 +21,8 @@ impl Default for GenericOutput {
 
         let state = IOType::default();
         let log = Arc::new(Mutex::new(OwnedLog::default()));
-        Self { metadata, state, log }
+        let command = None;
+        Self { metadata, state, log, command }
     }
 }
 
@@ -53,30 +52,35 @@ impl Device for GenericOutput {
         let state = IOType::default();
         let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Input);
 
-        GenericOutput { metadata, state, log }
+        let command = None;
+
+        Self { metadata, state, log, command }
     }
 
     fn metadata(&self) -> &DeviceMetadata {
         &self.metadata
     }
 
-    /// Generate an `IOEvent` instance from provided value or `::tx()`
-    fn generate_event(&self, dt: DateTime<Utc>, value: Option<IOType>) -> IOEvent {
-        IOEvent::generate(self, dt, value.unwrap())
+    fn add_command(&mut self, command: GPIOCommand) {
+        self.command = Some(command);
     }
 }
 
 impl GenericOutput {
     /// Return a mock value
-    pub fn tx(&self, value: &IOType) -> IOEvent {
-        /* low-level functionality goes here */
-        self.generate_event(Utc::now(), Some(*value))
+    pub fn tx(&self, value: IOType) -> errors::Result<IOEvent> {
+        // Execute GPIO command
+        if let Some(command) = &self.command {
+            command.execute(Some(value)).unwrap();
+        } else { return Err(no_internal_closure()) };
+
+        Ok(self.generate_event(value))
     }
 
     /// Primary interface method during polling.
     /// Calls `tx()`, updates cached state, and saves to log.
-    pub fn write(&mut self, value: &IOType) -> errors::Result<IOEvent> {
-        let event = self.tx(value);
+    pub fn write(&mut self, value: IOType) -> errors::Result<IOEvent> {
+        let event = self.tx(value).expect("Error returned by `tx()`");
 
         // update cached state
         self.state = event.data.value;
@@ -106,7 +110,7 @@ mod tests {
         let value = IOType::Binary(true);
         let output = GenericOutput::default();
 
-        let new = output.tx(&value);
+        let new = output.tx(value);
 
         assert_eq!(value, new.data.value);
         assert_eq!(output.kind(), new.data.kind);
@@ -122,7 +126,7 @@ mod tests {
         // check `state` before `::write()`
         assert_ne!(value, *output.state());
 
-        let new = output.write(&value).expect("Unknown error returned by `::write()`");
+        let new = output.write(value).expect("Unknown error returned by `::write()`");
 
         // check state after `::write()`
         assert_eq!(value, *output.state());

@@ -1,7 +1,7 @@
 use std::ops::DerefMut;
 use chrono::{DateTime, Duration, Utc};
 use std::sync::Arc;
-use crate::action::PublisherInstance;
+use crate::action::{IOCommand, PublisherInstance};
 use crate::builders::DeviceLogBuilder;
 use crate::helpers::Deferred;
 use crate::errors::Result;
@@ -40,9 +40,9 @@ impl PollGroup {
 
         if next_execution <= Utc::now() {
             for (_, input) in self.inputs.iter_mut() {
-                let mut device = input.lock().unwrap();
+                let mut device = input.try_lock().unwrap();
                 if let DeviceType::Input(inner) = device.deref_mut() {
-                    let result = inner.read(next_execution);
+                    let result = inner.read();
                     results.push(result);
                 }
             }
@@ -76,12 +76,22 @@ impl PollGroup {
     /// Build device interface and log.
     ///
     /// Add device to store
-    pub fn build_device(&mut self, name: &str, id: &IdType, kind: &Option<IOKind>, direction: &IODirection) -> Result<Deferred<DeviceType>> {
+    pub fn build_device(
+        &mut self,
+        name: &str,
+        id: &IdType,
+        kind: &Option<IOKind>,
+        direction: &IODirection,
+        command: &IOCommand,
+    ) -> Result<Deferred<DeviceType>> {
         // variable allowed to go out-of-scope because `poller` owns reference
         let settings = Some(self.settings.clone());
 
-        let builder = DeviceLogBuilder::new(name, id, kind, direction, settings);
+        let builder = DeviceLogBuilder::new(name, id, kind, direction, command, settings);
+        builder.setup_command();
+
         let (device, log) = builder.get();
+
         self.logs.push(log);
 
         match direction {
@@ -98,13 +108,13 @@ impl PollGroup {
         Ok(device)
     }
 
-    /// Builds multiple input objects and respective `OwnedLog` containers.
+    /// Builds multiple input objects and their respective `OwnedLog` containers.
     /// # Args:
     /// Single array should be any sequence of tuples containing a name literal, an `IdType`, and an `IOKind`
-    pub fn add_devices(&mut self, arr: &[(&str, IdType, IOKind, IODirection)]) -> Result<()> {
+    pub fn add_devices(&mut self, arr: &[(&str, IdType, IOKind, IODirection, IOCommand)]) -> Result<()> {
         let mut results = Vec::default();
-        for (name, id, kind, direction) in arr.iter().to_owned() {
-            let result = self.build_device(name, id, &Some(*kind), direction);
+        for (name, id, kind, direction, command) in arr.iter().to_owned() {
+            let result = self.build_device(name, id, &Some(*kind), direction, command);
             results.push(result);
         };
         check_results(&results)

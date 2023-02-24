@@ -12,7 +12,7 @@ mod units;
 
 use std::sync::Arc;
 
-use crate::action::{BaseCommandFactory, Comparison, SimpleNotifier};
+use crate::action::{BaseCommandFactory, Comparison, SimpleNotifier, GPIOCommand, IOCommand};
 use crate::builders::ActionBuilder;
 use crate::errors::Result;
 use crate::io::{IODirection, IOKind, IOType};
@@ -37,9 +37,10 @@ fn init(name: &str) -> PollGroup {
 
 fn main() -> Result<()> {
     let mut poller = init("main");
+
     let config = vec![
-        ("test name", 0, IOKind::PH, IODirection::Input),
-        ("second sensor", 1, IOKind::Flow, IODirection::Input),
+        ("test name", 0, IOKind::PH, IODirection::Input, IOCommand::Input(move || IOType::Float(1.2))),
+        ("second sensor", 1, IOKind::Flow, IODirection::Input, IOCommand::Input(move || IOType::Float(0.5))),
     ];
     poller.add_devices(&config).unwrap();
 
@@ -49,7 +50,7 @@ fn main() -> Result<()> {
     for (id, input) in poller.inputs.iter() {
         println!("\n- Setting up builder ...");
 
-        let builder = ActionBuilder::new(input.clone());
+        let mut builder = ActionBuilder::new(input.clone())?;
 
         println!("- Initializing subscriber ...");
 
@@ -58,7 +59,7 @@ fn main() -> Result<()> {
         let trigger = Comparison::GT;
         let factory: BaseCommandFactory =
             |value, threshold| SimpleNotifier::command(format!("{} exceeded {}", value, threshold));
-        builder?.add_threshold(&name, threshold, trigger, factory);
+        builder.add_threshold(&name, threshold, trigger, factory);
     }
 
     println!("\n... Finished building\n");

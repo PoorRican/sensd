@@ -1,7 +1,8 @@
 use std::sync::{Arc, Mutex};
 use crate::action::{Command, CommandType};
+use crate::errors::Result;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::IOEvent;
+use crate::io::{IOEvent, IOType};
 
 /// Simple command for printing a message to stdout
 pub struct SimpleNotifier {
@@ -18,7 +19,7 @@ impl SimpleNotifier {
 }
 
 impl Command for SimpleNotifier {
-    fn execute(&self) -> Option<IOEvent> {
+    fn execute(&self, _value: Option<IOType>) -> Option<Result<IOEvent>> {
         println!("{}", self.msg);
         None
     }

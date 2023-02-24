@@ -39,6 +39,7 @@ fn test_device_log_builder() {
         &ID,
         &Some(KIND),
         &DIRECTION,
+        &None,
         None
     );
     let (device, log) = builder.get();
