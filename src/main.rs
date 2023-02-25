@@ -14,7 +14,7 @@ use std::sync::Arc;
 
 use crate::action::{BaseCommandFactory, Comparison, SimpleNotifier, GPIOCommand, IOCommand};
 use crate::builders::ActionBuilder;
-use crate::errors::Result;
+use crate::errors::ErrorType;
 use crate::io::{IODirection, IOKind, IOType};
 use crate::settings::Settings;
 use crate::storage::{Persistent, PollGroup};
@@ -35,7 +35,7 @@ fn init(name: &str) -> PollGroup {
     group
 }
 
-fn main() -> Result<()> {
+fn main() -> Result<(), ErrorType> {
     let mut poller = init("main");
 
     let config = vec![

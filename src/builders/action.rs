@@ -1,7 +1,7 @@
 use std::ops::DerefMut;
 use crate::action::{BaseCommandFactory, Comparison, Publisher, PublisherInstance,
                     ThresholdNotifier};
-use crate::errors::{ErrorKind, Error, Result};
+use crate::errors::{ErrorKind, Error, ErrorType};
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{DeferredDevice, DeviceType, IOType, DeviceWrapper};
 
@@ -23,7 +23,7 @@ impl ActionBuilder {
     /// `Err` is returned if passed device is not input.
     /// # Args
     /// - device: Device to add pub/subs. Should be Input
-    pub fn new(device: DeferredDevice) -> Result<Self> {
+    pub fn new(device: DeferredDevice) -> Result<Self, ErrorType> {
         if device.is_output() {
             return Err(Error::new(ErrorKind::DeviceError, "Passed device is output. Expected input."))
         }

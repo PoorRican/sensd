@@ -7,7 +7,7 @@ use std::io::{BufReader, BufWriter};
 use std::ops::Deref;
 use std::sync::{Arc, Mutex, Weak};
 
-use crate::errors::{Error, ErrorKind, Result};
+use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::{writable_or_create, Deferred};
 use crate::io::{IOEvent, IdType, DeviceType, DeferredDevice, DeviceTraits};
 use crate::settings::Settings;
@@ -85,7 +85,7 @@ impl OwnedLog {
 }
 
 impl MappedCollection<IOEvent, DateTime<Utc>> for OwnedLog {
-    fn push(&mut self, key: DateTime<Utc>, data: IOEvent) -> Result<&mut IOEvent> {
+    fn push(&mut self, key: DateTime<Utc>, data: IOEvent) -> Result<&mut IOEvent, ErrorType> {
         self.log.push(key, data)
     }
 
@@ -108,7 +108,7 @@ impl MappedCollection<IOEvent, DateTime<Utc>> for OwnedLog {
 
 // Implement save/load operations for `LogType`
 impl Persistent for OwnedLog {
-    fn save(&self, path: &Option<String>) -> Result<()> {
+    fn save(&self, path: &Option<String>) -> Result<(), ErrorType> {
         if self.log.is_empty() {
             Err(Error::new(
                 ErrorKind::ContainerEmpty,
@@ -130,7 +130,7 @@ impl Persistent for OwnedLog {
         }
     }
 
-    fn load(&mut self, path: &Option<String>) -> Result<()> {
+    fn load(&mut self, path: &Option<String>) -> Result<(), ErrorType> {
         if self.log.is_empty() {
             let file = File::open(self.full_path(path).deref())?;
             let reader = BufReader::new(file);
@@ -173,7 +173,7 @@ mod tests {
     use chrono::Utc;
     use crate::builders::DeviceLogBuilder;
     use crate::helpers::Deferred;
-    use crate::io::{Device, IOKind, IdType, DeviceType, IODirection};
+    use crate::io::{Device, IOKind, IdType, DeviceType, IODirection, IOType};
     use crate::storage::{MappedCollection, OwnedLog, Persistent};
     use std::path::Path;
     use std::time::Duration;
@@ -184,8 +184,8 @@ mod tests {
         for _ in 0..count {
             let binding = device.lock().unwrap();
             let event = match binding.deref() {
-                DeviceType::Input(inner) => inner.generate_event(Utc::now(), None),
-                DeviceType::Output(inner) => inner.generate_event(Utc::now(), None),
+                DeviceType::Input(inner) => inner.generate_event(IOType::default()),
+                DeviceType::Output(inner) => inner.generate_event(IOType::default()),
             };
             log.lock().unwrap().push(event.timestamp, event).unwrap();
             thread::sleep(Duration::from_nanos(1)); // add delay so that we don't finish too quickly

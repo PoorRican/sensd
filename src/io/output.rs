@@ -1,5 +1,5 @@
 use crate::action::{Command, GPIOCommand};
-use crate::errors;
+use crate::errors::ErrorType;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{DeviceMetadata, IODirection, IOEvent, IOKind, IdType, Device, IOType, DeviceType, no_internal_closure};
 use crate::storage::{MappedCollection, OwnedLog};
@@ -68,7 +68,7 @@ impl Device for GenericOutput {
 
 impl GenericOutput {
     /// Return a mock value
-    pub fn tx(&self, value: IOType) -> errors::Result<IOEvent> {
+    pub fn tx(&self, value: IOType) -> Result<IOEvent, ErrorType> {
         // Execute GPIO command
         if let Some(command) = &self.command {
             command.execute(Some(value)).unwrap();
@@ -79,7 +79,7 @@ impl GenericOutput {
 
     /// Primary interface method during polling.
     /// Calls `tx()`, updates cached state, and saves to log.
-    pub fn write(&mut self, value: IOType) -> errors::Result<IOEvent> {
+    pub fn write(&mut self, value: IOType) -> Result<IOEvent, ErrorType> {
         let event = self.tx(value).expect("Error returned by `tx()`");
 
         // update cached state

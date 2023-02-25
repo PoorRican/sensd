@@ -4,7 +4,7 @@ use std::sync::Arc;
 use crate::action::{IOCommand, PublisherInstance};
 use crate::builders::DeviceLogBuilder;
 use crate::helpers::Deferred;
-use crate::errors::Result;
+use crate::errors::ErrorType;
 use crate::helpers::check_results;
 use crate::io::{IdType, IOKind, DeviceContainer, IOEvent, DeviceType, IODirection};
 use crate::settings::Settings;
@@ -34,8 +34,8 @@ pub struct PollGroup {
 impl PollGroup {
     /// Iterate through container once. Call `get_event()` on each value.
     /// Update according to the lowest rate.
-    pub fn poll(&mut self) -> std::result::Result<Vec<Result<IOEvent>>, ()> {
-        let mut results: Vec<Result<IOEvent>> = Vec::new();
+    pub fn poll(&mut self) -> Result<Vec<Result<IOEvent, ErrorType>>, ()> {
+        let mut results: Vec<Result<IOEvent, ErrorType>> = Vec::new();
         let next_execution = self.last_execution + self.settings.interval;
 
         if next_execution <= Utc::now() {
@@ -83,7 +83,7 @@ impl PollGroup {
         kind: &Option<IOKind>,
         direction: &IODirection,
         command: &IOCommand,
-    ) -> Result<Deferred<DeviceType>> {
+    ) -> Result<Deferred<DeviceType>, ErrorType> {
         // variable allowed to go out-of-scope because `poller` owns reference
         let settings = Some(self.settings.clone());
 
@@ -111,7 +111,7 @@ impl PollGroup {
     /// Builds multiple input objects and their respective `OwnedLog` containers.
     /// # Args:
     /// Single array should be any sequence of tuples containing a name literal, an `IdType`, and an `IOKind`
-    pub fn add_devices(&mut self, arr: &[(&str, IdType, IOKind, IODirection, IOCommand)]) -> Result<()> {
+    pub fn add_devices(&mut self, arr: &[(&str, IdType, IOKind, IODirection, IOCommand)]) -> Result<(), ErrorType> {
         let mut results = Vec::default();
         for (name, id, kind, direction, command) in arr.iter().to_owned() {
             let result = self.build_device(name, id, &Some(*kind), direction, command);
@@ -129,7 +129,7 @@ impl PollGroup {
     /// # Notes
     /// This works because each log container should have it's own name upon initialization
     /// from hardcoded input devices.
-    fn load_logs(&self, path: &Option<String>) -> Result<()> {
+    fn load_logs(&self, path: &Option<String>) -> Result<(), ErrorType> {
         let mut results = Vec::new();
         for log in self.logs.iter() {
             let result = log.lock().unwrap().load(path);
@@ -142,7 +142,7 @@ impl PollGroup {
     /// # Notes
     /// This works because each log container should have it's own name upon initialization
     /// from hardcoded input devices.
-    fn save_logs(&self, path: &Option<String>) -> Result<()> {
+    fn save_logs(&self, path: &Option<String>) -> Result<(), ErrorType> {
         let mut results = Vec::new();
         for log in self.logs.iter() {
             let result = log.lock().unwrap().save(path);
@@ -155,12 +155,12 @@ impl PollGroup {
 /// Only save and load log data since PollGroup is statically initialized
 /// If `&None` is given to either methods, then current directory is used.
 impl Persistent for PollGroup {
-    fn save(&self, path: &Option<String>) -> Result<()> {
+    fn save(&self, path: &Option<String>) -> Result<(), ErrorType> {
         let results = &[self.save_logs(path)];
         check_results(results)
     }
 
-    fn load(&mut self, path: &Option<String>) -> Result<()> {
+    fn load(&mut self, path: &Option<String>) -> Result<(), ErrorType> {
         let results = &[self.load_logs(path)];
         check_results(results)
     }

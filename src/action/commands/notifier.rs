@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 use crate::action::{Command, CommandType};
-use crate::errors::Result;
+use crate::errors::ErrorType;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{IOEvent, IOType};
 
@@ -19,9 +19,9 @@ impl SimpleNotifier {
 }
 
 impl Command for SimpleNotifier {
-    fn execute(&self, _value: Option<IOType>) -> Option<Result<IOEvent>> {
+    fn execute(&self, _value: Option<IOType>) -> Result<Option<IOEvent>, ErrorType> {
         println!("{}", self.msg);
-        None
+        Ok(None)
     }
 }
 

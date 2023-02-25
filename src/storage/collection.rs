@@ -1,4 +1,4 @@
-use crate::errors;
+use crate::errors::ErrorType;
 use crate::io::IdTraits;
 
 /// Define a basic interface to interact with underlying data.
@@ -10,7 +10,7 @@ use crate::io::IdTraits;
 pub trait MappedCollection<T, K: IdTraits> {
     /// Add a key-value pair to the collection and return a boolean indicating if the addition was successful.
     /// If the key already existed, then `false` is returned.
-    fn push(&mut self, key: K, data: T) -> errors::Result<&mut T>;
+    fn push(&mut self, key: K, data: T) -> Result<&mut T, ErrorType>;
 
     /// Access object by key
     /// Since key might not exist, an option is returned.

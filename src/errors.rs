@@ -1,7 +1,7 @@
 use std::error::Error as _Error;
 use std::fmt;
 
-pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+pub type ErrorType = Box<dyn _Error>;
 
 #[derive(Debug)]
 pub enum ErrorKind {
@@ -23,7 +23,7 @@ pub struct Error {
 }
 
 impl Error {
-    pub fn new(kind: ErrorKind, msg: &str) -> Box<dyn _Error> {
+    pub fn new(kind: ErrorKind, msg: &str) -> ErrorType {
         let message = String::from(msg);
         Box::new(Error { kind, message })
     }

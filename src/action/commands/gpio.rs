@@ -1,7 +1,7 @@
 use std::ops::Deref;
 use crate::action::{Command, CommandType, IOCommand};
 use crate::io::{DeferredDevice, Device, DeviceType, IOEvent, IOType, DeviceTraits};
-use crate::errors::{Result, Error, ErrorKind};
+use crate::errors::{Error, ErrorKind, ErrorType};
 
 pub struct GPIOCommand {
     func: IOCommand,
@@ -19,7 +19,7 @@ impl GPIOCommand {
     /// # Returns
     /// If internal function is `IOCommand::Input`, then the value that is read from device is returned.
     /// Otherwise, if `IOCommand::Output`, then `None` is returned.
-    pub fn execute(&self, value: Option<IOType>) -> Result<Option<IOType>> {
+    pub fn execute(&self, value: Option<IOType>) -> Result<Option<IOType>, ErrorType> {
         match self.func {
             IOCommand::Input(inner) => {
                 // throw warning for unused value
