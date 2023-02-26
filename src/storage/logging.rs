@@ -169,8 +169,6 @@ impl std::fmt::Debug for OwnedLog {
 // Testing
 #[cfg(test)]
 mod tests {
-
-    use chrono::Utc;
     use crate::builders::DeviceLogBuilder;
     use crate::helpers::Deferred;
     use crate::io::{Device, IOKind, IdType, DeviceType, IODirection, IOType};
@@ -179,6 +177,7 @@ mod tests {
     use std::time::Duration;
     use std::{fs, thread};
     use std::ops::Deref;
+    use crate::action::IOCommand;
 
     fn add_to_log(device: &Deferred<DeviceType>, log: &Deferred<OwnedLog>, count: usize) {
         for _ in 0..count {
@@ -197,6 +196,7 @@ mod tests {
         const SENSOR_NAME: &str = "test";
         const ID: IdType = 32;
         const COUNT: usize = 10;
+        const COMMAND: IOCommand = IOCommand::Input(move || IOType::default());
 
         /* NOTE: More complex `IOEvent` objects *could* be checked, but we are trusting `serde`.
         These tests only count the number of `IOEvent`'s added. */
@@ -205,7 +205,7 @@ mod tests {
         // test save
         {
             let builder = DeviceLogBuilder::new(SENSOR_NAME, &ID, &Some(IOKind::Flow),
-                                                &IODirection::Input, &None, None);
+                                                &IODirection::Input, &COMMAND, None);
             let (device, log) = builder.get();
             add_to_log(&device, &log, COUNT);
             let _log = log.lock().unwrap();
@@ -220,8 +220,9 @@ mod tests {
         // test load
         // build back up then load
         {
+            let command = IOCommand::Input(move || IOType::default());
             let builder = DeviceLogBuilder::new(SENSOR_NAME, &ID, &Some(IOKind::Flow),
-                                                &IODirection::Input, &None, None);
+                                                &IODirection::Input, &COMMAND, None);
             let (_device, log) = builder.get();
             let mut _log = log.lock().unwrap();
             _log.load(&None).unwrap();

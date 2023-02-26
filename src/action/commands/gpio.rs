@@ -1,6 +1,5 @@
-use std::ops::Deref;
-use crate::action::{Command, CommandType, IOCommand};
-use crate::io::{DeferredDevice, Device, DeviceType, IOEvent, IOType, DeviceTraits};
+use crate::action::IOCommand;
+use crate::io::{DeferredDevice, IOType, DeviceTraits};
 use crate::errors::{Error, ErrorKind, ErrorType};
 
 pub struct GPIOCommand {
@@ -8,8 +7,10 @@ pub struct GPIOCommand {
 }
 
 impl GPIOCommand {
-    pub fn new(func: IOCommand, device: DeferredDevice) -> Self {
-        check_alignment(&func, device.clone());
+    pub fn new(func: IOCommand, device: Option<DeferredDevice>) -> Self {
+        if let Some(device) = device {
+            check_alignment(&func, device.clone()).unwrap();
+        }
 
         Self { func }
     }
@@ -41,12 +42,16 @@ impl GPIOCommand {
 }
 
 /// Panic if command and device are not aligned
-fn check_alignment(command: &IOCommand, device: DeferredDevice) {
-    assert_eq!(command.direction(), device.direction())
+fn check_alignment(command: &IOCommand, device: DeferredDevice) -> Result<(), ErrorType> {
+    let aligned = command.direction() == device.direction();
+    match aligned {
+        true => Ok(()),
+        false => Err(misconfigured_error())
+    }
 }
 
 /// Generate an error for when command type does not match device type
-fn misconfigured_error() -> Box<dyn std::error::Error> {
+fn misconfigured_error() -> ErrorType {
     Error::new(ErrorKind::CommandError, "Misconfigured device! Device and command type do not match.")
 }
 

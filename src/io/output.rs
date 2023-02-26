@@ -1,4 +1,4 @@
-use crate::action::{Command, GPIOCommand};
+use crate::action::GPIOCommand;
 use crate::errors::ErrorType;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{DeviceMetadata, IODirection, IOEvent, IOKind, IdType, Device, IOType, DeviceType, no_internal_closure};
@@ -103,18 +103,24 @@ impl GenericOutput {
 
 #[cfg(test)]
 mod tests {
+    use crate::action::{GPIOCommand, IOCommand};
     use crate::io::{Device, GenericOutput, IOType};
+
+    /// Dummy output command for testing.
+    /// Accepts value and returns `Ok(())`
+    const COMMAND: IOCommand = IOCommand::Output(move |val| Ok(()));
 
     #[test]
     fn test_tx() {
         let value = IOType::Binary(true);
-        let output = GenericOutput::default();
+        let mut output = GenericOutput::default();
+        output.command = Some(GPIOCommand::new(COMMAND, None));
 
-        let new = output.tx(value);
+        let event = output.tx(value).expect("Unknown error occurred in `tx()`");
 
-        assert_eq!(value, new.data.value);
-        assert_eq!(output.kind(), new.data.kind);
-        assert_eq!(output.direction(), new.direction);
+        assert_eq!(value, event.data.value);
+        assert_eq!(output.kind(), event.data.kind);
+        assert_eq!(output.direction(), event.direction);
     }
 
     #[test]
@@ -122,6 +128,7 @@ mod tests {
     fn test_write() {
         let value = IOType::Binary(true);
         let mut output = GenericOutput::default();
+        output.command = Some(GPIOCommand::new(COMMAND, None));
 
         // check `state` before `::write()`
         assert_ne!(value, *output.state());

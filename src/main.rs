@@ -12,7 +12,7 @@ mod units;
 
 use std::sync::Arc;
 
-use crate::action::{BaseCommandFactory, Comparison, SimpleNotifier, GPIOCommand, IOCommand};
+use crate::action::{BaseCommandFactory, Comparison, SimpleNotifier, IOCommand};
 use crate::builders::ActionBuilder;
 use crate::errors::ErrorType;
 use crate::io::{IODirection, IOKind, IOType};

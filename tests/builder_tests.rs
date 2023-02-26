@@ -1,5 +1,5 @@
 use std::ops::Deref;
-use sensd::action::{BaseCommandFactory, Comparison, SimpleNotifier};
+use sensd::action::{BaseCommandFactory, Comparison, IOCommand, SimpleNotifier};
 use sensd::helpers::*;
 use sensd::builders::{ActionBuilder, DeviceLogBuilder};
 use sensd::io::{DeviceType, GenericInput, IdType, IODirection, IOKind, IOType, DeviceTraits};
@@ -34,12 +34,13 @@ fn test_device_log_builder() {
     const DIRECTION: IODirection = IODirection::Input;
     const KIND: IOKind = IOKind::Unassigned;
 
+    let command = IOCommand::Input(move || IOType::default());
     let builder = DeviceLogBuilder::new(
         NAME,
         &ID,
         &Some(KIND),
         &DIRECTION,
-        &None,
+        &command,
         None
     );
     let (device, log) = builder.get();

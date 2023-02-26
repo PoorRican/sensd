@@ -22,7 +22,7 @@ impl SubscriberStrategy for PIDMonitor {
     fn name(&self) -> String {
         self.name.clone()
     }
-    fn evaluate(&mut self, data: &IOEvent) {
+    fn evaluate(&mut self, _data: &IOEvent) {
         todo!()
         // maintain PID
     }

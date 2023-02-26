@@ -62,7 +62,7 @@ impl SubscriberStrategy for ThresholdNotifier {
             &Comparison::LT => value <= self.threshold,
         };
         if exceeded {
-            (self.factory)(value, self.threshold).execute(None);
+            let _ = (self.factory)(value, self.threshold).execute(None);
         }
     }
 

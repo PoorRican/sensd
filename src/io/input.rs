@@ -1,4 +1,4 @@
-use crate::action::{Command, GPIOCommand, Publisher, PublisherInstance};
+use crate::action::{GPIOCommand, Publisher, PublisherInstance};
 use crate::errors::ErrorType;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::types::DeviceType;
@@ -117,27 +117,31 @@ impl GenericInput {
 // Testing
 #[cfg(test)]
 mod tests {
-    use chrono::Utc;
-    use crate::action::PublisherInstance;
+    use crate::action::{GPIOCommand, IOCommand, PublisherInstance};
     use crate::helpers::Deferrable;
     use crate::io::{Device, GenericInput, IOType};
 
     const DUMMY_OUTPUT: IOType = IOType::Float(1.2);
+    const COMMAND: IOCommand = IOCommand::Input(move || DUMMY_OUTPUT);
 
     #[test]
     fn test_rx() {
-        let input = GenericInput::default();
-        assert_eq!(input.rx(), DUMMY_OUTPUT);
+        let mut input = GenericInput::default();
+
+        input.command = Some(GPIOCommand::new(COMMAND, None));
+
+        let event = input.rx().unwrap();
+        assert_eq!(event.data.value, DUMMY_OUTPUT);
     }
 
     #[test]
     fn test_read() {
         let mut input = GenericInput::default();
 
-        let time = Utc::now();
+        input.command = Some(GPIOCommand::new(COMMAND, None));
+
         let event = input.read().unwrap();
         assert_eq!(event.data.value, DUMMY_OUTPUT);
-        assert_eq!(event.timestamp, time);
         assert_eq!(event.data.kind, input.kind());
 
         // TODO: attach log and assert that IOEvent has been added to log

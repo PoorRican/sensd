@@ -1,4 +1,4 @@
-use std::ops::{Deref, DerefMut};
+use std::ops::DerefMut;
 use crate::action::{IOCommand, GPIOCommand};
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{
@@ -70,9 +70,9 @@ impl DeviceLogBuilder {
     /// Create a `GPIOCommand` from `command` field.
     ///
     /// # Notes
-    /// Alignment of command and device type should be checked in `::new()` by `check_command_alignment()`
+    /// Alignment of command and device type is checked in `::new()` by `check_command_alignment()`
     pub fn setup_command(&self) {
-        let gpio = GPIOCommand::new(self.command, self.device.clone());
+        let gpio = GPIOCommand::new(self.command, Some(self.device.clone()));
 
         let mut binding = self.device.lock().unwrap();
         let device = binding.deref_mut();
