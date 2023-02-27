@@ -35,7 +35,7 @@ fn init(name: &str) -> PollGroup {
     group
 }
 
-fn main() -> Result<(), ErrorType> {
+fn setup_poller() -> PollGroup {
     let mut poller = init("main");
 
     let config = vec![
@@ -43,8 +43,10 @@ fn main() -> Result<(), ErrorType> {
         ("second sensor", 1, IOKind::Flow, IODirection::Input, IOCommand::Input(move || IOType::Float(0.5))),
     ];
     poller.add_devices(&config).unwrap();
+    poller
+}
 
-    // build subscribers/commands
+fn build_subscribers(poller: &mut PollGroup) {
     println!("\nBuilding subscribers ...");
 
     for (id, input) in poller.inputs.iter() {
@@ -63,6 +65,12 @@ fn main() -> Result<(), ErrorType> {
     }
 
     println!("\n... Finished building\n");
+
+}
+
+fn main() -> Result<(), ErrorType> {
+    let mut poller = setup_poller();
+    build_subscribers(&mut poller);
 
     // main event loop
     println!("... Beginning polling ...\n");
