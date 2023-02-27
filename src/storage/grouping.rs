@@ -1,7 +1,7 @@
 use std::ops::DerefMut;
 use chrono::{DateTime, Duration, Utc};
 use std::sync::Arc;
-use crate::action::{IOCommand, PublisherInstance};
+use crate::action::{Command, IOCommand, PublisherInstance, Routine};
 use crate::builders::DeviceLogBuilder;
 use crate::helpers::Deferred;
 use crate::errors::ErrorType;
@@ -29,6 +29,7 @@ pub struct PollGroup {
     pub logs: LogContainer,
     pub inputs: DeviceContainer<IdType>,
     pub publishers: Vec<Deferred<PublisherInstance>>,
+    pub scheduled: Vec<Routine>,
 }
 
 impl PollGroup {
@@ -53,6 +54,19 @@ impl PollGroup {
         }
     }
 
+    pub fn check_scheduled(&mut self) {
+        let mut executed = Vec::default();
+        for (index, routine) in self.scheduled.iter().enumerate() {
+            if routine.attempt() {
+                executed.push(index);
+            }
+        }
+        // remove completed
+        for index in executed {
+            self.scheduled.remove(index);
+        }
+    }
+
     /// Constructor for `Poller` struct.
     /// Initialized empty containers.
     pub fn new(name: &str, settings: Option<Arc<Settings>>) -> Self {
@@ -62,6 +76,7 @@ impl PollGroup {
         let inputs = <DeviceContainer<IdType>>::default();
         let logs = Vec::default();
         let publishers = Vec::default();
+        let scheduled = Vec::default();
 
         Self {
             _name: String::from(name),
@@ -69,7 +84,8 @@ impl PollGroup {
             last_execution,
             logs,
             inputs,
-            publishers
+            publishers,
+            scheduled,
         }
     }
 

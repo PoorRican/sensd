@@ -63,7 +63,7 @@ pub trait Device {
     /// device trait objects and any of it's owners (i.e.: `PollGroup`).
     fn generate_event(&self, value: IOType) -> IOEvent {
         let dt = Utc::now();
-        IOEvent::generate(self, dt, value)
+        IOEvent::generate(self.metadata(), dt, value)
     }
 
     fn add_command(&mut self, command: GPIOCommand);

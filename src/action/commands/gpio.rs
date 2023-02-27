@@ -1,5 +1,5 @@
 use crate::action::{Command, IOCommand};
-use crate::io::{DeferredDevice, IOType, DeviceTraits};
+use crate::io::{DeferredDevice, IOType, DeviceTraits, IODirection};
 use crate::errors::{Error, ErrorKind, ErrorType};
 
 pub struct GPIOCommand {
@@ -13,6 +13,13 @@ impl GPIOCommand {
         }
 
         Self { func }
+    }
+
+    pub fn direction(&self) -> IODirection {
+        match self.func {
+            IOCommand::Input(_) => IODirection::Input,
+            IOCommand::Output(_) => IODirection::Output,
+        }
     }
 }
 

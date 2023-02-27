@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::io::types::{IOData, IOType, IdTraits};
-use crate::io::{Device, IODirection, IdType};
+use crate::io::{Device, IODirection, IdType, DeviceMetadata};
 
 /// Encapsulates `IOData` alongside of timestamp and device data
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
@@ -32,12 +32,11 @@ impl IOEvent {
     /// ```
     ///
     /// ```
-    pub fn generate(device: &(impl Device + ?Sized), timestamp: DateTime<Utc>, value: IOType) -> Self {
-        let direction = device.direction();
-        let info = device.metadata();
-        let id = info.id;
+    pub fn generate(metadata: &DeviceMetadata, timestamp: DateTime<Utc>, value: IOType) -> Self {
+        let direction = metadata.direction;
+        let id = metadata.id;
         let data = IOData {
-            kind: info.kind.clone(),
+            kind: metadata.kind,
             value,
         };
         IOEvent {

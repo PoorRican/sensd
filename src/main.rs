@@ -68,6 +68,23 @@ fn build_subscribers(poller: &mut PollGroup) {
 
 }
 
+fn poll(poller: &mut PollGroup) -> Result<(), ErrorType> {
+    match poller.poll() {
+        Ok(_) => match poller.save(&None) {
+            Ok(_) => (),
+            Err(t) => {
+                return Err(t);
+            }
+        },
+        _ => (),
+    };
+    Ok(())
+}
+
+fn attempt_scheduled(poller: &mut PollGroup) {
+    poller.check_scheduled()
+}
+
 fn main() -> Result<(), ErrorType> {
     let mut poller = setup_poller();
     build_subscribers(&mut poller);
@@ -75,16 +92,11 @@ fn main() -> Result<(), ErrorType> {
     // main event loop
     println!("... Beginning polling ...\n");
     loop {
-        let polled = poller.poll();
-        match polled {
-            Ok(_) => match poller.save(&None) {
-                Ok(_) => (),
-                Err(t) => {
-                    return Err(t);
-                }
-            },
-            _ => (),
-        };
+
+        poll(&mut poller).expect("Error occurred during polling");
+
+        attempt_scheduled(&mut poller);
+
         std::thread::sleep(FREQUENCY);
     }
 }
