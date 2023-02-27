@@ -220,7 +220,6 @@ mod tests {
         // test load
         // build back up then load
         {
-            let command = IOCommand::Input(move || IOType::default());
             let builder = DeviceLogBuilder::new(SENSOR_NAME, &ID, &Some(IOKind::Flow),
                                                 &IODirection::Input, &COMMAND, None);
             let (_device, log) = builder.get();

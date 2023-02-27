@@ -13,12 +13,12 @@ impl SimpleNotifier {
     pub fn new(msg: String) -> Self {
         Self { msg }
     }
-    pub fn command(msg: String) -> CommandType {
+    pub fn command(msg: String) -> CommandType<IOEvent> {
         Box::new(Self::new(msg))
     }
 }
 
-impl Command for SimpleNotifier {
+impl Command<IOEvent> for SimpleNotifier {
     fn execute(&self, _value: Option<IOType>) -> Result<Option<IOEvent>, ErrorType> {
         println!("{}", self.msg);
         Ok(None)
@@ -26,7 +26,7 @@ impl Command for SimpleNotifier {
 }
 
 impl Deferrable for SimpleNotifier {
-    type Inner = CommandType;
+    type Inner = CommandType<IOEvent>;
     fn deferred(self) -> Deferred<Self::Inner> {
         Arc::new(Mutex::new(Box::new(self)))
     }

@@ -1,7 +1,7 @@
 //! Type aliases for functions and closures to assist `ActionBuilder`.
 //! These aliases allow for strongly structuring the dynamic initialization of subscriber/command instances.
 use crate::action::CommandType;
-use crate::io::{IODirection, IOType};
+use crate::io::{IODirection, IOEvent, IOType};
 
 // Command Factories
 #[derive(Copy, Clone)]
@@ -18,4 +18,4 @@ impl IOCommand {
     }
 }
 
-pub type BaseCommandFactory = fn(IOType, IOType) -> CommandType;
+pub type BaseCommandFactory = fn(IOType, IOType) -> CommandType<IOEvent>;

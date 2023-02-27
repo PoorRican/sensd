@@ -1,4 +1,4 @@
-use crate::action::{GPIOCommand, Publisher, PublisherInstance};
+use crate::action::{Command, GPIOCommand, Publisher, PublisherInstance};
 use crate::errors::ErrorType;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::types::DeviceType;

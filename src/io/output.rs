@@ -1,4 +1,4 @@
-use crate::action::GPIOCommand;
+use crate::action::{Command, GPIOCommand};
 use crate::errors::ErrorType;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{DeviceMetadata, IODirection, IOEvent, IOKind, IdType, Device, IOType, DeviceType, no_internal_closure};
@@ -108,7 +108,7 @@ mod tests {
 
     /// Dummy output command for testing.
     /// Accepts value and returns `Ok(())`
-    const COMMAND: IOCommand = IOCommand::Output(move |val| Ok(()));
+    const COMMAND: IOCommand = IOCommand::Output(move |_| Ok(()));
 
     #[test]
     fn test_tx() {

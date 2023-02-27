@@ -1,4 +1,4 @@
-use crate::action::IOCommand;
+use crate::action::{Command, IOCommand};
 use crate::io::{DeferredDevice, IOType, DeviceTraits};
 use crate::errors::{Error, ErrorKind, ErrorType};
 
@@ -14,13 +14,15 @@ impl GPIOCommand {
 
         Self { func }
     }
+}
 
+impl Command<IOType> for GPIOCommand {
     /// Execute internally stored function.
     ///
     /// # Returns
     /// If internal function is `IOCommand::Input`, then the value that is read from device is returned.
     /// Otherwise, if `IOCommand::Output`, then `None` is returned.
-    pub fn execute(&self, value: Option<IOType>) -> Result<Option<IOType>, ErrorType> {
+    fn execute(&self, value: Option<IOType>) -> Result<Option<IOType>, ErrorType> {
         match self.func {
             IOCommand::Input(inner) => {
                 // throw warning for unused value
