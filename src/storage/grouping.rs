@@ -1,7 +1,7 @@
 use std::ops::DerefMut;
 use chrono::{DateTime, Duration, Utc};
 use std::sync::Arc;
-use crate::action::{Command, IOCommand, PublisherInstance, Routine};
+use crate::action::{IOCommand, PublisherInstance, Routine};
 use crate::builders::DeviceLogBuilder;
 use crate::helpers::Deferred;
 use crate::errors::ErrorType;

@@ -92,7 +92,7 @@ impl Command<IOEvent> for Routine {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{DateTime, Duration, Utc};
+    use chrono::{Duration, Utc};
     use crate::action::{GPIOCommand, IOCommand, Routine};
     use crate::helpers::Deferrable;
     use crate::io::{DeviceMetadata, IOType};
@@ -114,7 +114,7 @@ mod tests {
         unsafe { reset_register(); }
         let metadata = DeviceMetadata::default();
 
-        let mut log = OwnedLog::new(metadata.id, None).deferred();
+        let log = OwnedLog::new(metadata.id, None).deferred();
 
         let func = IOCommand::Output(move |val| unsafe {
             set_register(val);

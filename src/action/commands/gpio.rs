@@ -51,7 +51,7 @@ impl Command<IOType> for GPIOCommand {
 }
 
 /// Panic if command and device are not aligned
-fn check_alignment(command: &IOCommand, device: DeferredDevice) -> Result<(), ErrorType> {
+pub fn check_alignment(command: &IOCommand, device: DeferredDevice) -> Result<(), ErrorType> {
     let aligned = command.direction() == device.direction();
     match aligned {
         true => Ok(()),
@@ -60,7 +60,7 @@ fn check_alignment(command: &IOCommand, device: DeferredDevice) -> Result<(), Er
 }
 
 /// Generate an error for when command type does not match device type
-fn misconfigured_error() -> ErrorType {
+pub fn misconfigured_error() -> ErrorType {
     Error::new(ErrorKind::CommandError, "Misconfigured device! Device and command type do not match.")
 }
 
@@ -68,4 +68,108 @@ fn misconfigured_error() -> ErrorType {
 fn unused_value() {
     const MSG: &str = "Unused value passed when reading input...";
     eprintln!("{}", MSG);
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::action::{IOCommand, check_alignment, GPIOCommand};
+    use crate::helpers::Deferrable;
+    use crate::io::{DeferredDevice, Device, DeviceType, GenericOutput, IdType, IODirection, GenericInput, IOType};
+    use crate::storage::OwnedLog;
+
+    fn make_device(direction: &IODirection) -> DeferredDevice {
+        let name = "";
+        let id = IdType::default();
+        let log = OwnedLog::new(id, None).deferred();
+
+        let device = match direction {
+            IODirection::Input => {
+                DeviceType::Input(GenericInput::new(String::from(name), id, None, log))
+            }
+            IODirection::Output => {
+                DeviceType::Output(GenericOutput::new(String::from(name), id, None, log))
+            }
+        };
+        device.deferred()
+    }
+
+    #[test]
+    fn test_check_alignment() {
+        {
+            let direction = IODirection::Input;
+            let device = make_device(&direction);
+
+            let command = IOCommand::Input(move || IOType::Float(0.0));
+
+            let result = check_alignment(&command, device);
+            match result {
+                Ok(_) => assert!(true),
+                Err(_) => assert!(false)
+            }
+        }
+        {
+            let direction = IODirection::Output;
+            let device = make_device(&direction);
+
+            let command = IOCommand::Output(move |_| Ok(()));
+
+            let result = check_alignment(&command, device);
+            match result {
+                Ok(_) => assert!(true),
+                Err(_) => assert!(false)
+            }
+        }
+
+
+        {
+            let direction = IODirection::Output;
+            let device = make_device(&direction);
+
+            let command = IOCommand::Input(move || IOType::Float(0.0));
+
+            let result = check_alignment(&command, device);
+            match result {
+                Ok(_) => assert!(false),
+                Err(_) => assert!(true)
+            }
+        }
+        {
+            let direction = IODirection::Input;
+            let device = make_device(&direction);
+
+            let command = IOCommand::Output(move |_| Ok(()));
+
+            let result = check_alignment(&command, device);
+            match result {
+                Ok(_) => assert!(false),
+                Err(_) => assert!(true)
+            }
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    /// Assert that program panics when device and IOCommand are misaligned
+    /// This test case specifically uses an input device and an output command.
+    fn test_alignment_i_o() {
+        let direction = IODirection::Input;
+        let device = make_device(&direction);
+
+        let command = IOCommand::Output(move |_| Ok(()));
+
+        GPIOCommand::new(command, Some(device));
+    }
+
+    #[test]
+    #[should_panic]
+    /// Assert that program panics when device and IOCommand are misaligned
+    /// This test case specifically uses an output device and an input command.
+    fn test_alignment_o_i() {
+        let direction = IODirection::Output;
+        let device = make_device(&direction);
+
+        let command = IOCommand::Input(move || IOType::default());
+
+        GPIOCommand::new(command, Some(device));
+    }
 }

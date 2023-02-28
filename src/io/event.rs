@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::io::types::{IOData, IOType, IdTraits};
-use crate::io::{Device, IODirection, IdType, DeviceMetadata};
+use crate::io::{IODirection, IdType, DeviceMetadata};
 
 /// Encapsulates `IOData` alongside of timestamp and device data
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]

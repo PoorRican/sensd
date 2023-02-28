@@ -50,7 +50,7 @@ impl Device for GenericOutput {
     {
         let kind = kind.unwrap_or_default();
         let state = IOType::default();
-        let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Input);
+        let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Output);
 
         let command = None;
 
