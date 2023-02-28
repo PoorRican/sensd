@@ -52,7 +52,7 @@ fn build_subscribers(poller: &mut PollGroup) {
     for (id, input) in poller.inputs.iter() {
         println!("\n- Setting up builder ...");
 
-        let mut builder = ActionBuilder::new(input.clone())?;
+        let mut builder = ActionBuilder::new(input.clone()).unwrap();
 
         println!("- Initializing subscriber ...");
 

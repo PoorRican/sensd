@@ -1,4 +1,4 @@
-use std::sync::{Mutex, Weak};
+use std::sync::{Arc, Mutex, Weak};
 use chrono::{DateTime, Utc};
 use crate::action::{GPIOCommand, Command};
 use crate::errors::ErrorType;
@@ -32,6 +32,16 @@ pub struct Routine {
 }
 
 impl Routine {
+    pub fn new(
+        timestamp: DateTime<Utc>,
+        metadata: DeviceMetadata,
+        value: IOType,
+        log: Deferred<OwnedLog>,
+        command: GPIOCommand) -> Self
+    {
+        let log = Arc::downgrade(&log);
+        Self { timestamp, metadata, value, log, command }
+    }
     /// Main polling function
     ///
     /// Checks scheduled time, then executes command. `IOEvent` is automatically added to device log.
@@ -70,7 +80,60 @@ impl Routine {
 
 impl Command<IOEvent> for Routine {
     fn execute(&self, value: Option<IOType>) -> Result<Option<IOEvent>, ErrorType> {
-        let event = IOEvent::generate(&self.metadata, self.timestamp, value.unwrap());
-        Ok(Some(event))
+        match self.command.execute(value) {
+            Ok(_) => {
+                let event = IOEvent::generate(&self.metadata, self.timestamp, value.unwrap());
+                Ok(Some(event))
+            }
+            Err(e) => Err(e)
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use chrono::{DateTime, Duration, Utc};
+    use crate::action::{GPIOCommand, IOCommand, Routine};
+    use crate::helpers::Deferrable;
+    use crate::io::{DeviceMetadata, IOType};
+    use crate::storage::{MappedCollection, OwnedLog};
+
+    const REGISTER_DEFAULT: IOType = IOType::Binary(false);
+    static mut REGISTER: IOType = REGISTER_DEFAULT;
+
+    unsafe fn reset_register() {
+        REGISTER = REGISTER_DEFAULT;
+    }
+
+    unsafe fn set_register(val: IOType) {
+        REGISTER = val;
+    }
+
+    #[test]
+    fn test_attempt() {
+        unsafe { reset_register(); }
+        let metadata = DeviceMetadata::default();
+
+        let mut log = OwnedLog::new(metadata.id, None).deferred();
+
+        let func = IOCommand::Output(move |val| unsafe {
+            set_register(val);
+            Ok(())
+        });
+        let command = GPIOCommand::new(func, None);
+
+        let timestamp = Utc::now() + Duration::microseconds(5);
+        let value = IOType::Binary(true);
+        let routine = Routine::new(timestamp, metadata, value, log.clone(), command);
+
+        unsafe { assert_ne!(REGISTER, value); }
+
+        while Utc::now() < timestamp {
+            assert_eq!(false, routine.attempt());
+        }
+
+        assert!(routine.attempt());
+        unsafe { assert_eq!(REGISTER, value); }
+        assert_eq!(log.try_lock().unwrap().length(), 1);
     }
 }

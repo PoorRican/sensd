@@ -8,7 +8,7 @@ use std::ops::Deref;
 use std::sync::{Arc, Mutex, Weak};
 
 use crate::errors::{Error, ErrorKind, ErrorType};
-use crate::helpers::{writable_or_create, Deferred};
+use crate::helpers::{writable_or_create, Deferred, Deferrable};
 use crate::io::{IOEvent, IdType, DeviceType, DeferredDevice, DeviceTraits};
 use crate::settings::Settings;
 use crate::storage::{Container, MappedCollection, Persistent};
@@ -152,6 +152,13 @@ impl Persistent for OwnedLog {
                 "Cannot load objects into non-empty container",
             ))
         }
+    }
+}
+
+impl Deferrable for OwnedLog {
+    type Inner = OwnedLog;
+    fn deferred(self) -> Deferred<Self::Inner> {
+        Arc::new(Mutex::new(self))
     }
 }
 
