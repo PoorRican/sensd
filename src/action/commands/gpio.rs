@@ -72,10 +72,21 @@ fn unused_value() {
 
 #[cfg(test)]
 mod tests {
-    use crate::action::{IOCommand, check_alignment, GPIOCommand};
+    use crate::action::{IOCommand, check_alignment, GPIOCommand, Command};
     use crate::helpers::Deferrable;
     use crate::io::{DeferredDevice, Device, DeviceType, GenericOutput, IdType, IODirection, GenericInput, IOType};
     use crate::storage::OwnedLog;
+
+    const REGISTER_DEFAULT: IOType = IOType::PosInt8(255);
+    static mut REGISTER: IOType = REGISTER_DEFAULT;
+
+    unsafe fn reset_register() {
+        REGISTER = REGISTER_DEFAULT;
+    }
+
+    unsafe fn set_register(val: IOType) {
+        REGISTER = val;
+    }
 
     fn make_device(direction: &IODirection) -> DeferredDevice {
         let name = "";
@@ -171,5 +182,52 @@ mod tests {
         let command = IOCommand::Input(move || IOType::default());
 
         GPIOCommand::new(command, Some(device));
+    }
+
+    #[test]
+    fn test_execute() {
+        {
+            unsafe { reset_register(); }
+
+            let func = IOCommand::Input(move || unsafe {
+                REGISTER
+            });
+            let command = GPIOCommand::new(func, None);
+
+            match command.execute(None) {
+                Ok(tentative) => unsafe {
+                    match tentative {
+                        Some(inner) => assert_eq!(REGISTER, inner),
+                        None => assert!(false)
+                    }
+                },
+                Err(_) => assert!(false)
+            }
+
+        }
+        {
+            unsafe { reset_register(); }
+
+            let func = IOCommand::Output(move |val| unsafe {
+                set_register(val);
+                Ok(())
+            });
+            let command = GPIOCommand::new(func, None);
+            let value = IOType::Binary(true);
+
+            unsafe { assert_ne!(REGISTER, value); }
+
+            match command.execute(Some(value)) {
+                Ok(tentative) => {
+                    match tentative {
+                        Some(_) => assert!(false),
+                        None => ()
+                    }
+                },
+                Err(_) => assert!(false)
+            }
+
+            unsafe { assert_eq!(REGISTER, value); }
+        }
     }
 }
