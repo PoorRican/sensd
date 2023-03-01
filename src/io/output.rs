@@ -2,7 +2,7 @@ use crate::action::{Command, GPIOCommand};
 use crate::errors::ErrorType;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{DeviceMetadata, IODirection, IOEvent, IOKind, IdType, Device, IOType, DeviceType, no_internal_closure};
-use crate::storage::{MappedCollection, OwnedLog};
+use crate::storage::{HasLog, OwnedLog};
 use std::sync::{Arc, Mutex};
 
 
@@ -10,7 +10,7 @@ pub struct GenericOutput {
     metadata: DeviceMetadata,
     // cached state
     state: IOType,
-    pub log: Deferred<OwnedLog>,
+    log: Deferred<OwnedLog>,
     command: Option<GPIOCommand>,
 }
 impl Default for GenericOutput {
@@ -85,11 +85,8 @@ impl GenericOutput {
         // update cached state
         self.state = event.data.value;
 
-        // add to log
-        self.log
-            .lock()
-            .unwrap()
-            .push(event.timestamp, event.clone())?;
+        self.add_to_log(event);
+
         Ok(event)
     }
 
@@ -97,6 +94,12 @@ impl GenericOutput {
     /// `state` field should be updated by `write()`
     pub fn state(&self) -> &IOType {
         &self.state
+    }
+}
+
+impl HasLog for GenericOutput {
+    fn log(&self) -> Deferred<OwnedLog> {
+        self.log.clone()
     }
 }
 

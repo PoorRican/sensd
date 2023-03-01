@@ -21,6 +21,16 @@ pub type LogContainer = Vec<Deferred<OwnedLog>>;
 
 const FILETYPE: &str = ".json";
 
+pub trait HasLog {
+    fn log(&self) -> Deferred<OwnedLog>;
+
+    fn add_to_log(&self, event: IOEvent) {
+        let log = self.log();
+        let mut binding = log.lock().unwrap();
+        binding.push(event.timestamp, event).expect("Unknown error when adding event to log");
+    }
+}
+
 // Encapsulates a `LogType` alongside a weak reference to a `Device`
 #[derive(Serialize, Deserialize, Default)]
 pub struct OwnedLog {

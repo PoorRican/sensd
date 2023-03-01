@@ -4,7 +4,7 @@ use crate::action::{GPIOCommand, Command};
 use crate::errors::ErrorType;
 use crate::helpers::Deferred;
 use crate::io::{IOEvent, IOType, DeviceMetadata};
-use crate::storage::{MappedCollection, OwnedLog};
+use crate::storage::{HasLog, OwnedLog};
 
 /// A `Command` that should be executed at a scheduled time *outside* of the normal event loop.
 ///
@@ -56,7 +56,7 @@ impl Routine {
             match result {
                 Ok(event) => {
                     let event = event.unwrap();
-                    self.add_to_log(event);
+                    let _ = self.add_to_log(event);
                     return true
                 }
                 Err(e) => {
@@ -67,14 +67,6 @@ impl Routine {
 
         // return false by default
         false
-    }
-
-    fn add_to_log(&self, event: IOEvent) {
-        let log: Deferred<OwnedLog> = self.log.upgrade().unwrap();
-        // TODO: This will panic in a multi-threaded context, should `IOEvents` be sent to a queue?
-        //      Event will then be added to device log *by* device during polling
-        log.try_lock().unwrap().push(event.timestamp, event)
-            .expect("Unknown error occurred when attempting to add to device log.");
     }
 }
 
@@ -87,6 +79,12 @@ impl Command<IOEvent> for Routine {
             }
             Err(e) => Err(e)
         }
+    }
+}
+
+impl HasLog for Routine {
+    fn log(&self) -> Deferred<OwnedLog> {
+        self.log.upgrade().expect("Device has no log")
     }
 }
 
