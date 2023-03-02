@@ -1,10 +1,10 @@
 use std::ops::DerefMut;
 use chrono::{DateTime, Duration, Utc};
 use std::sync::Arc;
-use crate::action::PublisherInstance;
+use crate::action::{IOCommand, PublisherInstance, Routine};
 use crate::builders::DeviceLogBuilder;
 use crate::helpers::Deferred;
-use crate::errors::Result;
+use crate::errors::ErrorType;
 use crate::helpers::check_results;
 use crate::io::{IdType, IOKind, DeviceContainer, IOEvent, DeviceType, IODirection};
 use crate::settings::Settings;
@@ -29,20 +29,21 @@ pub struct PollGroup {
     pub logs: LogContainer,
     pub inputs: DeviceContainer<IdType>,
     pub publishers: Vec<Deferred<PublisherInstance>>,
+    pub scheduled: Vec<Routine>,
 }
 
 impl PollGroup {
     /// Iterate through container once. Call `get_event()` on each value.
     /// Update according to the lowest rate.
-    pub fn poll(&mut self) -> std::result::Result<Vec<Result<IOEvent>>, ()> {
-        let mut results: Vec<Result<IOEvent>> = Vec::new();
+    pub fn poll(&mut self) -> Result<Vec<Result<IOEvent, ErrorType>>, ()> {
+        let mut results: Vec<Result<IOEvent, ErrorType>> = Vec::new();
         let next_execution = self.last_execution + self.settings.interval;
 
         if next_execution <= Utc::now() {
             for (_, input) in self.inputs.iter_mut() {
-                let mut device = input.lock().unwrap();
+                let mut device = input.try_lock().unwrap();
                 if let DeviceType::Input(inner) = device.deref_mut() {
-                    let result = inner.read(next_execution);
+                    let result = inner.read();
                     results.push(result);
                 }
             }
@@ -50,6 +51,19 @@ impl PollGroup {
             Ok(results)
         } else {
             Err(())
+        }
+    }
+
+    pub fn check_scheduled(&mut self) {
+        let mut executed = Vec::default();
+        for (index, routine) in self.scheduled.iter().enumerate() {
+            if routine.attempt() {
+                executed.push(index);
+            }
+        }
+        // remove completed
+        for index in executed {
+            self.scheduled.remove(index);
         }
     }
 
@@ -62,6 +76,7 @@ impl PollGroup {
         let inputs = <DeviceContainer<IdType>>::default();
         let logs = Vec::default();
         let publishers = Vec::default();
+        let scheduled = Vec::default();
 
         Self {
             _name: String::from(name),
@@ -69,19 +84,30 @@ impl PollGroup {
             last_execution,
             logs,
             inputs,
-            publishers
+            publishers,
+            scheduled,
         }
     }
 
     /// Build device interface and log.
     ///
     /// Add device to store
-    pub fn build_device(&mut self, name: &str, id: &IdType, kind: &Option<IOKind>, direction: &IODirection) -> Result<Deferred<DeviceType>> {
+    pub fn build_device(
+        &mut self,
+        name: &str,
+        id: &IdType,
+        kind: &Option<IOKind>,
+        direction: &IODirection,
+        command: &IOCommand,
+    ) -> Result<Deferred<DeviceType>, ErrorType> {
         // variable allowed to go out-of-scope because `poller` owns reference
         let settings = Some(self.settings.clone());
 
-        let builder = DeviceLogBuilder::new(name, id, kind, direction, settings);
+        let builder = DeviceLogBuilder::new(name, id, kind, direction, command, settings);
+        builder.setup_command();
+
         let (device, log) = builder.get();
+
         self.logs.push(log);
 
         match direction {
@@ -98,13 +124,13 @@ impl PollGroup {
         Ok(device)
     }
 
-    /// Builds multiple input objects and respective `OwnedLog` containers.
+    /// Builds multiple input objects and their respective `OwnedLog` containers.
     /// # Args:
     /// Single array should be any sequence of tuples containing a name literal, an `IdType`, and an `IOKind`
-    pub fn add_devices(&mut self, arr: &[(&str, IdType, IOKind, IODirection)]) -> Result<()> {
+    pub fn add_devices(&mut self, arr: &[(&str, IdType, IOKind, IODirection, IOCommand)]) -> Result<(), ErrorType> {
         let mut results = Vec::default();
-        for (name, id, kind, direction) in arr.iter().to_owned() {
-            let result = self.build_device(name, id, &Some(*kind), direction);
+        for (name, id, kind, direction, command) in arr.iter().to_owned() {
+            let result = self.build_device(name, id, &Some(*kind), direction, command);
             results.push(result);
         };
         check_results(&results)
@@ -119,7 +145,7 @@ impl PollGroup {
     /// # Notes
     /// This works because each log container should have it's own name upon initialization
     /// from hardcoded input devices.
-    fn load_logs(&self, path: &Option<String>) -> Result<()> {
+    fn load_logs(&self, path: &Option<String>) -> Result<(), ErrorType> {
         let mut results = Vec::new();
         for log in self.logs.iter() {
             let result = log.lock().unwrap().load(path);
@@ -132,7 +158,7 @@ impl PollGroup {
     /// # Notes
     /// This works because each log container should have it's own name upon initialization
     /// from hardcoded input devices.
-    fn save_logs(&self, path: &Option<String>) -> Result<()> {
+    fn save_logs(&self, path: &Option<String>) -> Result<(), ErrorType> {
         let mut results = Vec::new();
         for log in self.logs.iter() {
             let result = log.lock().unwrap().save(path);
@@ -145,12 +171,12 @@ impl PollGroup {
 /// Only save and load log data since PollGroup is statically initialized
 /// If `&None` is given to either methods, then current directory is used.
 impl Persistent for PollGroup {
-    fn save(&self, path: &Option<String>) -> Result<()> {
+    fn save(&self, path: &Option<String>) -> Result<(), ErrorType> {
         let results = &[self.save_logs(path)];
         check_results(results)
     }
 
-    fn load(&mut self, path: &Option<String>) -> Result<()> {
+    fn load(&mut self, path: &Option<String>) -> Result<(), ErrorType> {
         let results = &[self.load_logs(path)];
         check_results(results)
     }

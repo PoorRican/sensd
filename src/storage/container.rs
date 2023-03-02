@@ -18,7 +18,7 @@
 /// store a collection of objects of a specific type `T`, and identified by a specific key type `K`. The relationship
 /// between `Containerized` and `Container` is that `Containerized` defines how the `Container` should be created
 /// and used for a specific type, while `Container` actually holds the collection of objects.
-use crate::errors::{Error, ErrorKind, Result};
+use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::io::IdTraits;
 use crate::storage::collection::MappedCollection;
 use serde::{Deserialize, Serialize};
@@ -61,7 +61,7 @@ impl<T, K: IdTraits> MappedCollection<T, K> for Container<T, K> {
     /// Using `entry` method on the inner HashMap to check if the key already exists in the HashMap
     ///  - If the key already exists, the returned value is `std::collections::hash_map::Entry::Occupied`, which returns false.
     ///  - If the key does not exist, the returned value is `std::collections::hash_map::Entry::Vacant`, which inserts the key-value pair into the HashMap and returns true.
-    fn push(&mut self, key: K, data: T) -> Result<&mut T> {
+    fn push(&mut self, key: K, data: T) -> Result<&mut T, ErrorType> {
         match self.inner.entry(key) {
             std::collections::hash_map::Entry::Occupied(_) => {
                 Err(Error::new(ErrorKind::ContainerError, "Key already exists"))

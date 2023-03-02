@@ -1,17 +1,17 @@
-use crate::errors;
+use crate::action::{Command, GPIOCommand, Publisher, PublisherInstance};
+use crate::errors::ErrorType;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::types::{IOType, DeviceType};
-use crate::io::{Device, DeviceMetadata, IdType, IODirection, IOEvent, IOKind};
-use crate::storage::{MappedCollection, OwnedLog};
-use chrono::{DateTime, Utc};
+use crate::io::types::DeviceType;
+use crate::io::{Device, DeviceMetadata, IdType, IODirection, IOEvent, IOKind, no_internal_closure};
+use crate::storage::{HasLog, OwnedLog};
 use std::sync::{Arc, Mutex};
-use crate::action::{Publisher, PublisherInstance};
 
 #[derive(Default)]
 pub struct GenericInput {
     metadata: DeviceMetadata,
-    pub log: Deferred<OwnedLog>,
+    log: Option<Deferred<OwnedLog>>,
     publisher: Option<Deferred<PublisherInstance>>,
+    command: Option<GPIOCommand>,
 }
 
 impl Deferrable for GenericInput {
@@ -27,12 +27,11 @@ impl Device for GenericInput {
     /// Creates a mock sensor which returns a value
     ///
     /// # Arguments
-    ///
     /// * `name`: arbitrary name of sensor
     /// * `id`: arbitrary, numeric ID to differentiate from other sensors
     ///
     /// returns: MockPhSensor
-    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Deferred<OwnedLog>) -> Self
+    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Option<Deferred<OwnedLog>>) -> Self
     where
         Self: Sized,
     {
@@ -40,11 +39,13 @@ impl Device for GenericInput {
 
         let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Input);
         let publisher = None;
+        let command = None;
 
-        GenericInput {
+        Self {
             metadata,
             log,
             publisher,
+            command,
         }
     }
 
@@ -52,33 +53,50 @@ impl Device for GenericInput {
         &self.metadata
     }
 
-    /// Generate an `IOEvent` instance from provided value or `::rx()`
-    fn generate_event(&self, dt: DateTime<Utc>, value: Option<IOType>) -> IOEvent {
-        IOEvent::generate(self, dt, value.unwrap_or_else(move || self.rx()))
+    fn add_command(&mut self, command: GPIOCommand) {
+        self.command = Some(command);
+    }
+
+    fn add_log(&mut self, log: Deferred<OwnedLog>) {
+        self.log = Some(log)
     }
 }
 
 impl GenericInput {
     /// Return a mock value
-    pub fn rx(&self) -> IOType {
-        IOType::Float(1.2)
+    pub fn rx(&self) -> Result<IOEvent, ErrorType> {
+        // Execute GPIO command
+        let read_value = if let Some(command) = &self.command {
+            let result = command.execute(None).unwrap();
+            result.unwrap()
+        } else { return Err(no_internal_closure()) };
+
+        Ok(self.generate_event(read_value))
+    }
+
+    /// Propagate `IOEvent` to all subscribers.
+    ///
+    /// No error is raised when there is no associated publisher.
+    fn propagate(&mut self, event: &IOEvent) {
+        if let Some(publisher) = &self.publisher {
+            publisher.lock().unwrap().notify(&event);
+        };
     }
 
     /// Get IOEvent, add to log, and propagate to publisher/subscribers
+    ///
     /// Primary interface method during polling.
-    pub fn read(&mut self, time: DateTime<Utc>) -> errors::Result<IOEvent> {
-        // get IOEvent
-        let event = self.generate_event(time, None);
+    ///
+    /// # Notes
+    /// This method will fail if there is no associated log
+    pub fn read(&mut self) -> Result<IOEvent, ErrorType> {
 
-        // propagate to publisher/subscribers
-        match &self.publisher {
-            Some(publisher) => publisher.lock().unwrap().notify(&event),
-            _ => ()
-        };
+        let event = self.rx().expect("Error returned by `rx()`");
 
-        // add to log
-        let mut binding = self.log.lock().unwrap();
-        binding.push(time, event)?;
+        self.propagate(&event);
+
+        self.add_to_log(event);
+
         Ok(event)
     }
 
@@ -99,34 +117,49 @@ impl GenericInput {
     }
 }
 
+impl HasLog for GenericInput {
+    fn log(&self) -> Option<Deferred<OwnedLog>> {
+        self.log.clone()
+    }
+}
+
 
 // Testing
 #[cfg(test)]
 mod tests {
-    use chrono::Utc;
-    use crate::action::PublisherInstance;
+    use crate::action::{GPIOCommand, IOCommand, PublisherInstance};
     use crate::helpers::Deferrable;
     use crate::io::{Device, GenericInput, IOType};
+    use crate::storage::MappedCollection;
 
     const DUMMY_OUTPUT: IOType = IOType::Float(1.2);
+    const COMMAND: IOCommand = IOCommand::Input(move || DUMMY_OUTPUT);
 
     #[test]
     fn test_rx() {
-        let input = GenericInput::default();
-        assert_eq!(input.rx(), DUMMY_OUTPUT);
+        let mut input = GenericInput::default();
+
+        input.command = Some(GPIOCommand::new(COMMAND, None));
+
+        let event = input.rx().unwrap();
+        assert_eq!(event.data.value, DUMMY_OUTPUT);
     }
 
     #[test]
     fn test_read() {
         let mut input = GenericInput::default();
+        let log = input.init_log(None);
 
-        let time = Utc::now();
-        let event = input.read(time).unwrap();
+        input.command = Some(GPIOCommand::new(COMMAND, None));
+
+        assert_eq!(log.try_lock().unwrap().length(), 0);
+
+        let event = input.read().unwrap();
         assert_eq!(event.data.value, DUMMY_OUTPUT);
-        assert_eq!(event.timestamp, time);
         assert_eq!(event.data.kind, input.kind());
 
-        // TODO: attach log and assert that IOEvent has been added to log
+        // assert that event was added to log
+        assert_eq!(log.try_lock().unwrap().length(), 1);
     }
 
     /// Test `::add_publisher()` and `::has_publisher()`

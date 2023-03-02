@@ -1,16 +1,18 @@
 use chrono::Duration;
-use sensd::io::{IODirection, IOKind};
+use sensd::io::{IODirection, IOKind, IOType};
 use sensd::settings::Settings;
 use sensd::storage::PollGroup;
 use std::sync::Arc;
+use sensd::action::IOCommand;
 
 #[test]
 fn test_add_device() {
     let mut poller: PollGroup = PollGroup::new("main", None);
 
+    let command = IOCommand::Input(move || IOType::default());
     let config = vec![
-        ("test name", 0, IOKind::PH, IODirection::Input),
-        ("second sensor", 1, IOKind::EC, IODirection::Input),
+        ( "test name", 0, IOKind::PH, IODirection::Input, command.clone(), ),
+        ( "second sensor", 1, IOKind::EC, IODirection::Input, command.clone(), ),
     ];
     poller.add_devices(&config).unwrap();
 
@@ -23,9 +25,10 @@ fn test_add_to_log() {
     settings.interval = Duration::nanoseconds(1);
     let mut poller: PollGroup = PollGroup::new("main", Some(Arc::new(settings)));
 
+    let command = IOCommand::Input(move || IOType::default());
     let config = vec![
-        ("test name", 0, IOKind::AmbientTemperature, IODirection::Input),
-        ("second sensor", 1, IOKind::Color, IODirection::Input),
+        ("test name", 0, IOKind::AmbientTemperature, IODirection::Input, command.clone()),
+        ("second sensor", 1, IOKind::Color, IODirection::Input, command.clone()),
     ];
     poller.add_devices(&config).unwrap();
 

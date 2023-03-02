@@ -55,16 +55,14 @@ impl SubscriberStrategy for ThresholdNotifier {
         self.name.clone()
     }
 
-    fn evaluate(&mut self, event: &IOEvent) -> Option<IOEvent> {
-        let value = event.data.value;
+    fn evaluate(&mut self, data: &IOEvent) {
+        let value = data.data.value;
         let exceeded = match &self.trigger {
             &Comparison::GT => value >= self.threshold,
             &Comparison::LT => value <= self.threshold,
         };
         if exceeded {
-            (self.factory)(value, self.threshold).execute()
-        } else {
-            None
+            let _ = (self.factory)(value, self.threshold).execute(None);
         }
     }
 

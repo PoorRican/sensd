@@ -12,9 +12,9 @@ mod units;
 
 use std::sync::Arc;
 
-use crate::action::{BaseCommandFactory, Comparison, SimpleNotifier};
+use crate::action::{BaseCommandFactory, Comparison, SimpleNotifier, IOCommand};
 use crate::builders::ActionBuilder;
-use crate::errors::Result;
+use crate::errors::ErrorType;
 use crate::io::{IODirection, IOKind, IOType};
 use crate::settings::Settings;
 use crate::storage::{Persistent, PollGroup};
@@ -35,21 +35,24 @@ fn init(name: &str) -> PollGroup {
     group
 }
 
-fn main() -> Result<()> {
+fn setup_poller() -> PollGroup {
     let mut poller = init("main");
+
     let config = vec![
-        ("test name", 0, IOKind::PH, IODirection::Input),
-        ("second sensor", 1, IOKind::Flow, IODirection::Input),
+        ("test name", 0, IOKind::PH, IODirection::Input, IOCommand::Input(move || IOType::Float(1.2))),
+        ("second sensor", 1, IOKind::Flow, IODirection::Input, IOCommand::Input(move || IOType::Float(0.5))),
     ];
     poller.add_devices(&config).unwrap();
+    poller
+}
 
-    // build subscribers/commands
+fn build_subscribers(poller: &mut PollGroup) {
     println!("\nBuilding subscribers ...");
 
     for (id, input) in poller.inputs.iter() {
         println!("\n- Setting up builder ...");
 
-        let builder = ActionBuilder::new(input.clone());
+        let mut builder = ActionBuilder::new(input.clone()).unwrap();
 
         println!("- Initializing subscriber ...");
 
@@ -58,24 +61,42 @@ fn main() -> Result<()> {
         let trigger = Comparison::GT;
         let factory: BaseCommandFactory =
             |value, threshold| SimpleNotifier::command(format!("{} exceeded {}", value, threshold));
-        builder?.add_threshold(&name, threshold, trigger, factory);
+        builder.add_threshold(&name, threshold, trigger, factory);
     }
 
     println!("\n... Finished building\n");
 
+}
+
+fn poll(poller: &mut PollGroup) -> Result<(), ErrorType> {
+    match poller.poll() {
+        Ok(_) => match poller.save(&None) {
+            Ok(_) => (),
+            Err(t) => {
+                return Err(t);
+            }
+        },
+        _ => (),
+    };
+    Ok(())
+}
+
+fn attempt_scheduled(poller: &mut PollGroup) {
+    poller.check_scheduled()
+}
+
+fn main() -> Result<(), ErrorType> {
+    let mut poller = setup_poller();
+    build_subscribers(&mut poller);
+
     // main event loop
     println!("... Beginning polling ...\n");
     loop {
-        let polled = poller.poll();
-        match polled {
-            Ok(_) => match poller.save(&None) {
-                Ok(_) => (),
-                Err(t) => {
-                    return Err(t);
-                }
-            },
-            _ => (),
-        };
+
+        poll(&mut poller).expect("Error occurred during polling");
+
+        attempt_scheduled(&mut poller);
+
         std::thread::sleep(FREQUENCY);
     }
 }
