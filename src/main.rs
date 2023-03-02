@@ -12,13 +12,10 @@ mod units;
 
 use std::sync::Arc;
 
-use crate::action::{
-    BaseCommandFactory, Comparison, SimpleNotifier, ThresholdNotifier, ThresholdNotifierFactory,
-};
-use crate::builders::{pubsub_builder, ActionBuilder};
+use crate::action::{BaseCommandFactory, Comparison, SimpleNotifier};
+use crate::builders::ActionBuilder;
 use crate::errors::Result;
-use crate::helpers::Deferrable;
-use crate::io::{IOKind, IOType};
+use crate::io::{IODirection, IOKind, IOType};
 use crate::settings::Settings;
 use crate::storage::{Persistent, PollGroup};
 
@@ -41,26 +38,30 @@ fn init(name: &str) -> PollGroup {
 fn main() -> Result<()> {
     let mut poller = init("main");
     let config = vec![
-        ("test name", 0, IOKind::PH),
-        ("second sensor", 1, IOKind::Flow),
+        ("test name", 0, IOKind::PH, IODirection::Input),
+        ("second sensor", 1, IOKind::Flow, IODirection::Input),
     ];
-    poller.add_inputs(&config).unwrap();
+    poller.add_devices(&config).unwrap();
 
     // build subscribers/commands
     println!("\nBuilding subscribers ...");
+
     for (id, input) in poller.inputs.iter() {
-        println!("- Setting up builder ...");
-        let mut builder = ActionBuilder::new(input.clone());
+        println!("\n- Setting up builder ...");
+
+        let builder = ActionBuilder::new(input.clone());
 
         println!("- Initializing subscriber ...");
+
         let name = format!("Subscriber for Input:{}", id);
         let threshold = IOType::Float(1.0);
         let trigger = Comparison::GT;
         let factory: BaseCommandFactory =
             |value, threshold| SimpleNotifier::command(format!("{} exceeded {}", value, threshold));
-        builder.add_threshold(&name, threshold, trigger, factory);
+        builder?.add_threshold(&name, threshold, trigger, factory);
     }
-    println!("... Finished building\n");
+
+    println!("\n... Finished building\n");
 
     // main event loop
     println!("... Beginning polling ...\n");
@@ -70,7 +71,6 @@ fn main() -> Result<()> {
             Ok(_) => match poller.save(&None) {
                 Ok(_) => (),
                 Err(t) => {
-                    dbg!("Error");
                     return Err(t);
                 }
             },

@@ -18,7 +18,8 @@ pub fn writable_or_create(path: String) -> File {
 
 /// Check a sequence of `Result`
 /// This used to check the returned outputs of recursive or parallel operations.
-pub fn check_results(results: &[Result<()>]) -> Result<()> {
+/// This does not crash the program but instead prints any errors via `dbg!`.
+pub fn check_results<T>(results: &[Result<T>]) -> Result<()> {
     for result in results {
         match result {
             Err(e) => dbg!(e),

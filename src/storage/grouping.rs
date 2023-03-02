@@ -1,11 +1,12 @@
+use std::ops::DerefMut;
 use chrono::{DateTime, Duration, Utc};
 use std::sync::Arc;
 use crate::action::PublisherInstance;
-use crate::builders::input_log_builder;
+use crate::builders::DeviceLogBuilder;
 use crate::helpers::Deferred;
 use crate::errors::Result;
 use crate::helpers::check_results;
-use crate::io::{IdType, IOKind, InputContainer};
+use crate::io::{IdType, IOKind, DeviceContainer, IOEvent, DeviceType, IODirection};
 use crate::settings::Settings;
 use crate::storage::{LogContainer, MappedCollection, Persistent};
 
@@ -17,7 +18,7 @@ use crate::storage::{LogContainer, MappedCollection, Persistent};
 /// `interval` dictates the duration between each poll,
 /// and `last_execution` field is working memory to store the time of the last successful poll.
 pub struct PollGroup {
-    name: String,
+    _name: String,
     last_execution: DateTime<Utc>,
 
     /// Non-mutable storage of runtime settings
@@ -26,21 +27,24 @@ pub struct PollGroup {
 
     // internal containers
     pub logs: LogContainer,
-    pub inputs: InputContainer<IdType>,
+    pub inputs: DeviceContainer<IdType>,
     pub publishers: Vec<Deferred<PublisherInstance>>,
 }
 
 impl PollGroup {
     /// Iterate through container once. Call `get_event()` on each value.
     /// Update according to the lowest rate.
-    pub fn poll(&mut self) -> std::result::Result<Vec<Result<()>>, ()> {
-        let mut results: Vec<Result<()>> = Vec::new();
+    pub fn poll(&mut self) -> std::result::Result<Vec<Result<IOEvent>>, ()> {
+        let mut results: Vec<Result<IOEvent>> = Vec::new();
         let next_execution = self.last_execution + self.settings.interval;
 
         if next_execution <= Utc::now() {
             for (_, input) in self.inputs.iter_mut() {
-                let result = input.lock().unwrap().read(next_execution);
-                results.push(result);
+                let mut device = input.lock().unwrap();
+                if let DeviceType::Input(inner) = device.deref_mut() {
+                    let result = inner.read(next_execution);
+                    results.push(result);
+                }
             }
             self.last_execution = next_execution;
             Ok(results)
@@ -55,12 +59,12 @@ impl PollGroup {
         let settings = settings.unwrap_or_else(|| Arc::new(Settings::default()));
         let last_execution = Utc::now() - settings.interval;
 
-        let inputs = <InputContainer<IdType>>::default();
+        let inputs = <DeviceContainer<IdType>>::default();
         let logs = Vec::default();
         let publishers = Vec::default();
 
         Self {
-            name: String::from(name),
+            _name: String::from(name),
             settings,
             last_execution,
             logs,
@@ -69,26 +73,40 @@ impl PollGroup {
         }
     }
 
-    pub fn build_input(&mut self, name: &str, id: &IdType, kind: &Option<IOKind>) -> Result<()> {
+    /// Build device interface and log.
+    ///
+    /// Add device to store
+    pub fn build_device(&mut self, name: &str, id: &IdType, kind: &Option<IOKind>, direction: &IODirection) -> Result<Deferred<DeviceType>> {
         // variable allowed to go out-of-scope because `poller` owns reference
         let settings = Some(self.settings.clone());
 
-        let (log, input) = input_log_builder(name, id, kind, settings);
+        let builder = DeviceLogBuilder::new(name, id, kind, direction, settings);
+        let (device, log) = builder.get();
         self.logs.push(log);
 
-        let id = input.lock().unwrap().id();
-        self.inputs.push(id, input)
+        match direction {
+            IODirection::Input => {
+                match self.inputs.push(*id, device.clone()) {
+                    Err(error) => eprintln!("{}", error.to_string()),
+                    _ => ()
+                }
+            },
+            IODirection::Output => {
+                unimplemented!()
+            }
+        }
+        Ok(device)
     }
 
     /// Builds multiple input objects and respective `OwnedLog` containers.
     /// # Args:
     /// Single array should be any sequence of tuples containing a name literal, an `IdType`, and an `IOKind`
-    pub fn add_inputs(&mut self, arr: &[(&str, IdType, IOKind)]) -> Result<()> {
-        let mut results = Vec::new();
-        for (name, id, kind) in arr.into_iter() {
-            let result = self.build_input(name, id, &Some(*kind));
+    pub fn add_devices(&mut self, arr: &[(&str, IdType, IOKind, IODirection)]) -> Result<()> {
+        let mut results = Vec::default();
+        for (name, id, kind, direction) in arr.iter().to_owned() {
+            let result = self.build_device(name, id, &Some(*kind), direction);
             results.push(result);
-        }
+        };
         check_results(&results)
     }
 

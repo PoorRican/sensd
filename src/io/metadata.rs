@@ -3,20 +3,11 @@ use crate::io::IdType;
 use serde::{Deserialize, Serialize};
 use std::fmt::Formatter;
 
-/// Encapsulation of individual device metadata
+/// Encapsulate device metadata
 ///
-/// This struct stores information about a device, including its name, ID,
-/// kind, minimum and maximum value, and resolution.
-///
-/// # Example
-///
-/// ```
-/// let name = "Device".to_string();
-/// let id = 1;
-/// let kind = crate::io::IOKind::PH;
-///
-/// let info = crate::DeviceInfo::new(name, id, kind, None);
-/// ```
+/// This struct stores information about a physical or abstract device, including a user provided name, ID,
+/// the kind of device, and the dataflow direction (defaults to input). In future releases, the included data
+/// must be minimal and remain universal and agnostic to device type.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceMetadata {
     pub name: String,
@@ -38,6 +29,19 @@ impl DeviceMetadata {
     /// # Returns
     ///
     /// A new instance with given specified parameters
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use sensd::io::{IOKind, DeviceMetadata, IODirection};
+    ///
+    /// let name = "Device".to_string();
+    /// let id = 1;
+    /// let kind = IOKind::PH;
+    /// let direction = IODirection::default();
+    ///
+    /// let info = DeviceMetadata::new(name, id, kind, direction);
+    /// ```
     pub fn new(name: String, id: IdType, kind: io::IOKind, direction: io::IODirection) -> Self {
         DeviceMetadata {
             name,

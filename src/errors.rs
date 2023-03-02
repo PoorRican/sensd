@@ -8,7 +8,10 @@ pub enum ErrorKind {
     ContainerError,
     ContainerEmpty,
     ContainerNotEmpty,
+
     SerializationError,
+
+    DeviceError,
 }
 
 #[derive(Debug)]
@@ -31,6 +34,7 @@ impl fmt::Display for Error {
             ErrorKind::ContainerEmpty => "Container is empty",
             ErrorKind::ContainerNotEmpty => "Container is not empty",
             ErrorKind::SerializationError => "Error during serialization",
+            ErrorKind::DeviceError => "Wrong type of device passed",
         };
 
         write!(f, "{}: {}", pretext, self.message)

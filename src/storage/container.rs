@@ -25,64 +25,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::hash_map::{Iter, IterMut};
 use std::collections::HashMap;
 
-/// A trait for creating a specialized `Container` instance
-///
-/// # Notes
-/// Any objects that should be stored _shall_ implement `Containerized` where the intention is to reduce boilerplate
-/// code and minimize type definitions.
-///
-/// # See Also
-/// Reference implementations for `io::IOEvent<T>` and `dyn input<T>`
-///
-/// Provide a specialized key-value container for agnostic to type of objects stored or key-value type.
-/// Such stored objects are `input` or `IOEvent` objects. The `Containerized` trait provides a wrapper around a
-/// `HashMap` intended to reduce boilerplate code and minimize type definitions.
-///
-/// # Notes:
-///     - Any objects that will be stored _shall_ implement the `Containerized` trait
-///     - It is important to note that for objects that implement the `input` trait, the objects should be stored as
-///         `dyn input<T>` in order to maintain their dynamic nature. It might also be necessary to use `Box<dyn input<T>`.
-///         This allows for a single container to store multiple types of inputs while still being able to call the trait's
-///         methods on them.
-///
-/// # Type Parameters
-///
-/// * `T`: the type of the objects being stored in the container. This can be any type that implements the `input` trait.
-/// * `K`: the type of the keys used to index the objects in the container. This can be any type that implements the `Eq` and `Hash` traits.
-///
-/// # Examples
-///
-/// ```
-/// struct MyInput {
-///     // fields here
-/// }
-///
-/// impl crate::input for MyInput {
-///     // implementation here
-/// }
-///
-/// // Create a container to store MyInput objects
-/// let container: crate::Container<Box<dyn crate::input<T>>, String> = Containerized::container();
-///
-/// // Insert a MyInput object into the container
-/// let input = MyInput { /* fields */ };
-/// container.insert("input1", Box::new(input));
-///
-/// // Get a reference to the MyInput object in the container
-/// let stored_input = container.get("input1").unwrap();
-///
-/// // Since Containerized is implemented for input, any derived objects should be stored as `dyn input<T>`
-/// ```
-pub trait Containerized<T, K>
-where
-    K: IdTraits,
-{
-    // TODO: add type
-    /// Returns a new instance of the `Container` struct for storing objects of type T
-    /// which can be accessed by key-values of type K.
-    fn container() -> Container<T, K>;
-}
-
 /// Define a struct `Container` which takes in two types T and K.
 /// This container is meant to store any complex type and is stored with an arbitrary key.
 /// The key only needs to be hashable.
@@ -103,12 +45,6 @@ impl<T, K: IdTraits> Default for Container<T, K> {
 }
 
 impl<T, K: IdTraits> Container<T, K> {
-    // A new Container struct is created with an empty HashMap
-    pub fn new() -> Self {
-        let inner: HashMap<K, T> = Default::default();
-        Container { inner }
-    }
-
     /// Return a readonly reference to stored HashMap
     pub fn iter(&self) -> Iter<'_, K, T> {
         self.inner.iter()
@@ -125,14 +61,13 @@ impl<T, K: IdTraits> MappedCollection<T, K> for Container<T, K> {
     /// Using `entry` method on the inner HashMap to check if the key already exists in the HashMap
     ///  - If the key already exists, the returned value is `std::collections::hash_map::Entry::Occupied`, which returns false.
     ///  - If the key does not exist, the returned value is `std::collections::hash_map::Entry::Vacant`, which inserts the key-value pair into the HashMap and returns true.
-    fn push(&mut self, key: K, data: T) -> Result<()> {
+    fn push(&mut self, key: K, data: T) -> Result<&mut T> {
         match self.inner.entry(key) {
             std::collections::hash_map::Entry::Occupied(_) => {
                 Err(Error::new(ErrorKind::ContainerError, "Key already exists"))
             }
             std::collections::hash_map::Entry::Vacant(entry) => {
-                entry.insert(data);
-                Ok(())
+                Ok(entry.insert(data))
             }
         }
     }

@@ -1,74 +1,37 @@
 use crate::errors;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{Device, IOType, OutputType};
+use crate::io::{Device, IOType, DeviceType};
 use crate::io::{
-    DeviceMetadata, IODirection, IOEvent, IOKind, IdTraits, IdType,
+    DeviceMetadata, IODirection, IOEvent, IOKind, IdType,
 };
-use crate::storage::Container;
-use crate::storage::{Containerized, MappedCollection, OwnedLog};
-use std::fmt::Formatter;
+use crate::storage::{MappedCollection, OwnedLog};
 use std::sync::{Arc, Mutex};
+use chrono::{DateTime, Utc};
 
-/// Interface defining an output device
-/// Implementing output devices can be done through structs and can be stored in a container via
-/// `Containerized` trait. Any structs that implement this trait may be accessed by `OutputType`
-///
-/// # Functions
-/// - `tx() -> IOEvent`: Low-level function for passing object to device.
-/// - `write() -> Result<()>`: Main interface function output device. Should update cached state.
-/// - `state() -> IOType`: Get cached state of output device. Facade for `state` field that gets updated by `write()`.
-///
-/// # Notes:
-/// Since `Containerized` is implemented for the `Output` trait, types that implement the `Output` trait
-/// can be stored in a container returned by the `Containerized::container()` method. This way, multiple instances of
-/// differing types may be stored in the same `Container`.
-///
-/// ```
-/// let mut container = Containerized::<Box<dyn crate::Output<f32>>, i32>::container();
-/// container.insert(1, Box::new(HeatingPad::new(String::from("Temperature Output"), 1)));
-/// container.insert(2, Box::new(Humidifier::new(String::from("Humidity Output"), 2)));
-/// ```
-/// > Note how two different output device types were stored in `container`.
-pub trait Output: Device {
-    fn tx(&self, event: &IOEvent) -> IOEvent;
-    fn write(&mut self, event: &IOEvent) -> errors::Result<()>;
-    fn state(&self) -> &IOType;
-}
 
-impl<K> Containerized<Deferred<OutputType>, K> for OutputType
-where
-    K: IdTraits,
-{
-    fn container() -> Container<Deferred<OutputType>, K> {
-        Container::<Deferred<OutputType>, K>::new()
-    }
-}
-
-impl std::fmt::Debug for OutputType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Output {{ name: {}, id: {}, kind: {}",
-            self.name(),
-            self.id(),
-            self.metadata().kind
-        )
-    }
-}
-
-#[derive(Default)]
 pub struct GenericOutput {
     metadata: DeviceMetadata,
     // cached state
     state: IOType,
     pub log: Deferred<OwnedLog>,
 }
+impl Default for GenericOutput {
+    /// Overwrite default value for `IODirection` in `DeviceMetadata`
+    fn default() -> Self {
+        let mut metadata = DeviceMetadata::default();
+        metadata.direction = IODirection::Output;
+
+        let state = IOType::default();
+        let log = Arc::new(Mutex::new(OwnedLog::default()));
+        Self { metadata, state, log }
+    }
+}
 
 impl Deferrable for GenericOutput {
-    type Inner = OutputType;
+    type Inner = DeviceType;
     /// Return wrapped `OutputType` in `Deferred`
     fn deferred(self) -> Deferred<Self::Inner> {
-        Arc::new(Mutex::new(Box::new(self)))
+        Arc::new(Mutex::new(DeviceType::Output(self)))
     }
 }
 
@@ -96,19 +59,24 @@ impl Device for GenericOutput {
     fn metadata(&self) -> &DeviceMetadata {
         &self.metadata
     }
+
+    /// Generate an `IOEvent` instance from provided value or `::tx()`
+    fn generate_event(&self, dt: DateTime<Utc>, value: Option<IOType>) -> IOEvent {
+        IOEvent::generate(self, dt, value.unwrap())
+    }
 }
 
-impl Output for GenericOutput {
+impl GenericOutput {
     /// Return a mock value
-    fn tx(&self, event: &IOEvent) -> IOEvent {
-        let val = IOType::Float(1.2);
-        event.clone().invert(val)
+    pub fn tx(&self, value: &IOType) -> IOEvent {
+        /* low-level functionality goes here */
+        self.generate_event(Utc::now(), Some(*value))
     }
 
     /// Primary interface method during polling.
-    /// Calls `tx()`, updates state, and saves to log.
-    fn write(&mut self, event: &IOEvent) -> errors::Result<()> {
-        let event = self.tx(event);
+    /// Calls `tx()`, updates cached state, and saves to log.
+    pub fn write(&mut self, value: &IOType) -> errors::Result<IOEvent> {
+        let event = self.tx(value);
 
         // update cached state
         self.state = event.data.value;
@@ -117,12 +85,53 @@ impl Output for GenericOutput {
         self.log
             .lock()
             .unwrap()
-            .push(event.timestamp, event.clone())
+            .push(event.timestamp, event.clone())?;
+        Ok(event)
     }
 
     /// Immutable reference to cached state
     /// `state` field should be updated by `write()`
-    fn state(&self) -> &IOType {
+    pub fn state(&self) -> &IOType {
         &self.state
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use crate::io::{Device, GenericOutput, IOType};
+
+    #[test]
+    fn test_tx() {
+        let value = IOType::Binary(true);
+        let output = GenericOutput::default();
+
+        let new = output.tx(&value);
+
+        assert_eq!(value, new.data.value);
+        assert_eq!(output.kind(), new.data.kind);
+        assert_eq!(output.direction(), new.direction);
+    }
+
+    #[test]
+    /// Test that `tx()` was called, cached state was updated, and IOEvent added to log.
+    fn test_write() {
+        let value = IOType::Binary(true);
+        let mut output = GenericOutput::default();
+
+        // check `state` before `::write()`
+        assert_ne!(value, *output.state());
+
+        let new = output.write(&value).expect("Unknown error returned by `::write()`");
+
+        // check state after `::write()`
+        assert_eq!(value, *output.state());
+
+        // check returned `IOEvent`
+        assert_eq!(value, new.data.value);
+        assert_eq!(output.kind(), new.data.kind);
+        assert_eq!(output.direction(), new.direction);
+
+        // TODO: attach log and assert that event was added to log
     }
 }

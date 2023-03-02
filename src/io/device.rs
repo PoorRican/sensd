@@ -1,7 +1,9 @@
-/// Provide Low-level Device Functionality
+//! Provide Low-level Device Functionality
+use std::fmt::Formatter;
+use chrono::{DateTime, Utc};
 use crate::helpers::Deferred;
 use crate::io::metadata::DeviceMetadata;
-use crate::io::{IODirection, IOKind, IdType};
+use crate::io::{IODirection, IOKind, IdType, IOType, IOEvent};
 use crate::storage::OwnedLog;
 
 /// Defines a minimum interface for interacting with GPIO devices.
@@ -43,4 +45,21 @@ pub trait Device {
     fn kind(&self) -> IOKind {
         self.metadata().kind
     }
+
+    /// Generate an `IOEvent` instance from provided value or `::rx()`
+    fn generate_event(&self, dt: DateTime<Utc>, value: Option<IOType>) -> IOEvent;
 }
+
+impl std::fmt::Debug for dyn Device {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Device: {} - {{ name: {}, id: {}, kind: {}}}",
+            self.direction(),
+            self.name(),
+            self.id(),
+            self.metadata().kind
+        )
+    }
+}
+

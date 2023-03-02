@@ -1,15 +1,20 @@
 use chrono::Utc;
-use sensd::helpers::{input_log_builder, Deferred};
-use sensd::io::{Device, DeviceType, GenericSensor, IOEvent, IOKind, IdType, Input, InputType};
-use sensd::storage::{LogType, MappedCollection, OwnedLog, Persistent};
+use sensd::builders::DeviceLogBuilder;
+use sensd::helpers::Deferred;
+use sensd::io::{Device, IOKind, IdType, DeviceType, IODirection};
+use sensd::storage::{MappedCollection, OwnedLog, Persistent};
 use std::path::Path;
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use std::{fs, thread};
+use std::ops::Deref;
 
-fn add_to_log(device: &Deferred<InputType>, log: &Deferred<OwnedLog>, count: usize) {
+fn add_to_log(device: &Deferred<DeviceType>, log: &Deferred<OwnedLog>, count: usize) {
     for _ in 0..count {
-        let event = device.lock().unwrap().get_event(Utc::now());
+        let binding = device.lock().unwrap();
+        let event = match binding.deref() {
+            DeviceType::Input(inner) => inner.generate_event(Utc::now(), None),
+            DeviceType::Output(inner) => inner.generate_event(Utc::now(), None),
+        };
         log.lock().unwrap().push(event.timestamp, event).unwrap();
         thread::sleep(Duration::from_nanos(1)); // add delay so that we don't finish too quickly
     }
@@ -27,7 +32,9 @@ fn test_load_save() {
     let filename;
     // test save
     {
-        let (log, device) = input_log_builder(SENSOR_NAME, &ID, &Some(IOKind::Flow), None);
+        let builder = DeviceLogBuilder::new(SENSOR_NAME, &ID, &Some(IOKind::Flow),
+                                            &IODirection::Input, None);
+        let (device, log) = builder.get();
         add_to_log(&device, &log, COUNT);
         let _log = log.lock().unwrap();
         _log.save(&None).unwrap();
@@ -41,7 +48,9 @@ fn test_load_save() {
     // test load
     // build back up then load
     {
-        let (log, device) = input_log_builder(SENSOR_NAME, &ID, &Some(IOKind::Flow), None);
+        let builder = DeviceLogBuilder::new(SENSOR_NAME, &ID, &Some(IOKind::Flow),
+                                            &IODirection::Input, None);
+        let (_device, log) = builder.get();
         let mut _log = log.lock().unwrap();
         _log.load(&None).unwrap();
 

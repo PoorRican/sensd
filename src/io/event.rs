@@ -3,10 +3,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::io::types::{IOData, IOType, IdTraits};
 use crate::io::{Device, IODirection, IdType};
-use crate::storage::{Container, Containerized, LogType};
 
 /// Encapsulates `IOData` alongside of timestamp and device data
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub struct IOEvent {
     pub id: IdType,
     pub timestamp: DateTime<Utc>,
@@ -48,25 +47,6 @@ impl IOEvent {
             data,
         }
     }
-
-    /// Invert a copy of existing `IOEvent` and inject a new value.
-    /// This should be used for converting an `IOEvent` from input to output.
-    pub fn invert(&self, value: IOType) -> Self {
-        let mut inverted = self.clone();
-        inverted.data.value = value;
-        inverted.direction = match inverted.direction {
-            IODirection::Input => IODirection::Output,
-            IODirection::Output => IODirection::Input,
-        };
-        inverted
-    }
 }
 
 impl IdTraits for DateTime<Utc> {}
-
-/// Return a new instance of `Container` with for storing `IOEvent` which are accessed by `DateTime<Utc>` as keys
-impl Containerized<IOEvent, DateTime<Utc>> for IOEvent {
-    fn container() -> LogType {
-        Container::<IOEvent, DateTime<Utc>>::new()
-    }
-}
