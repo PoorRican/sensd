@@ -83,8 +83,8 @@ impl Command<IOEvent> for Routine {
 }
 
 impl HasLog for Routine {
-    fn log(&self) -> Deferred<OwnedLog> {
-        self.log.upgrade().expect("Device has no log")
+    fn log(&self) -> Option<Deferred<OwnedLog>> {
+        Some(self.log.upgrade().unwrap())
     }
 }
 

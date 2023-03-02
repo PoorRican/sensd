@@ -22,12 +22,12 @@ pub type LogContainer = Vec<Deferred<OwnedLog>>;
 const FILETYPE: &str = ".json";
 
 pub trait HasLog {
-    fn log(&self) -> Deferred<OwnedLog>;
+    fn log(&self) -> Option<Deferred<OwnedLog>>;
 
     fn add_to_log(&self, event: IOEvent) {
-        let log = self.log();
-        let mut binding = log.lock().unwrap();
-        binding.push(event.timestamp, event).expect("Unknown error when adding event to log");
+        let log = self.log().expect("No log is associated");
+        log.try_lock().unwrap()
+            .push(event.timestamp, event).expect("Unknown error when adding event to log");
     }
 }
 

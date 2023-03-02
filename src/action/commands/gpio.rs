@@ -95,10 +95,10 @@ mod tests {
 
         let device = match direction {
             IODirection::Input => {
-                DeviceType::Input(GenericInput::new(String::from(name), id, None, log))
+                DeviceType::Input(GenericInput::new(String::from(name), id, None, Some(log)))
             }
             IODirection::Output => {
-                DeviceType::Output(GenericOutput::new(String::from(name), id, None, log))
+                DeviceType::Output(GenericOutput::new(String::from(name), id, None, Some(log)))
             }
         };
         device.deferred()

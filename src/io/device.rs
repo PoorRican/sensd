@@ -1,11 +1,13 @@
 //! Provide Low-level Device Functionality
 use std::fmt::Formatter;
+use std::sync::Arc;
 use chrono::Utc;
 use crate::action::GPIOCommand;
 use crate::errors::*;
-use crate::helpers::Deferred;
+use crate::helpers::{Deferrable, Deferred};
 use crate::io::{IODirection, IOKind, IdType, IOType, IOEvent, DeviceMetadata};
-use crate::storage::OwnedLog;
+use crate::settings::Settings;
+use crate::storage::{HasLog, OwnedLog};
 
 /// Defines a minimum interface for interacting with GPIO devices.
 ///
@@ -13,7 +15,7 @@ use crate::storage::OwnedLog;
 /// Additionally, an accessor, `metadata()` is defined to provide for the facade methods to access
 /// device name, id, direction, and kind. Therefore, implementing structs shall implement a field
 /// `metadata` that is mutably accessed through the reciprocal getter method.
-pub trait Device {
+pub trait Device: HasLog {
 
     /// Creates a new instance of the device with the given parameters.
     ///
@@ -21,7 +23,7 @@ pub trait Device {
     /// `id`: device ID.
     /// `kind`: kind of I/O device. Optional argument.
     /// `log`: Optional deferred owned log for the device.
-    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Deferred<OwnedLog>) -> Self
+    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Option<Deferred<OwnedLog>>) -> Self
     where
         Self: Sized;
 
@@ -66,7 +68,18 @@ pub trait Device {
         IOEvent::generate(self.metadata(), dt, value)
     }
 
+    /// Setter for `command` field
     fn add_command(&mut self, command: GPIOCommand);
+
+    /// Setter for `log` field
+    fn add_log(&mut self, log: Deferred<OwnedLog>);
+
+    /// Initialize, set, and return log.
+    fn init_log(&mut self, settings: Option<Arc<Settings>>) -> Deferred<OwnedLog> {
+        let log = OwnedLog::new(self.id(), settings).deferred();
+        self.add_log(log.clone());
+        log
+    }
 }
 
 impl std::fmt::Debug for dyn Device {

@@ -26,25 +26,27 @@ impl DeviceLogBuilder {
 
         check_command_alignment(command, direction, name);
 
-        let log: Deferred<OwnedLog> = Arc::new(Mutex::new(OwnedLog::new(*id, settings)));
+        let log: Deferred<OwnedLog>;
 
         let device = match direction {
             IODirection::Output => {
-                let output = GenericOutput::new(
+                let mut output = GenericOutput::new(
                     name.to_string(),
                     *id,
                     *kind,
-                    log.clone(),
+                    None,
                 );
+                log = output.init_log(settings);
                 DeviceType::Output(output)
             },
             IODirection::Input => {
-                let input = GenericInput::new(
+                let mut input = GenericInput::new(
                     name.to_string(),
                     *id,
                     *kind,
-                    log.clone(),
+                    None,
                 );
+                log = input.init_log(settings);
                 DeviceType::Input(input)
             },
         };

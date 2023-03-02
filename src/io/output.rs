@@ -6,24 +6,13 @@ use crate::storage::{HasLog, OwnedLog};
 use std::sync::{Arc, Mutex};
 
 
+#[derive(Default)]
 pub struct GenericOutput {
     metadata: DeviceMetadata,
     // cached state
     state: IOType,
-    log: Deferred<OwnedLog>,
+    log: Option<Deferred<OwnedLog>>,
     command: Option<GPIOCommand>,
-}
-impl Default for GenericOutput {
-    /// Overwrite default value for `IODirection` in `DeviceMetadata`
-    fn default() -> Self {
-        let mut metadata = DeviceMetadata::default();
-        metadata.direction = IODirection::Output;
-
-        let state = IOType::default();
-        let log = Arc::new(Mutex::new(OwnedLog::default()));
-        let command = None;
-        Self { metadata, state, log, command }
-    }
 }
 
 impl Deferrable for GenericOutput {
@@ -44,7 +33,7 @@ impl Device for GenericOutput {
     /// * `id`: arbitrary, numeric ID to differentiate from other devices
     ///
     /// returns: GenericOutput
-    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Deferred<OwnedLog>) -> Self
+    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Option<Deferred<OwnedLog>>) -> Self
     where
         Self: Sized,
     {
@@ -64,6 +53,10 @@ impl Device for GenericOutput {
     fn add_command(&mut self, command: GPIOCommand) {
         self.command = Some(command);
     }
+
+    fn add_log(&mut self, log: Deferred<OwnedLog>) {
+        self.log = Some(log)
+    }
 }
 
 impl GenericOutput {
@@ -78,7 +71,11 @@ impl GenericOutput {
     }
 
     /// Primary interface method during polling.
+    ///
     /// Calls `tx()`, updates cached state, and saves to log.
+    ///
+    /// # Notes
+    /// This method will fail if there is no associated log
     pub fn write(&mut self, value: IOType) -> Result<IOEvent, ErrorType> {
         let event = self.tx(value).expect("Error returned by `tx()`");
 
@@ -98,7 +95,7 @@ impl GenericOutput {
 }
 
 impl HasLog for GenericOutput {
-    fn log(&self) -> Deferred<OwnedLog> {
+    fn log(&self) -> Option<Deferred<OwnedLog>> {
         self.log.clone()
     }
 }
@@ -108,6 +105,7 @@ impl HasLog for GenericOutput {
 mod tests {
     use crate::action::{GPIOCommand, IOCommand};
     use crate::io::{Device, GenericOutput, IOType};
+    use crate::storage::MappedCollection;
 
     /// Dummy output command for testing.
     /// Accepts value and returns `Ok(())`
@@ -115,10 +113,10 @@ mod tests {
 
     #[test]
     fn test_tx() {
-        let value = IOType::Binary(true);
         let mut output = GenericOutput::default();
         output.command = Some(GPIOCommand::new(COMMAND, None));
 
+        let value = IOType::Binary(true);
         let event = output.tx(value).expect("Unknown error occurred in `tx()`");
 
         assert_eq!(value, event.data.value);
@@ -129,23 +127,28 @@ mod tests {
     #[test]
     /// Test that `tx()` was called, cached state was updated, and IOEvent added to log.
     fn test_write() {
-        let value = IOType::Binary(true);
         let mut output = GenericOutput::default();
+        let log = output.init_log(None);
+
+        assert_eq!(log.try_lock().unwrap().length(), 0);
+
+        let value = IOType::Binary(true);
         output.command = Some(GPIOCommand::new(COMMAND, None));
 
         // check `state` before `::write()`
         assert_ne!(value, *output.state());
 
-        let new = output.write(value).expect("Unknown error returned by `::write()`");
+        let event = output.write(value).expect("Unknown error returned by `::write()`");
 
         // check state after `::write()`
         assert_eq!(value, *output.state());
 
         // check returned `IOEvent`
-        assert_eq!(value, new.data.value);
-        assert_eq!(output.kind(), new.data.kind);
-        assert_eq!(output.direction(), new.direction);
+        assert_eq!(value, event.data.value);
+        assert_eq!(output.kind(), event.data.kind);
+        assert_eq!(output.direction(), event.direction);
 
-        // TODO: attach log and assert that event was added to log
+        // assert that event was added to log
+        assert_eq!(log.try_lock().unwrap().length(), 1);
     }
 }

@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 #[derive(Default)]
 pub struct GenericInput {
     metadata: DeviceMetadata,
-    log: Deferred<OwnedLog>,
+    log: Option<Deferred<OwnedLog>>,
     publisher: Option<Deferred<PublisherInstance>>,
     command: Option<GPIOCommand>,
 }
@@ -31,7 +31,7 @@ impl Device for GenericInput {
     /// * `id`: arbitrary, numeric ID to differentiate from other sensors
     ///
     /// returns: MockPhSensor
-    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Deferred<OwnedLog>) -> Self
+    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Option<Deferred<OwnedLog>>) -> Self
     where
         Self: Sized,
     {
@@ -55,6 +55,10 @@ impl Device for GenericInput {
 
     fn add_command(&mut self, command: GPIOCommand) {
         self.command = Some(command);
+    }
+
+    fn add_log(&mut self, log: Deferred<OwnedLog>) {
+        self.log = Some(log)
     }
 }
 
@@ -82,6 +86,9 @@ impl GenericInput {
     /// Get IOEvent, add to log, and propagate to publisher/subscribers
     ///
     /// Primary interface method during polling.
+    ///
+    /// # Notes
+    /// This method will fail if there is no associated log
     pub fn read(&mut self) -> Result<IOEvent, ErrorType> {
 
         let event = self.rx().expect("Error returned by `rx()`");
@@ -111,7 +118,7 @@ impl GenericInput {
 }
 
 impl HasLog for GenericInput {
-    fn log(&self) -> Deferred<OwnedLog> {
+    fn log(&self) -> Option<Deferred<OwnedLog>> {
         self.log.clone()
     }
 }
@@ -123,6 +130,7 @@ mod tests {
     use crate::action::{GPIOCommand, IOCommand, PublisherInstance};
     use crate::helpers::Deferrable;
     use crate::io::{Device, GenericInput, IOType};
+    use crate::storage::MappedCollection;
 
     const DUMMY_OUTPUT: IOType = IOType::Float(1.2);
     const COMMAND: IOCommand = IOCommand::Input(move || DUMMY_OUTPUT);
@@ -140,14 +148,18 @@ mod tests {
     #[test]
     fn test_read() {
         let mut input = GenericInput::default();
+        let log = input.init_log(None);
 
         input.command = Some(GPIOCommand::new(COMMAND, None));
+
+        assert_eq!(log.try_lock().unwrap().length(), 0);
 
         let event = input.read().unwrap();
         assert_eq!(event.data.value, DUMMY_OUTPUT);
         assert_eq!(event.data.kind, input.kind());
 
-        // TODO: attach log and assert that IOEvent has been added to log
+        // assert that event was added to log
+        assert_eq!(log.try_lock().unwrap().length(), 1);
     }
 
     /// Test `::add_publisher()` and `::has_publisher()`
