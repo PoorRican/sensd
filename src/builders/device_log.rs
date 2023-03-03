@@ -5,12 +5,12 @@ use crate::io::{
     DeferredDevice, Device, DeviceType, GenericInput, GenericOutput, IODirection, IOKind, IdType,
 };
 use crate::settings::Settings;
-use crate::storage::OwnedLog;
+use crate::storage::Log;
 use std::sync::{Arc, Mutex, Weak};
 
 pub struct DeviceLogBuilder {
     device: DeferredDevice,
-    log: Deferred<OwnedLog>,
+    log: Deferred<Log>,
     command: IOCommand,
 }
 
@@ -26,7 +26,7 @@ impl DeviceLogBuilder {
 
         check_command_alignment(command, direction, name);
 
-        let log: Deferred<OwnedLog>;
+        let log: Deferred<Log>;
 
         let device = match direction {
             IODirection::Output => {
@@ -65,7 +65,7 @@ impl DeviceLogBuilder {
         }
     }
 
-    pub fn get(&self) -> (DeferredDevice, Deferred<OwnedLog>) {
+    pub fn get(&self) -> (DeferredDevice, Deferred<Log>) {
         (self.device.clone(), self.log.clone())
     }
 

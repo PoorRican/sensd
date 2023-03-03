@@ -7,7 +7,7 @@ use crate::errors::*;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{IODirection, IOKind, IdType, IOType, IOEvent, DeviceMetadata};
 use crate::settings::Settings;
-use crate::storage::{HasLog, OwnedLog};
+use crate::storage::{HasLog, Log};
 
 /// Defines a minimum interface for interacting with GPIO devices.
 ///
@@ -23,7 +23,7 @@ pub trait Device: HasLog {
     /// `id`: device ID.
     /// `kind`: kind of I/O device. Optional argument.
     /// `log`: Optional deferred owned log for the device.
-    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Option<Deferred<OwnedLog>>) -> Self
+    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Option<Deferred<Log>>) -> Self
     where
         Self: Sized;
 
@@ -72,11 +72,11 @@ pub trait Device: HasLog {
     fn add_command(&mut self, command: GPIOCommand);
 
     /// Setter for `log` field
-    fn add_log(&mut self, log: Deferred<OwnedLog>);
+    fn add_log(&mut self, log: Deferred<Log>);
 
     /// Initialize, set, and return log.
-    fn init_log(&mut self, settings: Option<Arc<Settings>>) -> Deferred<OwnedLog> {
-        let log = OwnedLog::new(self.id(), settings).deferred();
+    fn init_log(&mut self, settings: Option<Arc<Settings>>) -> Deferred<Log> {
+        let log = Log::new(self.id(), settings).deferred();
         self.add_log(log.clone());
         log
     }

@@ -4,7 +4,7 @@ use crate::action::{GPIOCommand, Command};
 use crate::errors::ErrorType;
 use crate::helpers::Deferred;
 use crate::io::{IOEvent, IOType, DeviceMetadata};
-use crate::storage::{HasLog, OwnedLog};
+use crate::storage::{HasLog, Log};
 
 /// A `Command` that should be executed at a scheduled time *outside* of the normal event loop.
 ///
@@ -26,7 +26,7 @@ pub struct Routine {
     value: IOType,
 
     /// Weak reference to log for originating device
-    log: Weak<Mutex<OwnedLog>>,
+    log: Weak<Mutex<Log>>,
 
     command: GPIOCommand,
 }
@@ -36,7 +36,7 @@ impl Routine {
         timestamp: DateTime<Utc>,
         metadata: DeviceMetadata,
         value: IOType,
-        log: Deferred<OwnedLog>,
+        log: Deferred<Log>,
         command: GPIOCommand) -> Self
     {
         let log = Arc::downgrade(&log);
@@ -83,7 +83,7 @@ impl Command<IOEvent> for Routine {
 }
 
 impl HasLog for Routine {
-    fn log(&self) -> Option<Deferred<OwnedLog>> {
+    fn log(&self) -> Option<Deferred<Log>> {
         Some(self.log.upgrade().unwrap())
     }
 }
@@ -94,7 +94,7 @@ mod tests {
     use crate::action::{GPIOCommand, IOCommand, Routine};
     use crate::helpers::Deferrable;
     use crate::io::{DeviceMetadata, IOType};
-    use crate::storage::{MappedCollection, OwnedLog};
+    use crate::storage::{MappedCollection, Log};
 
     const REGISTER_DEFAULT: IOType = IOType::Binary(false);
     static mut REGISTER: IOType = REGISTER_DEFAULT;
@@ -112,7 +112,7 @@ mod tests {
         unsafe { reset_register(); }
         let metadata = DeviceMetadata::default();
 
-        let log = OwnedLog::new(metadata.id, None).deferred();
+        let log = Log::new(metadata.id, None).deferred();
 
         let func = IOCommand::Output(move |val| unsafe {
             set_register(val);

@@ -3,13 +3,13 @@ use crate::errors::ErrorType;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::types::DeviceType;
 use crate::io::{Device, DeviceMetadata, IdType, IODirection, IOEvent, IOKind, no_internal_closure};
-use crate::storage::{HasLog, OwnedLog};
+use crate::storage::{HasLog, Log};
 use std::sync::{Arc, Mutex};
 
 #[derive(Default)]
 pub struct GenericInput {
     metadata: DeviceMetadata,
-    log: Option<Deferred<OwnedLog>>,
+    log: Option<Deferred<Log>>,
     publisher: Option<Deferred<PublisherInstance>>,
     command: Option<GPIOCommand>,
 }
@@ -31,7 +31,7 @@ impl Device for GenericInput {
     /// * `id`: arbitrary, numeric ID to differentiate from other sensors
     ///
     /// returns: MockPhSensor
-    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Option<Deferred<OwnedLog>>) -> Self
+    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Option<Deferred<Log>>) -> Self
     where
         Self: Sized,
     {
@@ -57,7 +57,7 @@ impl Device for GenericInput {
         self.command = Some(command);
     }
 
-    fn add_log(&mut self, log: Deferred<OwnedLog>) {
+    fn add_log(&mut self, log: Deferred<Log>) {
         self.log = Some(log)
     }
 }
@@ -118,7 +118,7 @@ impl GenericInput {
 }
 
 impl HasLog for GenericInput {
-    fn log(&self) -> Option<Deferred<OwnedLog>> {
+    fn log(&self) -> Option<Deferred<Log>> {
         self.log.clone()
     }
 }

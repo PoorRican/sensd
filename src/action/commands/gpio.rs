@@ -75,7 +75,7 @@ mod tests {
     use crate::action::{IOCommand, check_alignment, GPIOCommand, Command};
     use crate::helpers::Deferrable;
     use crate::io::{DeferredDevice, Device, DeviceType, GenericOutput, IdType, IODirection, GenericInput, IOType};
-    use crate::storage::OwnedLog;
+    use crate::storage::Log;
 
     const REGISTER_DEFAULT: IOType = IOType::PosInt8(255);
     static mut REGISTER: IOType = REGISTER_DEFAULT;
@@ -91,7 +91,7 @@ mod tests {
     fn make_device(direction: &IODirection) -> DeferredDevice {
         let name = "";
         let id = IdType::default();
-        let log = OwnedLog::new(id, None).deferred();
+        let log = Log::new(id, None).deferred();
 
         let device = match direction {
             IODirection::Input => {
