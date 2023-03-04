@@ -1,23 +1,15 @@
 extern crate chrono;
+extern crate sensd;
 extern crate serde;
-
-mod action;
-mod builders;
-mod errors;
-mod helpers;
-mod io;
-mod settings;
-mod storage;
-mod units;
 
 use std::sync::Arc;
 
-use crate::action::{BaseCommandFactory, Comparison, IOCommand, SimpleNotifier};
-use crate::builders::ActionBuilder;
-use crate::errors::ErrorType;
-use crate::io::{IODirection, IOKind, IOType};
-use crate::settings::Settings;
-use crate::storage::{Persistent, PollGroup};
+use sensd::action::{BaseCommandFactory, Comparison, IOCommand, SimpleNotifier};
+use sensd::builders::ActionBuilder;
+use sensd::errors::ErrorType;
+use sensd::io::{IODirection, IOKind, IOType};
+use sensd::settings::Settings;
+use sensd::storage::{Persistent, PollGroup};
 
 /// Operating frequency
 /// Allows for operations to occur at any multiple of once per second
