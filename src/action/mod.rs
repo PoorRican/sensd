@@ -1,15 +1,15 @@
 mod command;
-mod subscriber;
-mod publisher;
-mod types;
-mod subscribers;
 mod commands;
+mod publisher;
 mod routine;
+mod subscriber;
+mod subscribers;
+mod types;
 
 pub use command::*;
 pub use commands::*;
+pub use publisher::*;
+pub use routine::*;
 pub use subscriber::*;
 pub use subscribers::*;
-pub use publisher::*;
 pub use types::*;
-pub use routine::*;

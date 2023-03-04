@@ -1,6 +1,5 @@
-use crate::io::IOType;
 use crate::errors::ErrorType;
-
+use crate::io::IOType;
 
 pub type CommandType<T> = Box<dyn Command<T>>;
 

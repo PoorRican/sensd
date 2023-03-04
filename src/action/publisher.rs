@@ -10,10 +10,10 @@
 //! `Input::publisher().notify()` should also be called as well. `notify()` should thereby call
 //! `Subscriber::evaluate()` on any listeners.
 
-use std::sync::{Arc, Mutex};
 use crate::action::SubscriberType;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::IOEvent;
+use std::sync::{Arc, Mutex};
 
 pub trait NamedRoutine {
     fn name(&self) -> String;
@@ -30,11 +30,13 @@ pub trait Publisher: Deferrable {
 /// Concrete instance of publisher object
 #[derive(Default, Clone)]
 pub struct PublisherInstance {
-    subscribers: Vec<Deferred<SubscriberType>>
+    subscribers: Vec<Deferred<SubscriberType>>,
 }
 
 impl Publisher for PublisherInstance {
-    fn subscribers(&self) -> &[Deferred<SubscriberType>] { &self.subscribers }
+    fn subscribers(&self) -> &[Deferred<SubscriberType>] {
+        &self.subscribers
+    }
 
     fn subscribe(&mut self, subscriber: Deferred<SubscriberType>) {
         self.subscribers.push(subscriber)

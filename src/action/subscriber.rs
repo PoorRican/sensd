@@ -1,5 +1,5 @@
-use crate::helpers::Deferred;
 use crate::action::PublisherInstance;
+use crate::helpers::Deferred;
 use crate::io::IOEvent;
 
 pub type SubscriberType = Box<dyn Subscriber>;
@@ -25,7 +25,7 @@ pub trait Subscriber {
     fn orphan(&self) -> bool {
         match self.publisher() {
             Some(_) => true,
-            None => false
+            None => false,
         }
     }
 }

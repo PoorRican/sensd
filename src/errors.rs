@@ -11,9 +11,9 @@ pub enum ErrorKind {
 
     SerializationError,
 
-    DeviceError,        // error originating from device implementation
+    DeviceError, // error originating from device implementation
 
-    CommandError,       // error originating from command implementation
+    CommandError, // error originating from command implementation
 }
 
 #[derive(Debug)]

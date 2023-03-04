@@ -1,10 +1,12 @@
 use crate::action::{Command, GPIOCommand};
 use crate::errors::ErrorType;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{DeviceMetadata, IODirection, IOEvent, IOKind, IdType, Device, IOType, DeviceType, no_internal_closure};
+use crate::io::{
+    no_internal_closure, Device, DeviceMetadata, DeviceType, IODirection, IOEvent, IOKind, IOType,
+    IdType,
+};
 use crate::storage::{HasLog, Log};
 use std::sync::{Arc, Mutex};
-
 
 #[derive(Default)]
 pub struct GenericOutput {
@@ -43,7 +45,12 @@ impl Device for GenericOutput {
 
         let command = None;
 
-        Self { metadata, state, log, command }
+        Self {
+            metadata,
+            state,
+            log,
+            command,
+        }
     }
 
     fn metadata(&self) -> &DeviceMetadata {
@@ -65,7 +72,9 @@ impl GenericOutput {
         // Execute GPIO command
         if let Some(command) = &self.command {
             command.execute(Some(value)).unwrap();
-        } else { return Err(no_internal_closure()) };
+        } else {
+            return Err(no_internal_closure());
+        };
 
         Ok(self.generate_event(value))
     }
@@ -99,7 +108,6 @@ impl HasLog for GenericOutput {
         self.log.clone()
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -138,7 +146,9 @@ mod tests {
         // check `state` before `::write()`
         assert_ne!(value, *output.state());
 
-        let event = output.write(value).expect("Unknown error returned by `::write()`");
+        let event = output
+            .write(value)
+            .expect("Unknown error returned by `::write()`");
 
         // check state after `::write()`
         assert_eq!(value, *output.state());

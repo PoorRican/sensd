@@ -66,9 +66,7 @@ impl<T, K: IdTraits> MappedCollection<T, K> for Container<T, K> {
             std::collections::hash_map::Entry::Occupied(_) => {
                 Err(Error::new(ErrorKind::ContainerError, "Key already exists"))
             }
-            std::collections::hash_map::Entry::Vacant(entry) => {
-                Ok(entry.insert(data))
-            }
+            std::collections::hash_map::Entry::Vacant(entry) => Ok(entry.insert(data)),
         }
     }
 

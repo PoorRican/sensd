@@ -8,8 +8,8 @@ use std::ops::Deref;
 use std::sync::{Arc, Mutex, Weak};
 
 use crate::errors::{Error, ErrorKind, ErrorType};
-use crate::helpers::{writable_or_create, Deferred, Deferrable};
-use crate::io::{IOEvent, IdType, DeviceType, DeferredDevice, DeviceTraits};
+use crate::helpers::{writable_or_create, Deferrable, Deferred};
+use crate::io::{DeferredDevice, DeviceTraits, DeviceType, IOEvent, IdType};
 use crate::settings::Settings;
 use crate::storage::{Container, MappedCollection, Persistent};
 
@@ -26,8 +26,10 @@ pub trait HasLog {
 
     fn add_to_log(&self, event: IOEvent) {
         let log = self.log().expect("No log is associated");
-        log.try_lock().unwrap()
-            .push(event.timestamp, event).expect("Unknown error when adding event to log");
+        log.try_lock()
+            .unwrap()
+            .push(event.timestamp, event)
+            .expect("Unknown error when adding event to log");
     }
 }
 
@@ -186,15 +188,15 @@ impl std::fmt::Debug for Log {
 // Testing
 #[cfg(test)]
 mod tests {
+    use crate::action::IOCommand;
     use crate::builders::DeviceLogBuilder;
     use crate::helpers::Deferred;
-    use crate::io::{Device, IOKind, IdType, DeviceType, IODirection, IOType};
-    use crate::storage::{MappedCollection, Log, Persistent};
+    use crate::io::{Device, DeviceType, IODirection, IOKind, IOType, IdType};
+    use crate::storage::{Log, MappedCollection, Persistent};
+    use std::ops::Deref;
     use std::path::Path;
     use std::time::Duration;
     use std::{fs, thread};
-    use std::ops::Deref;
-    use crate::action::IOCommand;
 
     fn add_to_log(device: &Deferred<DeviceType>, log: &Deferred<Log>, count: usize) {
         for _ in 0..count {
@@ -221,8 +223,14 @@ mod tests {
         let filename;
         // test save
         {
-            let builder = DeviceLogBuilder::new(SENSOR_NAME, &ID, &Some(IOKind::Flow),
-                                                &IODirection::Input, &COMMAND, None);
+            let builder = DeviceLogBuilder::new(
+                SENSOR_NAME,
+                &ID,
+                &Some(IOKind::Flow),
+                &IODirection::Input,
+                &COMMAND,
+                None,
+            );
             let (device, log) = builder.get();
             add_to_log(&device, &log, COUNT);
             let _log = log.lock().unwrap();
@@ -237,8 +245,14 @@ mod tests {
         // test load
         // build back up then load
         {
-            let builder = DeviceLogBuilder::new(SENSOR_NAME, &ID, &Some(IOKind::Flow),
-                                                &IODirection::Input, &COMMAND, None);
+            let builder = DeviceLogBuilder::new(
+                SENSOR_NAME,
+                &ID,
+                &Some(IOKind::Flow),
+                &IODirection::Input,
+                &COMMAND,
+                None,
+            );
             let (_device, log) = builder.get();
             let mut _log = log.lock().unwrap();
             _log.load(&None).unwrap();

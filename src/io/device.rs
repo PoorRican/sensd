@@ -1,13 +1,13 @@
 //! Provide Low-level Device Functionality
-use std::fmt::Formatter;
-use std::sync::Arc;
-use chrono::Utc;
 use crate::action::GPIOCommand;
 use crate::errors::*;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{IODirection, IOKind, IdType, IOType, IOEvent, DeviceMetadata};
+use crate::io::{DeviceMetadata, IODirection, IOEvent, IOKind, IOType, IdType};
 use crate::settings::Settings;
 use crate::storage::{HasLog, Log};
+use chrono::Utc;
+use std::fmt::Formatter;
+use std::sync::Arc;
 
 /// Defines a minimum interface for interacting with GPIO devices.
 ///
@@ -16,7 +16,6 @@ use crate::storage::{HasLog, Log};
 /// device name, id, direction, and kind. Therefore, implementing structs shall implement a field
 /// `metadata` that is mutably accessed through the reciprocal getter method.
 pub trait Device: HasLog {
-
     /// Creates a new instance of the device with the given parameters.
     ///
     /// `name`: name of device.

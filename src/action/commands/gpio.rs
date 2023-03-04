@@ -1,6 +1,6 @@
 use crate::action::{Command, IOCommand};
-use crate::io::{DeferredDevice, IOType, DeviceTraits, IODirection};
 use crate::errors::{Error, ErrorKind, ErrorType};
+use crate::io::{DeferredDevice, DeviceTraits, IODirection, IOType};
 
 pub struct GPIOCommand {
     func: IOCommand,
@@ -33,19 +33,20 @@ impl Command<IOType> for GPIOCommand {
         match self.func {
             IOCommand::Input(inner) => {
                 // throw warning for unused value
-                if let Some(_) = value { unused_value() }
+                if let Some(_) = value {
+                    unused_value()
+                }
 
                 let read_value = inner();
 
                 Ok(Some(read_value))
-
-            },
+            }
             IOCommand::Output(inner) => {
                 let unwrapped_value = value.expect("No value was passed to write...");
-                let _ = inner(unwrapped_value);       // TODO: handle bad result
+                let _ = inner(unwrapped_value); // TODO: handle bad result
 
                 Ok(None)
-            },
+            }
         }
     }
 }
@@ -55,13 +56,16 @@ pub fn check_alignment(command: &IOCommand, device: DeferredDevice) -> Result<()
     let aligned = command.direction() == device.direction();
     match aligned {
         true => Ok(()),
-        false => Err(misconfigured_error())
+        false => Err(misconfigured_error()),
     }
 }
 
 /// Generate an error for when command type does not match device type
 pub fn misconfigured_error() -> ErrorType {
-    Error::new(ErrorKind::CommandError, "Misconfigured device! Device and command type do not match.")
+    Error::new(
+        ErrorKind::CommandError,
+        "Misconfigured device! Device and command type do not match.",
+    )
 }
 
 /// Print a warning on console stderr
@@ -72,9 +76,12 @@ fn unused_value() {
 
 #[cfg(test)]
 mod tests {
-    use crate::action::{IOCommand, check_alignment, GPIOCommand, Command};
+    use crate::action::{check_alignment, Command, GPIOCommand, IOCommand};
     use crate::helpers::Deferrable;
-    use crate::io::{DeferredDevice, Device, DeviceType, GenericOutput, IdType, IODirection, GenericInput, IOType};
+    use crate::io::{
+        DeferredDevice, Device, DeviceType, GenericInput, GenericOutput, IODirection, IOType,
+        IdType,
+    };
     use crate::storage::Log;
 
     const REGISTER_DEFAULT: IOType = IOType::PosInt8(255);
@@ -115,7 +122,7 @@ mod tests {
             let result = check_alignment(&command, device);
             match result {
                 Ok(_) => assert!(true),
-                Err(_) => assert!(false)
+                Err(_) => assert!(false),
             }
         }
         {
@@ -127,10 +134,9 @@ mod tests {
             let result = check_alignment(&command, device);
             match result {
                 Ok(_) => assert!(true),
-                Err(_) => assert!(false)
+                Err(_) => assert!(false),
             }
         }
-
 
         {
             let direction = IODirection::Output;
@@ -141,7 +147,7 @@ mod tests {
             let result = check_alignment(&command, device);
             match result {
                 Ok(_) => assert!(false),
-                Err(_) => assert!(true)
+                Err(_) => assert!(true),
             }
         }
         {
@@ -153,7 +159,7 @@ mod tests {
             let result = check_alignment(&command, device);
             match result {
                 Ok(_) => assert!(false),
-                Err(_) => assert!(true)
+                Err(_) => assert!(true),
             }
         }
     }
@@ -187,26 +193,27 @@ mod tests {
     #[test]
     fn test_execute() {
         {
-            unsafe { reset_register(); }
+            unsafe {
+                reset_register();
+            }
 
-            let func = IOCommand::Input(move || unsafe {
-                REGISTER
-            });
+            let func = IOCommand::Input(move || unsafe { REGISTER });
             let command = GPIOCommand::new(func, None);
 
             match command.execute(None) {
                 Ok(tentative) => unsafe {
                     match tentative {
                         Some(inner) => assert_eq!(REGISTER, inner),
-                        None => assert!(false)
+                        None => assert!(false),
                     }
                 },
-                Err(_) => assert!(false)
+                Err(_) => assert!(false),
             }
-
         }
         {
-            unsafe { reset_register(); }
+            unsafe {
+                reset_register();
+            }
 
             let func = IOCommand::Output(move |val| unsafe {
                 set_register(val);
@@ -215,19 +222,21 @@ mod tests {
             let command = GPIOCommand::new(func, None);
             let value = IOType::Binary(true);
 
-            unsafe { assert_ne!(REGISTER, value); }
-
-            match command.execute(Some(value)) {
-                Ok(tentative) => {
-                    match tentative {
-                        Some(_) => assert!(false),
-                        None => ()
-                    }
-                },
-                Err(_) => assert!(false)
+            unsafe {
+                assert_ne!(REGISTER, value);
             }
 
-            unsafe { assert_eq!(REGISTER, value); }
+            match command.execute(Some(value)) {
+                Ok(tentative) => match tentative {
+                    Some(_) => assert!(false),
+                    None => (),
+                },
+                Err(_) => assert!(false),
+            }
+
+            unsafe {
+                assert_eq!(REGISTER, value);
+            }
         }
     }
 }

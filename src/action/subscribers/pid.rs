@@ -1,4 +1,4 @@
-use crate::action::{ThresholdMonitor, PublisherInstance, Subscriber};
+use crate::action::{PublisherInstance, Subscriber, ThresholdMonitor};
 use crate::helpers::Deferred;
 use crate::io::{DeviceType, IOEvent, IOType};
 
@@ -34,7 +34,7 @@ impl Subscriber for PIDMonitor {
     fn add_publisher(&mut self, publisher: Deferred<PublisherInstance>) {
         match self.publisher {
             None => self.publisher = Some(publisher),
-            Some(_) => ()
+            Some(_) => (),
         }
     }
 }

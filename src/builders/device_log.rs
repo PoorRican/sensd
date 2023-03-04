@@ -1,11 +1,11 @@
-use std::ops::DerefMut;
-use crate::action::{IOCommand, GPIOCommand};
+use crate::action::{GPIOCommand, IOCommand};
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{
     DeferredDevice, Device, DeviceType, GenericInput, GenericOutput, IODirection, IOKind, IdType,
 };
 use crate::settings::Settings;
 use crate::storage::Log;
+use std::ops::DerefMut;
 use std::sync::{Arc, Mutex, Weak};
 
 pub struct DeviceLogBuilder {
@@ -23,32 +23,21 @@ impl DeviceLogBuilder {
         command: &IOCommand,
         settings: Option<Arc<Settings>>,
     ) -> Self {
-
         check_command_alignment(command, direction, name);
 
         let log: Deferred<Log>;
 
         let device = match direction {
             IODirection::Output => {
-                let mut output = GenericOutput::new(
-                    name.to_string(),
-                    *id,
-                    *kind,
-                    None,
-                );
+                let mut output = GenericOutput::new(name.to_string(), *id, *kind, None);
                 log = output.init_log(settings);
                 DeviceType::Output(output)
-            },
+            }
             IODirection::Input => {
-                let mut input = GenericInput::new(
-                    name.to_string(),
-                    *id,
-                    *kind,
-                    None,
-                );
+                let mut input = GenericInput::new(name.to_string(), *id, *kind, None);
                 log = input.init_log(settings);
                 DeviceType::Input(input)
-            },
+            }
         };
 
         // wrap device
@@ -61,7 +50,7 @@ impl DeviceLogBuilder {
         Self {
             device: wrapped,
             log,
-            command: *command
+            command: *command,
         }
     }
 
@@ -80,12 +69,8 @@ impl DeviceLogBuilder {
         let device = binding.deref_mut();
 
         match device {
-            DeviceType::Input(inner) => {
-                inner.add_command(gpio)
-            },
-            DeviceType::Output(inner) => {
-                inner.add_command(gpio)
-            }
+            DeviceType::Input(inner) => inner.add_command(gpio),
+            DeviceType::Output(inner) => inner.add_command(gpio),
         }
     }
 }
