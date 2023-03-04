@@ -1,5 +1,5 @@
-mod notifier;
 mod gpio;
+mod notifier;
 
-pub use notifier::*;
 pub use gpio::*;
+pub use notifier::*;

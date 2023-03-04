@@ -2,14 +2,16 @@ use crate::action::{Command, GPIOCommand, Publisher, PublisherInstance};
 use crate::errors::ErrorType;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::types::DeviceType;
-use crate::io::{Device, DeviceMetadata, IdType, IODirection, IOEvent, IOKind, no_internal_closure};
-use crate::storage::{HasLog, OwnedLog};
+use crate::io::{
+    no_internal_closure, Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType,
+};
+use crate::storage::{HasLog, Log};
 use std::sync::{Arc, Mutex};
 
 #[derive(Default)]
 pub struct GenericInput {
     metadata: DeviceMetadata,
-    log: Option<Deferred<OwnedLog>>,
+    log: Option<Deferred<Log>>,
     publisher: Option<Deferred<PublisherInstance>>,
     command: Option<GPIOCommand>,
 }
@@ -31,7 +33,7 @@ impl Device for GenericInput {
     /// * `id`: arbitrary, numeric ID to differentiate from other sensors
     ///
     /// returns: MockPhSensor
-    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Option<Deferred<OwnedLog>>) -> Self
+    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Option<Deferred<Log>>) -> Self
     where
         Self: Sized,
     {
@@ -57,7 +59,7 @@ impl Device for GenericInput {
         self.command = Some(command);
     }
 
-    fn add_log(&mut self, log: Deferred<OwnedLog>) {
+    fn add_log(&mut self, log: Deferred<Log>) {
         self.log = Some(log)
     }
 }
@@ -69,7 +71,9 @@ impl GenericInput {
         let read_value = if let Some(command) = &self.command {
             let result = command.execute(None).unwrap();
             result.unwrap()
-        } else { return Err(no_internal_closure()) };
+        } else {
+            return Err(no_internal_closure());
+        };
 
         Ok(self.generate_event(read_value))
     }
@@ -90,7 +94,6 @@ impl GenericInput {
     /// # Notes
     /// This method will fail if there is no associated log
     pub fn read(&mut self) -> Result<IOEvent, ErrorType> {
-
         let event = self.rx().expect("Error returned by `rx()`");
 
         self.propagate(&event);
@@ -105,24 +108,23 @@ impl GenericInput {
             None => {
                 self.publisher = Some(publisher);
                 Ok(())
-            },
-            _ => Err(())
+            }
+            _ => Err(()),
         }
     }
     pub fn has_publisher(&self) -> bool {
         match self.publisher {
             Some(_) => true,
-            None => false
+            None => false,
         }
     }
 }
 
 impl HasLog for GenericInput {
-    fn log(&self) -> Option<Deferred<OwnedLog>> {
+    fn log(&self) -> Option<Deferred<Log>> {
         self.log.clone()
     }
 }
-
 
 // Testing
 #[cfg(test)]

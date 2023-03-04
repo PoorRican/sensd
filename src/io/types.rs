@@ -2,7 +2,7 @@
 
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{Device, GenericInput, GenericOutput};
-use crate::storage::{Container};
+use crate::storage::Container;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::hash::Hash;
@@ -33,20 +33,20 @@ impl Default for IOType {
 
 impl Display for IOType {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            Self::Binary(val) => {
-               if *val {
-                   "true"
-               } else {
-                   "false"
-               }.to_string()
-            },
-            Self::PosInt8(val) => val.to_string(),
-            Self::Int8(val) => val.to_string(),
-            Self::PosInt(val) => val.to_string(),
-            Self::Int(val) => val.to_string(),
-            Self::Float(val) => val.to_string(),
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Binary(val) => {
+                    if *val { "true" } else { "false" }.to_string()
+                }
+                Self::PosInt8(val) => val.to_string(),
+                Self::Int8(val) => val.to_string(),
+                Self::PosInt(val) => val.to_string(),
+                Self::Int(val) => val.to_string(),
+                Self::Float(val) => val.to_string(),
+            }
+        )
     }
 }
 
@@ -154,7 +154,7 @@ pub trait DeviceTraits {
 
 pub enum DeviceType {
     Input(GenericInput),
-    Output(GenericOutput)
+    Output(GenericOutput),
 }
 impl Deferrable for DeviceType {
     type Inner = DeviceType;

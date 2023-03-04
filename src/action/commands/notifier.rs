@@ -1,12 +1,12 @@
-use std::sync::{Arc, Mutex};
 use crate::action::{Command, CommandType};
 use crate::errors::ErrorType;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{IOEvent, IOType};
+use std::sync::{Arc, Mutex};
 
 /// Simple command for printing a message to stdout
 pub struct SimpleNotifier {
-    msg: String
+    msg: String,
 }
 
 impl SimpleNotifier {

@@ -1,23 +1,15 @@
 extern crate chrono;
+extern crate sensd;
 extern crate serde;
-
-mod action;
-mod builders;
-mod errors;
-mod helpers;
-mod io;
-mod settings;
-mod storage;
-mod units;
 
 use std::sync::Arc;
 
-use crate::action::{BaseCommandFactory, Comparison, SimpleNotifier, IOCommand};
-use crate::builders::ActionBuilder;
-use crate::errors::ErrorType;
-use crate::io::{IODirection, IOKind, IOType};
-use crate::settings::Settings;
-use crate::storage::{Persistent, PollGroup};
+use sensd::action::{BaseCommandFactory, Comparison, IOCommand, SimpleNotifier};
+use sensd::builders::ActionBuilder;
+use sensd::errors::ErrorType;
+use sensd::io::{IODirection, IOKind, IOType};
+use sensd::settings::Settings;
+use sensd::storage::{Persistent, PollGroup};
 
 /// Operating frequency
 /// Allows for operations to occur at any multiple of once per second
@@ -39,8 +31,20 @@ fn setup_poller() -> PollGroup {
     let mut poller = init("main");
 
     let config = vec![
-        ("test name", 0, IOKind::PH, IODirection::Input, IOCommand::Input(move || IOType::Float(1.2))),
-        ("second sensor", 1, IOKind::Flow, IODirection::Input, IOCommand::Input(move || IOType::Float(0.5))),
+        (
+            "test name",
+            0,
+            IOKind::PH,
+            IODirection::Input,
+            IOCommand::Input(move || IOType::Float(1.2)),
+        ),
+        (
+            "second sensor",
+            1,
+            IOKind::Flow,
+            IODirection::Input,
+            IOCommand::Input(move || IOType::Float(0.5)),
+        ),
     ];
     poller.add_devices(&config).unwrap();
     poller
@@ -65,7 +69,6 @@ fn build_subscribers(poller: &mut PollGroup) {
     }
 
     println!("\n... Finished building\n");
-
 }
 
 fn poll(poller: &mut PollGroup) -> Result<(), ErrorType> {
@@ -92,7 +95,6 @@ fn main() -> Result<(), ErrorType> {
     // main event loop
     println!("... Beginning polling ...\n");
     loop {
-
         poll(&mut poller).expect("Error occurred during polling");
 
         attempt_scheduled(&mut poller);

@@ -8,8 +8,8 @@ use std::ops::Deref;
 use std::sync::{Arc, Mutex, Weak};
 
 use crate::errors::{Error, ErrorKind, ErrorType};
-use crate::helpers::{writable_or_create, Deferred, Deferrable};
-use crate::io::{IOEvent, IdType, DeviceType, DeferredDevice, DeviceTraits};
+use crate::helpers::{writable_or_create, Deferrable, Deferred};
+use crate::io::{DeferredDevice, DeviceTraits, DeviceType, IOEvent, IdType};
 use crate::settings::Settings;
 use crate::storage::{Container, MappedCollection, Persistent};
 
@@ -17,23 +17,25 @@ use crate::storage::{Container, MappedCollection, Persistent};
 pub type LogType = Container<IOEvent, DateTime<Utc>>;
 
 /// Define the `Deferred` type as an Arc of a Mutex wrapping the generic type `T`.
-pub type LogContainer = Vec<Deferred<OwnedLog>>;
+pub type LogContainer = Vec<Deferred<Log>>;
 
 const FILETYPE: &str = ".json";
 
 pub trait HasLog {
-    fn log(&self) -> Option<Deferred<OwnedLog>>;
+    fn log(&self) -> Option<Deferred<Log>>;
 
     fn add_to_log(&self, event: IOEvent) {
         let log = self.log().expect("No log is associated");
-        log.try_lock().unwrap()
-            .push(event.timestamp, event).expect("Unknown error when adding event to log");
+        log.try_lock()
+            .unwrap()
+            .push(event.timestamp, event)
+            .expect("Unknown error when adding event to log");
     }
 }
 
 // Encapsulates a `LogType` alongside a weak reference to a `Device`
 #[derive(Serialize, Deserialize, Default)]
-pub struct OwnedLog {
+pub struct Log {
     id: IdType,
     #[serde(skip)]
     owner: Option<Weak<Mutex<DeviceType>>>,
@@ -43,7 +45,7 @@ pub struct OwnedLog {
     log: LogType,
 }
 
-impl OwnedLog {
+impl Log {
     pub fn owner(&self) -> DeferredDevice {
         // TODO: handle error if owner is None or if Weak has no Strong
         self.owner.clone().unwrap().upgrade().unwrap()
@@ -94,7 +96,7 @@ impl OwnedLog {
     }
 }
 
-impl MappedCollection<IOEvent, DateTime<Utc>> for OwnedLog {
+impl MappedCollection<IOEvent, DateTime<Utc>> for Log {
     fn push(&mut self, key: DateTime<Utc>, data: IOEvent) -> Result<&mut IOEvent, ErrorType> {
         self.log.push(key, data)
     }
@@ -116,8 +118,8 @@ impl MappedCollection<IOEvent, DateTime<Utc>> for OwnedLog {
     }
 }
 
-// Implement save/load operations for `LogType`
-impl Persistent for OwnedLog {
+// Implement save/load operations for `Log`
+impl Persistent for Log {
     fn save(&self, path: &Option<String>) -> Result<(), ErrorType> {
         if self.log.is_empty() {
             Err(Error::new(
@@ -145,7 +147,7 @@ impl Persistent for OwnedLog {
             let file = File::open(self.full_path(path).deref())?;
             let reader = BufReader::new(file);
 
-            let buff: OwnedLog = match serde_json::from_reader(reader) {
+            let buff: Log = match serde_json::from_reader(reader) {
                 Ok(data) => data,
                 Err(e) => {
                     return Err(Error::new(
@@ -165,14 +167,14 @@ impl Persistent for OwnedLog {
     }
 }
 
-impl Deferrable for OwnedLog {
-    type Inner = OwnedLog;
+impl Deferrable for Log {
+    type Inner = Log;
     fn deferred(self) -> Deferred<Self::Inner> {
         Arc::new(Mutex::new(self))
     }
 }
 
-impl std::fmt::Debug for OwnedLog {
+impl std::fmt::Debug for Log {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -186,17 +188,17 @@ impl std::fmt::Debug for OwnedLog {
 // Testing
 #[cfg(test)]
 mod tests {
+    use crate::action::IOCommand;
     use crate::builders::DeviceLogBuilder;
     use crate::helpers::Deferred;
-    use crate::io::{Device, IOKind, IdType, DeviceType, IODirection, IOType};
-    use crate::storage::{MappedCollection, OwnedLog, Persistent};
+    use crate::io::{Device, DeviceType, IODirection, IOKind, IOType, IdType};
+    use crate::storage::{Log, MappedCollection, Persistent};
+    use std::ops::Deref;
     use std::path::Path;
     use std::time::Duration;
     use std::{fs, thread};
-    use std::ops::Deref;
-    use crate::action::IOCommand;
 
-    fn add_to_log(device: &Deferred<DeviceType>, log: &Deferred<OwnedLog>, count: usize) {
+    fn add_to_log(device: &Deferred<DeviceType>, log: &Deferred<Log>, count: usize) {
         for _ in 0..count {
             let binding = device.lock().unwrap();
             let event = match binding.deref() {
@@ -221,8 +223,14 @@ mod tests {
         let filename;
         // test save
         {
-            let builder = DeviceLogBuilder::new(SENSOR_NAME, &ID, &Some(IOKind::Flow),
-                                                &IODirection::Input, &COMMAND, None);
+            let builder = DeviceLogBuilder::new(
+                SENSOR_NAME,
+                &ID,
+                &Some(IOKind::Flow),
+                &IODirection::Input,
+                &COMMAND,
+                None,
+            );
             let (device, log) = builder.get();
             add_to_log(&device, &log, COUNT);
             let _log = log.lock().unwrap();
@@ -237,8 +245,14 @@ mod tests {
         // test load
         // build back up then load
         {
-            let builder = DeviceLogBuilder::new(SENSOR_NAME, &ID, &Some(IOKind::Flow),
-                                                &IODirection::Input, &COMMAND, None);
+            let builder = DeviceLogBuilder::new(
+                SENSOR_NAME,
+                &ID,
+                &Some(IOKind::Flow),
+                &IODirection::Input,
+                &COMMAND,
+                None,
+            );
             let (_device, log) = builder.get();
             let mut _log = log.lock().unwrap();
             _log.load(&None).unwrap();

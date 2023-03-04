@@ -1,14 +1,13 @@
-use std::ops::DerefMut;
-use chrono::{DateTime, Duration, Utc};
-use std::sync::Arc;
 use crate::action::{IOCommand, PublisherInstance, Routine};
 use crate::builders::DeviceLogBuilder;
-use crate::helpers::Deferred;
 use crate::errors::ErrorType;
-use crate::helpers::check_results;
-use crate::io::{IdType, IOKind, DeviceContainer, IOEvent, DeviceType, IODirection};
+use crate::helpers::{check_results, Deferred};
+use crate::io::{DeviceContainer, DeviceType, IODirection, IOEvent, IOKind, IdType};
 use crate::settings::Settings;
 use crate::storage::{LogContainer, MappedCollection, Persistent};
+use chrono::{DateTime, Duration, Utc};
+use std::ops::DerefMut;
+use std::sync::Arc;
 
 /// Mediator to periodically poll input devices of various types, and store the resulting `IOEvent` objects in a `Container`.
 ///
@@ -111,11 +110,9 @@ impl PollGroup {
         self.logs.push(log);
 
         match direction {
-            IODirection::Input => {
-                match self.inputs.push(*id, device.clone()) {
-                    Err(error) => eprintln!("{}", error.to_string()),
-                    _ => ()
-                }
+            IODirection::Input => match self.inputs.push(*id, device.clone()) {
+                Err(error) => eprintln!("{}", error.to_string()),
+                _ => (),
             },
             IODirection::Output => {
                 unimplemented!()
@@ -127,12 +124,15 @@ impl PollGroup {
     /// Builds multiple input objects and their respective `OwnedLog` containers.
     /// # Args:
     /// Single array should be any sequence of tuples containing a name literal, an `IdType`, and an `IOKind`
-    pub fn add_devices(&mut self, arr: &[(&str, IdType, IOKind, IODirection, IOCommand)]) -> Result<(), ErrorType> {
+    pub fn add_devices(
+        &mut self,
+        arr: &[(&str, IdType, IOKind, IODirection, IOCommand)],
+    ) -> Result<(), ErrorType> {
         let mut results = Vec::default();
         for (name, id, kind, direction, command) in arr.iter().to_owned() {
             let result = self.build_device(name, id, &Some(*kind), direction, command);
             results.push(result);
-        };
+        }
         check_results(&results)
     }
 

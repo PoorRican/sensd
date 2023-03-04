@@ -1,10 +1,10 @@
-use std::sync::{Arc, Mutex, Weak};
-use chrono::{DateTime, Utc};
-use crate::action::{GPIOCommand, Command};
+use crate::action::{Command, GPIOCommand};
 use crate::errors::ErrorType;
 use crate::helpers::Deferred;
-use crate::io::{IOEvent, IOType, DeviceMetadata};
-use crate::storage::{HasLog, OwnedLog};
+use crate::io::{DeviceMetadata, IOEvent, IOType};
+use crate::storage::{HasLog, Log};
+use chrono::{DateTime, Utc};
+use std::sync::{Arc, Mutex, Weak};
 
 /// A `Command` that should be executed at a scheduled time *outside* of the normal event loop.
 ///
@@ -26,7 +26,7 @@ pub struct Routine {
     value: IOType,
 
     /// Weak reference to log for originating device
-    log: Weak<Mutex<OwnedLog>>,
+    log: Weak<Mutex<Log>>,
 
     command: GPIOCommand,
 }
@@ -36,11 +36,17 @@ impl Routine {
         timestamp: DateTime<Utc>,
         metadata: DeviceMetadata,
         value: IOType,
-        log: Deferred<OwnedLog>,
-        command: GPIOCommand) -> Self
-    {
+        log: Deferred<Log>,
+        command: GPIOCommand,
+    ) -> Self {
         let log = Arc::downgrade(&log);
-        Self { timestamp, metadata, value, log, command }
+        Self {
+            timestamp,
+            metadata,
+            value,
+            log,
+            command,
+        }
     }
     /// Main polling function
     ///
@@ -57,7 +63,7 @@ impl Routine {
                 Ok(event) => {
                     let event = event.unwrap();
                     let _ = self.add_to_log(event);
-                    return true
+                    return true;
                 }
                 Err(e) => {
                     eprintln!("{}", e);
@@ -77,24 +83,24 @@ impl Command<IOEvent> for Routine {
                 let event = IOEvent::generate(&self.metadata, self.timestamp, value.unwrap());
                 Ok(Some(event))
             }
-            Err(e) => Err(e)
+            Err(e) => Err(e),
         }
     }
 }
 
 impl HasLog for Routine {
-    fn log(&self) -> Option<Deferred<OwnedLog>> {
+    fn log(&self) -> Option<Deferred<Log>> {
         Some(self.log.upgrade().unwrap())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use chrono::{Duration, Utc};
     use crate::action::{GPIOCommand, IOCommand, Routine};
     use crate::helpers::Deferrable;
     use crate::io::{DeviceMetadata, IOType};
-    use crate::storage::{MappedCollection, OwnedLog};
+    use crate::storage::{Log, MappedCollection};
+    use chrono::{Duration, Utc};
 
     const REGISTER_DEFAULT: IOType = IOType::Binary(false);
     static mut REGISTER: IOType = REGISTER_DEFAULT;
@@ -109,10 +115,12 @@ mod tests {
 
     #[test]
     fn test_attempt() {
-        unsafe { reset_register(); }
+        unsafe {
+            reset_register();
+        }
         let metadata = DeviceMetadata::default();
 
-        let log = OwnedLog::new(metadata.id, None).deferred();
+        let log = Log::new(metadata.id, None).deferred();
 
         let func = IOCommand::Output(move |val| unsafe {
             set_register(val);
@@ -124,14 +132,18 @@ mod tests {
         let value = IOType::Binary(true);
         let routine = Routine::new(timestamp, metadata, value, log.clone(), command);
 
-        unsafe { assert_ne!(REGISTER, value); }
+        unsafe {
+            assert_ne!(REGISTER, value);
+        }
 
         while Utc::now() < timestamp {
             assert_eq!(false, routine.attempt());
         }
 
         assert!(routine.attempt());
-        unsafe { assert_eq!(REGISTER, value); }
+        unsafe {
+            assert_eq!(REGISTER, value);
+        }
         assert_eq!(log.try_lock().unwrap().length(), 1);
     }
 }

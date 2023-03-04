@@ -1,9 +1,10 @@
-use std::ops::DerefMut;
-use crate::action::{BaseCommandFactory, Comparison, Publisher, PublisherInstance,
-                    ThresholdNotifier};
-use crate::errors::{ErrorKind, Error, ErrorType};
+use crate::action::{
+    BaseCommandFactory, Comparison, Publisher, PublisherInstance, ThresholdNotifier,
+};
+use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{DeferredDevice, DeviceType, IOType, DeviceWrapper};
+use crate::io::{DeferredDevice, DeviceType, DeviceWrapper, IOType};
+use std::ops::DerefMut;
 
 /// Assist the user in dynamically initializing a single publisher for a single input.
 /// Since an abstract input only uses a single publisher, helper functions help build
@@ -25,10 +26,16 @@ impl ActionBuilder {
     /// - device: Device to add pub/subs. Should be Input
     pub fn new(device: DeferredDevice) -> Result<Self, ErrorType> {
         if device.is_output() {
-            return Err(Error::new(ErrorKind::DeviceError, "Passed device is output. Expected input."))
+            return Err(Error::new(
+                ErrorKind::DeviceError,
+                "Passed device is output. Expected input.",
+            ));
         }
         let publisher = Self::build_publisher();
-        Ok(Self { input: device, publisher })
+        Ok(Self {
+            input: device,
+            publisher,
+        })
     }
 
     /// Initialize and return a deferred `PublisherInstance`

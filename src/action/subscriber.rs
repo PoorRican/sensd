@@ -1,8 +1,8 @@
-use crate::helpers::Deferred;
 use crate::action::PublisherInstance;
+use crate::helpers::Deferred;
 use crate::io::IOEvent;
 
-pub type SubscriberType = Box<dyn SubscriberStrategy>;
+pub type SubscriberType = Box<dyn Subscriber>;
 
 /// Subscriber to Publisher which enacts a dynamic strategy
 ///
@@ -14,7 +14,7 @@ pub type SubscriberType = Box<dyn SubscriberStrategy>;
 /// associated with the initialized subscriber. In this state, it is considered an
 /// "orphan" and can be checked via `orphan()`. During the build state, `add_publisher()`
 /// creates the reverse association.
-pub trait SubscriberStrategy {
+pub trait Subscriber {
     fn name(&self) -> String;
     /// Primary method to evaluate incoming data
     /// Returned IOEvent should be logged
@@ -25,7 +25,7 @@ pub trait SubscriberStrategy {
     fn orphan(&self) -> bool {
         match self.publisher() {
             Some(_) => true,
-            None => false
+            None => false,
         }
     }
 }

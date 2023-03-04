@@ -1,10 +1,10 @@
-use std::sync::{Arc, Mutex};
-use crate::action::{BaseCommandFactory, PublisherInstance, SubscriberStrategy, SubscriberType};
+use crate::action::{BaseCommandFactory, PublisherInstance, Subscriber, SubscriberType};
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{IOEvent, IOType};
+use std::sync::{Arc, Mutex};
 
 /// Generic command that monitors a threshold
-pub trait ThresholdMonitor: SubscriberStrategy {
+pub trait ThresholdMonitor: Subscriber {
     fn threshold(&self) -> IOType;
 }
 
@@ -32,7 +32,7 @@ impl ThresholdNotifier {
         name: String,
         threshold: IOType,
         trigger: Comparison,
-        factory: BaseCommandFactory
+        factory: BaseCommandFactory,
     ) -> Self {
         Self {
             name,
@@ -50,7 +50,7 @@ impl ThresholdMonitor for ThresholdNotifier {
     }
 }
 
-impl SubscriberStrategy for ThresholdNotifier {
+impl Subscriber for ThresholdNotifier {
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -73,7 +73,7 @@ impl SubscriberStrategy for ThresholdNotifier {
     fn add_publisher(&mut self, publisher: Deferred<PublisherInstance>) {
         match self.publisher {
             None => self.publisher = Some(publisher),
-            Some(_) => ()
+            Some(_) => (),
         }
     }
 }

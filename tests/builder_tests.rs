@@ -1,15 +1,14 @@
-use std::ops::Deref;
 use sensd::action::{BaseCommandFactory, Comparison, IOCommand, SimpleNotifier};
-use sensd::helpers::*;
 use sensd::builders::{ActionBuilder, DeviceLogBuilder};
-use sensd::io::{DeviceType, GenericInput, IdType, IODirection, IOKind, IOType, DeviceTraits};
+use sensd::helpers::*;
+use sensd::io::{DeviceTraits, DeviceType, GenericInput, IODirection, IOKind, IOType, IdType};
+use std::ops::Deref;
 
 #[test]
 fn test_action_builder() {
     let _input = GenericInput::default();
-    assert!( !(_input.has_publisher()) );
+    assert!(!(_input.has_publisher()));
     let input = _input.deferred();
-
 
     let mut builder = ActionBuilder::new(input.clone()).unwrap();
 
@@ -35,16 +34,13 @@ fn test_device_log_builder() {
     const KIND: IOKind = IOKind::Unassigned;
 
     let command = IOCommand::Input(move || IOType::default());
-    let builder = DeviceLogBuilder::new(
-        NAME,
-        &ID,
-        &Some(KIND),
-        &DIRECTION,
-        &command,
-        None
-    );
+    let builder = DeviceLogBuilder::new(NAME, &ID, &Some(KIND), &DIRECTION, &command, None);
     let (device, log) = builder.get();
 
     assert_eq!(false, log.lock().unwrap().orphan());
-    assert!(log.lock().unwrap().filename().contains(&device.lock().unwrap().name()));
+    assert!(log
+        .lock()
+        .unwrap()
+        .filename()
+        .contains(&device.lock().unwrap().name()));
 }
