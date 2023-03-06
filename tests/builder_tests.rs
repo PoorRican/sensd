@@ -1,4 +1,4 @@
-use sensd::action::{BaseCommandFactory, Comparison, IOCommand, SimpleNotifier};
+use sensd::action::{ThresholdFactory, Comparison, IOCommand, SimpleNotifier};
 use sensd::builders::{ActionBuilder, DeviceLogBuilder};
 use sensd::helpers::*;
 use sensd::io::{DeviceTraits, DeviceType, GenericInput, IODirection, IOKind, IOType, IdType};
@@ -15,7 +15,7 @@ fn test_action_builder() {
     let name = "Subscriber for Input";
     let threshold = IOType::Float(1.0);
     let trigger = Comparison::GT;
-    let factory: BaseCommandFactory =
+    let factory: ThresholdFactory =
         |value, threshold| SimpleNotifier::command(format!("{} exceeded {}", value, threshold));
     builder.add_threshold(&name, threshold, trigger, factory);
 

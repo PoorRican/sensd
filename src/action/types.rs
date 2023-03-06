@@ -18,4 +18,4 @@ impl IOCommand {
     }
 }
 
-pub type BaseCommandFactory = fn(IOType, IOType) -> CommandType<IOEvent>;
+pub type ThresholdFactory = fn(IOType, IOType) -> CommandType<IOEvent>;

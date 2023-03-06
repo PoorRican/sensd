@@ -42,7 +42,7 @@ fn test_add_to_log() {
         (
             "test name",
             0,
-            IOKind::AmbientTemperature,
+            IOKind::Temperature,
             IODirection::Input,
             command.clone(),
         ),

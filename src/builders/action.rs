@@ -1,5 +1,5 @@
 use crate::action::{
-    BaseCommandFactory, Comparison, Publisher, PublisherInstance, ThresholdNotifier,
+    ThresholdFactory, Comparison, Publisher, PublisherInstance, ThresholdNotifier,
 };
 use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::{Deferrable, Deferred};
@@ -66,7 +66,7 @@ impl ActionBuilder {
         name: &str,
         threshold: IOType,
         trigger: Comparison,
-        factory: BaseCommandFactory,
+        factory: ThresholdFactory,
     ) {
         self.check_publisher();
 

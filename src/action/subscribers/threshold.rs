@@ -1,4 +1,4 @@
-use crate::action::{BaseCommandFactory, PublisherInstance, Subscriber, SubscriberType};
+use crate::action::{ThresholdFactory, PublisherInstance, Subscriber, SubscriberType};
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{IOEvent, IOType};
 use std::sync::{Arc, Mutex};
@@ -24,7 +24,7 @@ pub struct ThresholdNotifier {
     publisher: Option<Deferred<PublisherInstance>>,
 
     trigger: Comparison,
-    factory: BaseCommandFactory,
+    factory: ThresholdFactory,
 }
 
 impl ThresholdNotifier {
@@ -32,7 +32,7 @@ impl ThresholdNotifier {
         name: String,
         threshold: IOType,
         trigger: Comparison,
-        factory: BaseCommandFactory,
+        factory: ThresholdFactory,
     ) -> Self {
         Self {
             name,

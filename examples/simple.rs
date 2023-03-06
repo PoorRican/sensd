@@ -24,7 +24,7 @@ extern crate serde;
 
 use std::sync::Arc;
 
-use sensd::action::{BaseCommandFactory, Comparison, IOCommand, SimpleNotifier};
+use sensd::action::{Comparison, IOCommand, SimpleNotifier, ThresholdFactory};
 use sensd::builders::ActionBuilder;
 use sensd::errors::ErrorType;
 use sensd::io::{IODirection, IOKind, IOType};
@@ -102,7 +102,7 @@ fn build_subscribers(poller: &mut PollGroup) {
         let name = format!("Subscriber for Input:{}", id);
         let threshold = IOType::Float(1.0);
         let trigger = Comparison::GT;
-        let factory: BaseCommandFactory =
+        let factory: ThresholdFactory =
             |value, threshold| SimpleNotifier::command(format!("{} exceeded {}", value, threshold));
         builder.add_threshold(&name, threshold, trigger, factory);
     }
