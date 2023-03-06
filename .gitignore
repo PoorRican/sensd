@@ -1,5 +1,6 @@
 /target
 migrations
+/tags
 
 .idea/
 
