@@ -27,6 +27,7 @@ pub struct PollGroup {
     // internal containers
     pub logs: LogContainer,
     pub inputs: DeviceContainer<IdType>,
+    pub outputs: DeviceContainer<IdType>,
     pub publishers: Vec<Deferred<PublisherInstance>>,
     pub scheduled: Vec<Routine>,
 }
@@ -73,6 +74,7 @@ impl PollGroup {
         let last_execution = Utc::now() - settings.interval;
 
         let inputs = <DeviceContainer<IdType>>::default();
+        let outputs = <DeviceContainer<IdType>>::default();
         let logs = Vec::default();
         let publishers = Vec::default();
         let scheduled = Vec::default();
@@ -83,6 +85,7 @@ impl PollGroup {
             last_execution,
             logs,
             inputs,
+            outputs,
             publishers,
             scheduled,
         }
@@ -110,13 +113,18 @@ impl PollGroup {
         self.logs.push(log);
 
         match direction {
-            IODirection::Input => match self.inputs.push(*id, device.clone()) {
-                Err(error) => eprintln!("{}", error.to_string()),
-                _ => (),
+            IODirection::Input => {
+                match self.inputs.push(*id, device.clone()) {
+                    Err(error) => eprintln!("{}", error.to_string()),
+                    _ => (),
+                }
             },
             IODirection::Output => {
-                unimplemented!()
-            }
+                match self.outputs.push(*id, device.clone()) {
+                    Err(error) => eprintln!("{}", error.to_string()),
+                    _ => (),
+                }
+            },
         }
         Ok(device)
     }
