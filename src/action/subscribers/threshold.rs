@@ -18,7 +18,7 @@ pub enum Comparison {
 
 /// Notify if threshold is exceeded
 #[derive(Clone)]
-pub struct ThresholdNotifier {
+pub struct ThresholdAction {
     name: String,
     threshold: IOType,
     publisher: Option<Deferred<PublisherInstance>>,
@@ -27,7 +27,7 @@ pub struct ThresholdNotifier {
     factory: ThresholdFactory,
 }
 
-impl ThresholdNotifier {
+impl ThresholdAction {
     pub fn new(
         name: String,
         threshold: IOType,
@@ -44,13 +44,13 @@ impl ThresholdNotifier {
     }
 }
 
-impl ThresholdMonitor for ThresholdNotifier {
+impl ThresholdMonitor for ThresholdAction {
     fn threshold(&self) -> IOType {
         self.threshold
     }
 }
 
-impl Subscriber for ThresholdNotifier {
+impl Subscriber for ThresholdAction {
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -78,7 +78,7 @@ impl Subscriber for ThresholdNotifier {
     }
 }
 
-impl Deferrable for ThresholdNotifier {
+impl Deferrable for ThresholdAction {
     type Inner = SubscriberType;
 
     fn deferred(self) -> Deferred<Self::Inner> {

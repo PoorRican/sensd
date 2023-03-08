@@ -1,5 +1,5 @@
 use crate::action::{
-    ThresholdFactory, Comparison, Publisher, PublisherInstance, ThresholdNotifier,
+    ThresholdFactory, Comparison, Publisher, PublisherInstance, ThresholdAction,
 };
 use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::{Deferrable, Deferred};
@@ -70,7 +70,7 @@ impl ActionBuilder {
     ) {
         self.check_publisher();
 
-        let _subscriber = ThresholdNotifier::new(name.to_string(), threshold, trigger, factory);
+        let _subscriber = ThresholdAction::new(name.to_string(), threshold, trigger, factory);
         let subscriber = _subscriber.deferred();
 
         // add subscriber to publisher
