@@ -1,7 +1,7 @@
 use crate::action::{Command, GPIOCommand, Publisher, PublisherInstance};
 use crate::errors::ErrorType;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::types::DeviceType;
+use crate::io::DeviceType;
 use crate::io::{
     no_internal_closure, Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType,
 };

@@ -26,6 +26,7 @@ fn test_action_builder() {
     }
 }
 
+
 #[test]
 fn test_device_log_builder() {
     const NAME: &str = "device name";

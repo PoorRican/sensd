@@ -13,7 +13,6 @@ use std::ops::DerefMut;
 /// # Notes
 /// Return types should be checked here, if anywhere.
 pub struct ActionBuilder {
-    // TODO: check that device is input
     input: DeferredDevice,
     publisher: Deferred<PublisherInstance>,
     // TODO: add reference to `PollGroup`
@@ -68,6 +67,7 @@ impl ActionBuilder {
         trigger: Comparison,
         factory: ThresholdFactory,
     ) {
+        // TODO: raise an error if device type is not numeric (ie: IOType::Boolean)
         self.check_publisher();
 
         let _subscriber = ThresholdAction::new(name.to_string(), threshold, trigger, factory);

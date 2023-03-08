@@ -1,12 +1,12 @@
-//! Provide Low-level Device Functionality
+use core::fmt::Formatter;
+use chrono::Utc;
 use crate::action::GPIOCommand;
-use crate::errors::*;
-use crate::helpers::{Deferrable, Deferred};
-use crate::io::{DeviceMetadata, IODirection, IOEvent, IOKind, IOType, IdType};
+use crate::helpers::{Deferred, Deferrable};
+use crate::io::{
+    IdType, IOKind, DeviceMetadata, IODirection, IOType, IOEvent,
+};
 use crate::settings::Settings;
 use crate::storage::{HasLog, Log};
-use chrono::Utc;
-use std::fmt::Formatter;
 use std::sync::Arc;
 
 /// Defines a minimum interface for interacting with GPIO devices.
@@ -81,6 +81,14 @@ pub trait Device: HasLog {
     }
 }
 
+pub trait DeviceTraits {
+    fn name(&self) -> String;
+    fn id(&self) -> IdType;
+    fn kind(&self) -> IOKind;
+    fn direction(&self) -> IODirection;
+}
+
+
 impl std::fmt::Debug for dyn Device {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -92,8 +100,4 @@ impl std::fmt::Debug for dyn Device {
             self.metadata().kind
         )
     }
-}
-
-pub fn no_internal_closure() -> Box<dyn std::error::Error> {
-    Error::new(ErrorKind::CommandError, "Device has no internal closure")
 }
