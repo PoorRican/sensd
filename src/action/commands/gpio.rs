@@ -1,4 +1,4 @@
-use crate::action::{Command, IOCommand};
+use crate::action::{Command, IOCommand, CommandType};
 use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::io::{DeferredDevice, DeviceTraits, IODirection, IOType};
 
@@ -15,6 +15,10 @@ impl GPIOCommand {
         Self { func }
     }
 
+pub fn command(self) -> CommandType<IOType> {
+    Box::new(self)
+}
+
     pub fn direction(&self) -> IODirection {
         match self.func {
             IOCommand::Input(_) => IODirection::Input,
@@ -25,6 +29,12 @@ impl GPIOCommand {
 
 impl Command<IOType> for GPIOCommand {
     /// Execute internally stored function.
+    ///
+    /// In summary: input command returns a value, output command accepts a value.
+    ///
+    /// # Args
+    /// value: Arbitrary value to pass to output. If passed to an input, an error is printed, but
+    ///        no panic occurs.
     ///
     /// # Returns
     /// If internal function is `IOCommand::Input`, then the value that is read from device is returned.
