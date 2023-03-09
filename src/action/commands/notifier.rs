@@ -1,4 +1,4 @@
-use crate::action::{Command, CommandType};
+use crate::action::{Command, BoxedCommand};
 use crate::errors::ErrorType;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{IOEvent, IOType};
@@ -13,7 +13,7 @@ impl SimpleNotifier {
     pub fn new(msg: String) -> Self {
         Self { msg }
     }
-    pub fn command(msg: String) -> CommandType<IOEvent> {
+    pub fn boxed(msg: String) -> BoxedCommand<IOEvent> {
         Box::new(Self::new(msg))
     }
 }
@@ -26,7 +26,7 @@ impl Command<IOEvent> for SimpleNotifier {
 }
 
 impl Deferrable for SimpleNotifier {
-    type Inner = CommandType<IOEvent>;
+    type Inner = BoxedCommand<IOEvent>;
     fn deferred(self) -> Deferred<Self::Inner> {
         Arc::new(Mutex::new(Box::new(self)))
     }

@@ -218,7 +218,7 @@ mod tests {
         const COMMAND: IOCommand = IOCommand::Input(move || IOType::default());
 
         /* NOTE: More complex `IOEvent` objects *could* be checked, but we are trusting `serde`.
-        These tests only count the number of `IOEvent`'s added. */
+           These tests only count the number of `IOEvent`'s added. */
 
         let filename;
         // test save

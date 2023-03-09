@@ -1,4 +1,4 @@
-use crate::action::{Command, IOCommand, CommandType};
+use crate::action::{Command, IOCommand, BoxedCommand};
 use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::io::{DeferredDevice, DeviceTraits, IODirection, IOType};
 
@@ -15,7 +15,7 @@ impl GPIOCommand {
         Self { func }
     }
 
-pub fn command(self) -> CommandType<IOType> {
+pub fn boxed(self) -> BoxedCommand<IOType> {
     Box::new(self)
 }
 

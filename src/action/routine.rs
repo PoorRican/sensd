@@ -122,7 +122,8 @@ mod tests {
 
         let log = Log::new(metadata.id, None).deferred();
 
-        let func = IOCommand::Output(move |val| unsafe {
+        let func = IOCommand::Output(
+            move |val| unsafe {
             set_register(val);
             Ok(())
         });

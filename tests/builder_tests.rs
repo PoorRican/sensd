@@ -16,7 +16,7 @@ fn test_action_builder() {
     let threshold = IOType::Float(1.0);
     let trigger = Comparison::GT;
     let factory: ThresholdFactory =
-        |value, threshold| SimpleNotifier::command(format!("{} exceeded {}", value, threshold));
+        |value, threshold| SimpleNotifier::boxed(format!("{} exceeded {}", value, threshold));
     builder.add_threshold(&name, threshold, trigger, factory);
 
     let binding = input.lock().unwrap();
