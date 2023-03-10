@@ -16,7 +16,7 @@ pub enum Comparison {
     LT,
 }
 
-/// Notify if threshold is exceeded
+/// Perform an action if threshold is exceeded
 #[derive(Clone)]
 pub struct ThresholdAction {
     name: String,

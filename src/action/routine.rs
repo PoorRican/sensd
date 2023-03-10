@@ -19,6 +19,7 @@ pub struct Routine {
     timestamp: DateTime<Utc>,
 
     /// Copy of owning device metadata
+    ///
     /// A copy is used to avoid locking issues since scheduled commands might be time critical.
     metadata: DeviceMetadata,
 
