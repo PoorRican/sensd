@@ -22,7 +22,7 @@ pub fn writable_or_create(path: String) -> File {
 pub fn check_results<T>(results: &[Result<T, ErrorType>]) -> Result<(), ErrorType> {
     for result in results {
         match result {
-            Err(e) => dbg!(e),
+            Err(e) => eprintln!("█▓▒░ ERROR: {}", e),
             _ => continue,
         };
     }
