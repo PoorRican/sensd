@@ -3,28 +3,38 @@ use crate::action::{
 };
 use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{DeferredDevice, DeviceType, DeviceWrapper, IOType};
+use crate::io::{DeferredDevice, DeviceType, DeviceWrapper, IOType, IdType, IODirection};
+use crate::storage::{PollGroup, MappedCollection};
 use std::ops::DerefMut;
 
 /// Assist the user in dynamically initializing a single publisher for a single input.
-/// Since an abstract input only uses a single publisher, helper functions help build
-/// subscribers by dynamically building commands.
+/// Since an input device has a one-to-one relationship with a `PublisherInstance`, helper functions
+/// help build subscribers by dynamically building commands.
 ///
 /// # Notes
 /// Return types should be checked here, if anywhere.
 pub struct ActionBuilder {
     input: DeferredDevice,
+    output: Option<DeferredDevice>,
+
     publisher: Deferred<PublisherInstance>,
-    // TODO: add reference to `PollGroup`
 }
+
 impl ActionBuilder {
-    /// Create a new builder for a given device
+    /// Create a new builder for the given input device
+    ///
     /// This starts the process of adding pubs/subscribers
     /// `Err` is returned if passed device is not input.
+    ///
+    /// # Notes
+    /// This constructor method may be used directly, or alternatively
+    /// `ActionBuilder::from_group()` may be used for indirectly constructing builder by only
+    /// supplying a reference to `PollGroup` and device id.
+    ///
     /// # Args
     /// - device: Device to add pub/subs. Should be Input
-    pub fn new(device: DeferredDevice) -> Result<Self, ErrorType> {
-        if device.is_output() {
+    pub fn new(input: DeferredDevice) -> Result<Self, ErrorType> {
+        if input.is_output() {
             return Err(Error::new(
                 ErrorKind::DeviceError,
                 "Passed device is output. Expected input.",
@@ -32,9 +42,79 @@ impl ActionBuilder {
         }
         let publisher = Self::build_publisher();
         Ok(Self {
-            input: device,
+            input,
+            output: None,
             publisher,
         })
+    }
+
+    /// Helper function that extracts deferred device from `PollGroup`
+    ///
+    /// Device type container is determined by `direction`: inputs are taken from
+    /// `PollGroup::inputs`, and outputs are taken from `PollGroup::outputs`.
+    ///
+    /// Extracting devices from respective `PollGroup` containers grants indirection between device
+    /// ininitialization and pub/sub building.
+    ///
+    /// # Args
+    /// poller: Reference to `PollGroup`
+    /// direction: IODirection which determines which container is used to retrieve deferred device
+    /// id: id of device
+    ///
+    /// # Returns
+    /// Result with deferred device or `ErrorType`.
+    ///
+    /// If id doesn't exist in `PollGroup::inputs`, then an error with `DeviceKind::ContainerError`
+    /// and the appropriate message is returned.
+    fn extract_device(poller: &PollGroup,
+                      direction: IODirection,
+                      id: IdType) -> Result<DeferredDevice, ErrorType> {
+
+        let result;
+        match direction {
+            IODirection::Output => {
+                result = poller.inputs.get(id);
+            }
+            IODirection::Input => {
+                result = poller.outputs.get(id);
+            }
+        };
+
+        if let Some(device) = result {
+            Ok(device.clone())
+        } else {
+            Err(Error::new(ErrorKind::ContainerError,
+                           "Incorrect id passed to `ActionBuilder::extract_device()`"))
+        }
+
+    }
+
+    /// Indirect constructor for `ActionBuilder`.
+    ///
+    /// Allows input device to be constructed and added to `PollGroup::inputs` seperately.
+    /// Therefore, deferred device does not need to remain in scope and passed to
+    /// `::new()`. This allows device building to be handled by an external function. Only the
+    /// device id needs remain in scope.
+    ///
+    /// # Args
+    /// poller: Reference to `PollGroup`
+    /// id: id of device
+    ///
+    /// # Returns
+    /// Result containing `ActionBuilder` or `ErrorType`.
+    ///
+    /// If id doesn't exist in `PollGroup::inputs`, then an error with `DeviceKind::ContainerError`
+    /// and the appropriate message is returned.
+    pub fn from_group(poller: &PollGroup, id: IdType) -> Result<Self, ErrorType> {
+        let input = Self::extract_device(poller, IODirection::Input, id)?;
+        Self::new(input)
+    }
+
+    /// Associate a deferred output to builder.
+    pub fn attach_output(&mut self, poller: &PollGroup, id: IdType) -> Result<(), ErrorType> {
+        let output = Self::extract_device(poller, IODirection::Output, id)?;
+        self.output = Some(output);
+        Ok(())
     }
 
     /// Initialize and return a deferred `PublisherInstance`
