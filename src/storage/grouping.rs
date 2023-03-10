@@ -26,8 +26,10 @@ pub struct PollGroup {
 
     // internal containers
     pub logs: LogContainer,
+
     pub inputs: DeviceContainer<IdType>,
     pub outputs: DeviceContainer<IdType>,
+
     pub publishers: Vec<Deferred<PublisherInstance>>,
     pub scheduled: Vec<Routine>,
 }
@@ -130,6 +132,7 @@ impl PollGroup {
     }
 
     /// Builds multiple input objects and their respective `OwnedLog` containers.
+    ///
     /// # Args:
     /// Single array should be any sequence of tuples containing a name literal, an `IdType`, and an `IOKind`
     pub fn add_devices(
@@ -150,6 +153,7 @@ impl PollGroup {
     }
 
     /// Load each individual log
+    ///
     /// # Notes
     /// This works because each log container should have it's own name upon initialization
     /// from hardcoded input devices.
@@ -163,6 +167,7 @@ impl PollGroup {
     }
 
     /// Save each individual log
+    ///
     /// # Notes
     /// This works because each log container should have it's own name upon initialization
     /// from hardcoded input devices.

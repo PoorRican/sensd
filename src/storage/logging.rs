@@ -121,10 +121,11 @@ impl MappedCollection<IOEvent, DateTime<Utc>> for Log {
 // Implement save/load operations for `Log`
 impl Persistent for Log {
     fn save(&self, path: &Option<String>) -> Result<(), ErrorType> {
+        let owner_name = self.owner().try_lock().unwrap().name();
         if self.log.is_empty() {
             Err(Error::new(
                 ErrorKind::ContainerEmpty,
-                "Log is empty. Will not save.",
+                format!("Log for '{}'. Nothing to save.", owner_name).as_str(),
             ))
         } else {
             let file = writable_or_create(self.full_path(path));
