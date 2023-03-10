@@ -67,9 +67,8 @@ impl Device for GenericOutput {
 }
 
 impl GenericOutput {
-    /// Return a mock value
-    pub fn tx(&self, value: IOType) -> Result<IOEvent, ErrorType> {
-        // Execute GPIO command
+    /// Execute GPIO command
+    fn tx(&self, value: IOType) -> Result<IOEvent, ErrorType> {
         if let Some(command) = &self.command {
             command.execute(Some(value)).unwrap();
         } else {

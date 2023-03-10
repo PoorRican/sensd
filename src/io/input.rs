@@ -65,9 +65,8 @@ impl Device for GenericInput {
 }
 
 impl GenericInput {
-    /// Return a mock value
-    pub fn rx(&self) -> Result<IOEvent, ErrorType> {
-        // Execute GPIO command
+    /// Execute low-level GPIO command
+    fn rx(&self) -> Result<IOEvent, ErrorType> {
         let read_value = if let Some(command) = &self.command {
             let result = command.execute(None).unwrap();
             result.unwrap()
