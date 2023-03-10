@@ -52,7 +52,7 @@ fn setup_devices(poller: &mut PollGroup) {
             OUTPUT_ID,
             IOKind::Light,
             IODirection::Output,
-            IOCommand::Output(move |val| Ok(println!("\n{}\n", val))),
+            IOCommand::Output(|val| Ok(println!("\n{}\n", val))),
         ),
     ];
     poller.add_devices(&config).unwrap();

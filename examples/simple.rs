@@ -71,14 +71,14 @@ fn setup_poller() -> PollGroup {
             0,
             IOKind::PH,
             IODirection::Input,
-            IOCommand::Input(move || IOType::Float(1.2)),
+            IOCommand::Input(|| IOType::Float(1.2)),
         ),
         (
             "second sensor",
             1,
             IOKind::Flow,
             IODirection::Input,
-            IOCommand::Input(move || IOType::Float(0.5)),
+            IOCommand::Input(|| IOType::Float(0.5)),
         ),
     ];
     poller.add_devices(&config).unwrap();
