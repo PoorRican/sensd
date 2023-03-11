@@ -1,4 +1,5 @@
-use crate::action::{ThresholdFactory, PublisherInstance, Subscriber, SubscriberType};
+use crate::action::{PublisherInstance, Subscriber, SubscriberType, EvaluationFunction};
+use crate::errors::ErrorType;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{IOEvent, IOType};
 use std::sync::{Arc, Mutex};
@@ -18,39 +19,54 @@ pub enum Comparison {
 
 /// Perform an action if threshold is exceeded
 #[derive(Clone)]
-pub struct ThresholdAction {
+pub struct ThresholdAction<F>
+where
+    F: FnMut(IOType) -> Result<IOEvent, ErrorType>
+{
     name: String,
     threshold: IOType,
     publisher: Option<Deferred<PublisherInstance>>,
 
     trigger: Comparison,
-    factory: ThresholdFactory,
+    command: Option<F>,
+    evaluator: EvaluationFunction,
 }
 
-impl ThresholdAction {
+impl<F> ThresholdAction<F>
+where
+    F: FnMut(IOType) -> Result<IOEvent, ErrorType>
+{
     pub fn new(
         name: String,
         threshold: IOType,
         trigger: Comparison,
-        factory: ThresholdFactory,
+        command: Option<F>,
+        evaluator: EvaluationFunction,
     ) -> Self {
         Self {
             name,
             threshold,
             publisher: None,
             trigger,
-            factory,
+            command,
+            evaluator,
         }
     }
 }
 
-impl ThresholdMonitor for ThresholdAction {
+impl<F> ThresholdMonitor for ThresholdAction<F>
+where
+    F: FnMut(IOType) -> Result<IOEvent, ErrorType>
+{
     fn threshold(&self) -> IOType {
         self.threshold
     }
 }
 
-impl Subscriber for ThresholdAction {
+impl<F> Subscriber for ThresholdAction<F>
+where
+    F: FnMut(IOType) -> Result<IOEvent, ErrorType>
+{
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -62,7 +78,16 @@ impl Subscriber for ThresholdAction {
             &Comparison::LT => value <= self.threshold,
         };
         if exceeded {
-            let _ = (self.factory)(value, self.threshold).execute(None);
+            let EvaluationFunction::Threshold(evaluator) = self.evaluator;
+            let output = (evaluator)(self.threshold, value);
+
+
+            let msg = format!("{} exceeds {}", value, self.threshold);
+            self.notify(msg.as_str());
+
+            if let Some(command) = &mut self.command {
+                let _ = (command)(output);
+            }
         }
     }
 
@@ -78,7 +103,10 @@ impl Subscriber for ThresholdAction {
     }
 }
 
-impl Deferrable for ThresholdAction {
+impl<F> Deferrable for ThresholdAction<F>
+where
+    F: FnMut(IOType) -> Result<IOEvent, ErrorType> + 'static
+{
     type Inner = SubscriberType;
 
     fn deferred(self) -> Deferred<Self::Inner> {

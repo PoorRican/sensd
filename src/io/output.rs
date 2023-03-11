@@ -67,7 +67,7 @@ impl Device for GenericOutput {
 }
 
 impl GenericOutput {
-    /// Execute GPIO command
+    /// Execute low-level GPIO command
     fn tx(&self, value: IOType) -> Result<IOEvent, ErrorType> {
         if let Some(command) = &self.command {
             command.execute(Some(value)).unwrap();

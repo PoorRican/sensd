@@ -1,5 +1,5 @@
 use crate::action::{
-    ThresholdFactory, Comparison, Publisher, PublisherInstance, ThresholdAction,
+    EvaluationFunction, Comparison, Publisher, PublisherInstance, ThresholdAction,
 };
 use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::{Deferrable, Deferred};
@@ -145,12 +145,33 @@ impl ActionBuilder {
         name: &str,
         threshold: IOType,
         trigger: Comparison,
-        factory: ThresholdFactory,
+        evaluator: EvaluationFunction,
+        output: Option<DeferredDevice>,
     ) {
         // TODO: raise an error if device type is not numeric (ie: IOType::Boolean)
+        // TODO: check that `evaluator` is `EvaluationFunction::Threshold`
         self.check_publisher();
 
-        let _subscriber = ThresholdAction::new(name.to_string(), threshold, trigger, factory);
+        let command;
+        // construct simple command that writes to output device
+        if let Some(output) = output {
+            let _command = move |val: IOType| {
+                let mut binding = output.try_lock().unwrap();
+                let device = binding.deref_mut();
+                if let DeviceType::Output(inner) = device {
+                    inner.write(val)
+                } else {
+                    Err(Error::new(ErrorKind::DeviceError,
+                                   "Command encountered error. Expected Output device."))
+                }
+            };
+            command = Some(_command);
+        } else {
+            command = None;
+        }
+
+        // construct subscriber
+        let _subscriber = ThresholdAction::new(name.to_string(), threshold, trigger, command, evaluator);
         let subscriber = _subscriber.deferred();
 
         // add subscriber to publisher

@@ -24,7 +24,7 @@ extern crate serde;
 
 use std::sync::Arc;
 
-use sensd::action::{Comparison, IOCommand, SimpleNotifier, ThresholdFactory};
+use sensd::action::{Comparison, IOCommand, EvaluationFunction};
 use sensd::builders::ActionBuilder;
 use sensd::errors::ErrorType;
 use sensd::io::{IODirection, IOKind, IOType};
@@ -92,6 +92,19 @@ fn setup_poller() -> PollGroup {
 fn build_subscribers(poller: &mut PollGroup) {
     println!("\n█▓▒░ Building subscribers ...");
 
+    let evaluator = EvaluationFunction::Threshold(
+        |value, threshold| 
+        if let IOType::Float(thresh) = threshold {
+            if let IOType::Float(val) = value {
+                IOType::Float(thresh - val)
+            } else {
+                panic!("Incorrect values")
+            }
+        } else {
+            panic!("Incorrect values")
+        }
+    );
+
     for (id, input) in poller.inputs.iter() {
         println!("\n- Initializing builder ...");
 
@@ -102,9 +115,7 @@ fn build_subscribers(poller: &mut PollGroup) {
         let name = format!("Subscriber for Input:{}", id);
         let threshold = IOType::Float(1.0);
         let trigger = Comparison::GT;
-        let factory: ThresholdFactory =
-            |value, threshold| SimpleNotifier::boxed(format!("{} exceeded {}", value, threshold));
-        builder.add_threshold(&name, threshold, trigger, factory);
+        builder.add_threshold(&name, threshold, trigger, evaluator.clone(), None);
     }
 
     println!("\n... Finished Initializing subscribers\n");

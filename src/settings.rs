@@ -3,7 +3,7 @@ use dotenv::dotenv;
 use std::env::var;
 
 /// Default values
-const VERSION: &str = "0.1.0-alpha";
+const VERSION: &str = "0.1.0";
 const INTERVAL: i64 = 1;
 
 /// Default Filename Prefixes

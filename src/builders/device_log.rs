@@ -50,7 +50,7 @@ impl DeviceLogBuilder {
         Self {
             device: wrapped,
             log,
-            command: *command,
+            command: command.clone(),
         }
     }
 
@@ -63,7 +63,7 @@ impl DeviceLogBuilder {
     /// # Notes
     /// Alignment of command and device type is checked in `::new()` by `check_command_alignment()`
     pub fn setup_command(&self) {
-        let gpio = GPIOCommand::new(self.command, Some(self.device.clone()));
+        let gpio = GPIOCommand::new(self.command.clone(), Some(self.device.clone()));
 
         let mut binding = self.device.lock().unwrap();
         let device = binding.deref_mut();
