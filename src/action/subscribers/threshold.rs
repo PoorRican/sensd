@@ -2,6 +2,7 @@ use crate::action::{PublisherInstance, Subscriber, SubscriberType, EvaluationFun
 use crate::errors::ErrorType;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{IOEvent, IOType};
+use std::fmt::{Display, Formatter};
 use std::sync::{Arc, Mutex};
 
 /// Generic command that monitors a threshold
@@ -15,6 +16,20 @@ pub trait ThresholdMonitor: Subscriber {
 pub enum Comparison {
     GT,
     LT,
+    GTE,
+    LTE,
+}
+
+impl Display for Comparison {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let name = match self {
+            Comparison::GT => ">",
+            Comparison::LT => "<",
+            Comparison::GTE => "≥",
+            Comparison::LTE => "≤",
+        };
+        write!(f, "{}", name)
+    }
 }
 
 /// Perform an action if threshold is exceeded
@@ -74,15 +89,16 @@ where
     fn evaluate(&mut self, data: &IOEvent) {
         let value = data.data.value;
         let exceeded = match &self.trigger {
-            &Comparison::GT => value >= self.threshold,
-            &Comparison::LT => value <= self.threshold,
+            &Comparison::GT => value > self.threshold,
+            &Comparison::GTE => value >= self.threshold,
+            &Comparison::LT => value < self.threshold,
+            &Comparison::LTE => value <= self.threshold,
         };
         if exceeded {
             let EvaluationFunction::Threshold(evaluator) = self.evaluator;
             let output = (evaluator)(self.threshold, value);
 
-
-            let msg = format!("{} exceeds {}", value, self.threshold);
+            let msg = format!("{} {} {}", value, &self.trigger, self.threshold);
             self.notify(msg.as_str());
 
             if let Some(command) = &mut self.command {
