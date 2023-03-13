@@ -1,23 +1,22 @@
-/// A basic example of sensd implementation.
-///
-/// # Description 
-///
-/// This example displays the use of the "ThresholdNotifier" subscriber. Two input devices are
-/// initalized using the `DeviceLog` builder - both return a static float value. The notifier
-/// set to return a basic message if threshold is exceeded. 
-///
-/// # Note
-///
-/// ## █▓▒░ Global Variables
-///
-/// Take note that the `PollGroup` singleton is not a global mutable static variable as this would
-/// require unsafe code.
-///
-/// ## █▓▒░ Operating Frequency
-/// Device polling is not multi-threaded and the frequency of the event loop is determined by a
-/// static frequency `FREQUENCY`. There might be a usecase where frequency needs to be modulated,
-/// such as during a control cycle for more accurate control. Reduced polling time might be useful
-/// in embedded scenarios requiring both power conservation and accurate control.
+//! A basic example of sensd implementation.
+//!
+//! # Description 
+//!
+//! This example displays the use of the "ThresholdAction" subscriber. Two input devices are
+//! initalized using the `DeviceLog` builder - both devices return a static float value.
+//!
+//! # Note
+//!
+//! ## █▓▒░ Global Variables
+//!
+//! Take note that the `PollGroup` singleton is not a global mutable static variable as this would
+//! require unsafe code.
+//!
+//! ## █▓▒░ Operating Frequency
+//! Device polling is not multi-threaded and the frequency of the event loop is determined by a
+//! static frequency `FREQUENCY`. There might be a usecase where frequency needs to be modulated,
+//! such as during a control cycle for more accurate control. Reduced polling time might be useful
+//! in embedded scenarios requiring both power conservation and accurate control.
 extern crate chrono;
 extern crate sensd;
 extern crate serde;
