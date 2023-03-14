@@ -1,7 +1,7 @@
 use crate::action::{Command, GPIOCommand};
 use crate::errors::ErrorType;
 use crate::helpers::Deferred;
-use crate::io::{DeviceMetadata, IOEvent, IOType};
+use crate::io::{DeviceMetadata, IOEvent, RawValue};
 use crate::storage::{HasLog, Log};
 use chrono::{DateTime, Utc};
 use std::sync::{Arc, Mutex, Weak};
@@ -24,7 +24,7 @@ pub struct Routine {
     metadata: DeviceMetadata,
 
     /// Value to pass to `GPIOCommand`
-    value: IOType,
+    value: RawValue,
 
     /// Weak reference to log for originating device
     log: Weak<Mutex<Log>>,
@@ -36,7 +36,7 @@ impl Routine {
     pub fn new(
         timestamp: DateTime<Utc>,
         metadata: DeviceMetadata,
-        value: IOType,
+        value: RawValue,
         log: Deferred<Log>,
         command: GPIOCommand,
     ) -> Self {
@@ -78,7 +78,7 @@ impl Routine {
 }
 
 impl Command<IOEvent> for Routine {
-    fn execute(&self, value: Option<IOType>) -> Result<Option<IOEvent>, ErrorType> {
+    fn execute(&self, value: Option<RawValue>) -> Result<Option<IOEvent>, ErrorType> {
         match self.command.execute(value) {
             Ok(_) => {
                 let event = IOEvent::generate(&self.metadata, self.timestamp, value.unwrap());
@@ -99,18 +99,18 @@ impl HasLog for Routine {
 mod tests {
     use crate::action::{GPIOCommand, IOCommand, Routine};
     use crate::helpers::Deferrable;
-    use crate::io::{DeviceMetadata, IOType};
+    use crate::io::{DeviceMetadata, RawValue};
     use crate::storage::{Log, MappedCollection};
     use chrono::{Duration, Utc};
 
-    const REGISTER_DEFAULT: IOType = IOType::Binary(false);
-    static mut REGISTER: IOType = REGISTER_DEFAULT;
+    const REGISTER_DEFAULT: RawValue = RawValue::Binary(false);
+    static mut REGISTER: RawValue = REGISTER_DEFAULT;
 
     unsafe fn reset_register() {
         REGISTER = REGISTER_DEFAULT;
     }
 
-    unsafe fn set_register(val: IOType) {
+    unsafe fn set_register(val: RawValue) {
         REGISTER = val;
     }
 
@@ -131,7 +131,7 @@ mod tests {
         let command = GPIOCommand::new(func, None);
 
         let timestamp = Utc::now() + Duration::microseconds(5);
-        let value = IOType::Binary(true);
+        let value = RawValue::Binary(true);
         let routine = Routine::new(timestamp, metadata, value, log.clone(), command);
 
         unsafe {

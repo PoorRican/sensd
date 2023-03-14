@@ -3,7 +3,7 @@ use crate::action::{
 };
 use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{DeferredDevice, DeviceType, DeviceWrapper, IOType, IdType, IODirection};
+use crate::io::{DeferredDevice, DeviceType, DeviceWrapper, RawValue, IdType, IODirection};
 use crate::storage::{PollGroup, MappedCollection};
 use std::ops::DerefMut;
 
@@ -143,19 +143,19 @@ impl ActionBuilder {
     pub fn add_threshold(
         &mut self,
         name: &str,
-        threshold: IOType,
+        threshold: RawValue,
         trigger: Comparison,
         evaluator: EvaluationFunction,
         output: Option<DeferredDevice>,
     ) {
-        // TODO: raise an error if device type is not numeric (ie: IOType::Boolean)
+        // TODO: raise an error if device type is not numeric (ie: RawValue::Boolean)
         // TODO: check that `evaluator` is `EvaluationFunction::Threshold`
         self.check_publisher();
 
         let command;
         // construct simple command that writes to output device
         if let Some(output) = output {
-            let _command = move |val: IOType| {
+            let _command = move |val: RawValue| {
                 let mut binding = output.try_lock().unwrap();
                 let device = binding.deref_mut();
                 if let DeviceType::Output(inner) = device {

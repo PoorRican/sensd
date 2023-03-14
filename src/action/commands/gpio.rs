@@ -1,6 +1,6 @@
 use crate::action::{Command, IOCommand, BoxedCommand};
 use crate::errors::{Error, ErrorKind, ErrorType};
-use crate::io::{DeferredDevice, DeviceTraits, IODirection, IOType};
+use crate::io::{DeferredDevice, DeviceTraits, IODirection, RawValue};
 
 pub struct GPIOCommand {
     func: IOCommand,
@@ -15,7 +15,7 @@ impl GPIOCommand {
         Self { func }
     }
 
-pub fn boxed(self) -> BoxedCommand<IOType> {
+pub fn boxed(self) -> BoxedCommand<RawValue> {
     Box::new(self)
 }
 
@@ -27,7 +27,7 @@ pub fn boxed(self) -> BoxedCommand<IOType> {
     }
 }
 
-impl Command<IOType> for GPIOCommand {
+impl Command<RawValue> for GPIOCommand {
     /// Execute internally stored function.
     ///
     /// In summary: input command returns a value, output command accepts a value.
@@ -39,7 +39,7 @@ impl Command<IOType> for GPIOCommand {
     /// # Returns
     /// If internal function is `IOCommand::Input`, then the value that is read from device is returned.
     /// Otherwise, if `IOCommand::Output`, then `None` is returned.
-    fn execute(&self, value: Option<IOType>) -> Result<Option<IOType>, ErrorType> {
+    fn execute(&self, value: Option<RawValue>) -> Result<Option<RawValue>, ErrorType> {
         match self.func {
             IOCommand::Input(inner) => {
                 // throw warning for unused value
@@ -89,19 +89,19 @@ mod tests {
     use crate::action::{check_alignment, Command, GPIOCommand, IOCommand};
     use crate::helpers::Deferrable;
     use crate::io::{
-        DeferredDevice, Device, DeviceType, GenericInput, GenericOutput, IODirection, IOType,
+        DeferredDevice, Device, DeviceType, GenericInput, GenericOutput, IODirection, RawValue,
         IdType,
     };
     use crate::storage::Log;
 
-    const REGISTER_DEFAULT: IOType = IOType::PosInt8(255);
-    static mut REGISTER: IOType = REGISTER_DEFAULT;
+    const REGISTER_DEFAULT: RawValue = RawValue::PosInt8(255);
+    static mut REGISTER: RawValue = REGISTER_DEFAULT;
 
     unsafe fn reset_register() {
         REGISTER = REGISTER_DEFAULT;
     }
 
-    unsafe fn set_register(val: IOType) {
+    unsafe fn set_register(val: RawValue) {
         REGISTER = val;
     }
 
@@ -127,7 +127,7 @@ mod tests {
             let direction = IODirection::Input;
             let device = make_device(&direction);
 
-            let command = IOCommand::Input(move || IOType::Float(0.0));
+            let command = IOCommand::Input(move || RawValue::Float(0.0));
 
             let result = check_alignment(&command, device);
             match result {
@@ -152,7 +152,7 @@ mod tests {
             let direction = IODirection::Output;
             let device = make_device(&direction);
 
-            let command = IOCommand::Input(move || IOType::Float(0.0));
+            let command = IOCommand::Input(move || RawValue::Float(0.0));
 
             let result = check_alignment(&command, device);
             match result {
@@ -195,7 +195,7 @@ mod tests {
         let direction = IODirection::Output;
         let device = make_device(&direction);
 
-        let command = IOCommand::Input(move || IOType::default());
+        let command = IOCommand::Input(move || RawValue::default());
 
         GPIOCommand::new(command, Some(device));
     }
@@ -230,7 +230,7 @@ mod tests {
                 Ok(())
             });
             let command = GPIOCommand::new(func, None);
-            let value = IOType::Binary(true);
+            let value = RawValue::Binary(true);
 
             unsafe {
                 assert_ne!(REGISTER, value);

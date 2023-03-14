@@ -3,7 +3,7 @@ use chrono::Utc;
 use crate::action::GPIOCommand;
 use crate::helpers::{Deferred, Deferrable};
 use crate::io::{
-    IdType, IOKind, DeviceMetadata, IODirection, IOType, IOEvent,
+    IdType, IOKind, DeviceMetadata, IODirection, RawValue, IOEvent,
 };
 use crate::settings::Settings;
 use crate::storage::{HasLog, Log};
@@ -62,7 +62,7 @@ pub trait Device: HasLog {
     ///
     /// Additionally, internally generating timestamp adds a layer of separation between
     /// device trait objects and any of it's owners (i.e.: `PollGroup`).
-    fn generate_event(&self, value: IOType) -> IOEvent {
+    fn generate_event(&self, value: RawValue) -> IOEvent {
         let dt = Utc::now();
         IOEvent::generate(self.metadata(), dt, value)
     }

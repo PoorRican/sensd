@@ -26,7 +26,7 @@ use std::sync::Arc;
 use sensd::action::{Comparison, IOCommand, EvaluationFunction};
 use sensd::builders::ActionBuilder;
 use sensd::errors::ErrorType;
-use sensd::io::{IODirection, IOKind, IOType};
+use sensd::io::{IODirection, IOKind, RawValue};
 use sensd::settings::Settings;
 use sensd::storage::{Persistent, PollGroup};
 
@@ -65,14 +65,14 @@ fn setup_poller(poller: &mut PollGroup) {
             0,
             IOKind::PH,
             IODirection::Input,
-            IOCommand::Input(|| IOType::Float(1.2)),
+            IOCommand::Input(|| RawValue::Float(1.2)),
         ),
         (
             "second sensor",
             1,
             IOKind::Flow,
             IODirection::Input,
-            IOCommand::Input(|| IOType::Float(0.5)),
+            IOCommand::Input(|| RawValue::Float(0.5)),
         ),
     ];
     poller.add_devices(&config).unwrap();
@@ -87,9 +87,9 @@ fn build_subscribers(poller: &mut PollGroup) {
 
     let evaluator = EvaluationFunction::Threshold(
         |value, threshold| 
-        if let IOType::Float(thresh) = threshold {
-            if let IOType::Float(val) = value {
-                IOType::Float(thresh - val)
+        if let RawValue::Float(thresh) = threshold {
+            if let RawValue::Float(val) = value {
+                RawValue::Float(thresh - val)
             } else {
                 panic!("Incorrect values")
             }
@@ -106,7 +106,7 @@ fn build_subscribers(poller: &mut PollGroup) {
         println!("- Initializing subscriber ...");
 
         let name = format!("Subscriber for Input:{}", id);
-        let threshold = IOType::Float(1.0);
+        let threshold = RawValue::Float(1.0);
         let trigger = Comparison::GT;
         builder.add_threshold(&name, threshold, trigger, evaluator.clone(), None);
     }

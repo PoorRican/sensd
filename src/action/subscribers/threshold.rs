@@ -1,13 +1,13 @@
 use crate::action::{PublisherInstance, Subscriber, SubscriberType, EvaluationFunction};
 use crate::errors::ErrorType;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{IOEvent, IOType};
+use crate::io::{IOEvent, RawValue};
 use std::fmt::{Display, Formatter};
 use std::sync::{Arc, Mutex};
 
 /// Generic command that monitors a threshold
 pub trait ThresholdMonitor: Subscriber {
-    fn threshold(&self) -> IOType;
+    fn threshold(&self) -> RawValue;
 }
 
 #[derive(Debug, Clone)]
@@ -36,10 +36,10 @@ impl Display for Comparison {
 #[derive(Clone)]
 pub struct ThresholdAction<F>
 where
-    F: FnMut(IOType) -> Result<IOEvent, ErrorType>
+    F: FnMut(RawValue) -> Result<IOEvent, ErrorType>
 {
     name: String,
-    threshold: IOType,
+    threshold: RawValue,
     publisher: Option<Deferred<PublisherInstance>>,
 
     trigger: Comparison,
@@ -49,11 +49,11 @@ where
 
 impl<F> ThresholdAction<F>
 where
-    F: FnMut(IOType) -> Result<IOEvent, ErrorType>
+    F: FnMut(RawValue) -> Result<IOEvent, ErrorType>
 {
     pub fn new(
         name: String,
-        threshold: IOType,
+        threshold: RawValue,
         trigger: Comparison,
         command: Option<F>,
         evaluator: EvaluationFunction,
@@ -71,16 +71,16 @@ where
 
 impl<F> ThresholdMonitor for ThresholdAction<F>
 where
-    F: FnMut(IOType) -> Result<IOEvent, ErrorType>
+    F: FnMut(RawValue) -> Result<IOEvent, ErrorType>
 {
-    fn threshold(&self) -> IOType {
+    fn threshold(&self) -> RawValue {
         self.threshold
     }
 }
 
 impl<F> Subscriber for ThresholdAction<F>
 where
-    F: FnMut(IOType) -> Result<IOEvent, ErrorType>
+    F: FnMut(RawValue) -> Result<IOEvent, ErrorType>
 {
     fn name(&self) -> String {
         self.name.clone()
@@ -121,7 +121,7 @@ where
 
 impl<F> Deferrable for ThresholdAction<F>
 where
-    F: FnMut(IOType) -> Result<IOEvent, ErrorType> + 'static
+    F: FnMut(RawValue) -> Result<IOEvent, ErrorType> + 'static
 {
     type Inner = SubscriberType;
 

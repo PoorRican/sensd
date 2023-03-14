@@ -10,7 +10,7 @@ use std::fmt::{Display, Formatter};
 /// The implemented types have been chosen as a good fit for GPIO. However,
 /// if a type is needed that is not here, feel free to initiate a pull request.
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq, PartialOrd)]
-pub enum IOType {
+pub enum RawValue {
     Binary(bool),
     PosInt8(u8),
     Int8(i8),
@@ -18,13 +18,13 @@ pub enum IOType {
     Int(i32),
     Float(f32),
 }
-impl Default for IOType {
+impl Default for RawValue {
     fn default() -> Self {
-        IOType::Float(f32::default())
+        RawValue::Float(f32::default())
     }
 }
 
-impl Display for IOType {
+impl Display for RawValue {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,

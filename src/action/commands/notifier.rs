@@ -1,6 +1,6 @@
 use crate::action::{Command, BoxedCommand};
 use crate::errors::ErrorType;
-use crate::io::{IOEvent, IOType};
+use crate::io::{IOEvent, RawValue};
 
 // Simple command for printing a message to stdout
 pub struct SimpleNotifier {
@@ -17,7 +17,7 @@ impl SimpleNotifier {
 }
 
 impl Command<IOEvent> for SimpleNotifier {
-    fn execute(&self, _value: Option<IOType>) -> Result<Option<IOEvent>, ErrorType> {
+    fn execute(&self, _value: Option<RawValue>) -> Result<Option<IOEvent>, ErrorType> {
         println!("{}", self.msg);
         Ok(None)
     }

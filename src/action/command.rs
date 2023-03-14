@@ -1,5 +1,5 @@
 use crate::errors::ErrorType;
-use crate::io::IOType;
+use crate::io::RawValue;
 
 pub type BoxedCommand<T> = Box<dyn Command<T>>;
 
@@ -13,5 +13,5 @@ pub trait Command<T> {
     ///
     /// # Returns
     /// Result containing optional value for `Ok` or `ErrorType`
-    fn execute(&self, value: Option<IOType>) -> Result<Option<T>, ErrorType>;
+    fn execute(&self, value: Option<RawValue>) -> Result<Option<T>, ErrorType>;
 }

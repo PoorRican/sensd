@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::io::{DeviceMetadata, IOData, IODirection, IOType, IdTraits, IdType};
+use crate::io::{DeviceMetadata, IOData, IODirection, RawValue, IdTraits, IdType};
 
 /// Encapsulates `IOData` alongside of timestamp and device data
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
@@ -31,7 +31,7 @@ impl IOEvent {
     /// ```
     ///
     /// ```
-    pub fn generate(metadata: &DeviceMetadata, timestamp: DateTime<Utc>, value: IOType) -> Self {
+    pub fn generate(metadata: &DeviceMetadata, timestamp: DateTime<Utc>, value: RawValue) -> Self {
         let direction = metadata.direction;
         let id = metadata.id;
         let data = IOData {

@@ -1,7 +1,7 @@
 use sensd::action::{Comparison, IOCommand, EvaluationFunction};
 use sensd::builders::{ActionBuilder, DeviceLogBuilder};
 use sensd::helpers::*;
-use sensd::io::{DeviceTraits, DeviceType, GenericInput, IODirection, IOKind, IOType, IdType};
+use sensd::io::{DeviceTraits, DeviceType, GenericInput, IODirection, IOKind, RawValue, IdType};
 use std::ops::Deref;
 
 /// Check that action builder sets correct values
@@ -15,13 +15,13 @@ fn test_action_builder() {
     let mut builder = ActionBuilder::new(input.clone()).unwrap();
 
     let name = "Subscriber for Input";
-    let threshold = IOType::Float(1.0);
+    let threshold = RawValue::Float(1.0);
     let trigger = Comparison::GT;
     let evaluator = EvaluationFunction::Threshold(
         |value, threshold| 
-        if let IOType::Int8(thresh) = threshold {
-            if let IOType::Int8(val) = value {
-                IOType::Int8(thresh - val)
+        if let RawValue::Int8(thresh) = threshold {
+            if let RawValue::Int8(val) = value {
+                RawValue::Int8(thresh - val)
             } else {
                 panic!("Incorrect values")
             }
@@ -47,7 +47,7 @@ fn test_device_log_builder() {
     const DIRECTION: IODirection = IODirection::Input;
     const KIND: IOKind = IOKind::Unassigned;
 
-    let command = IOCommand::Input(move || IOType::default());
+    let command = IOCommand::Input(move || RawValue::default());
     let builder = DeviceLogBuilder::new(NAME, &ID, &Some(KIND), &DIRECTION, &command, None);
     let (device, log) = builder.get();
 

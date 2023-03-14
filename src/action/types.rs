@@ -1,14 +1,14 @@
 //! Type aliases for functions and closures to assist `ActionBuilder`.
 //! These aliases allow for strongly structuring the dynamic initialization of subscriber/command instances.
-use crate::io::{IODirection, IOType};
+use crate::io::{IODirection, RawValue};
 
 /// Command Factories
 ///
 /// The internal functions should accept arbitrary HAL code.
 #[derive(Clone)]
 pub enum IOCommand {
-    Input(fn() -> IOType),
-    Output(fn(IOType) -> Result<(), ()>),
+    Input(fn() -> RawValue),
+    Output(fn(RawValue) -> Result<(), ()>),
 }
 
 impl IOCommand {
@@ -29,5 +29,5 @@ impl IOCommand {
 #[derive(Clone)]
 pub enum EvaluationFunction {
     // Calculate value to write based on threshold and input value
-    Threshold(fn(value: IOType, threshold: IOType) -> IOType)
+    Threshold(fn(value: RawValue, threshold: RawValue) -> RawValue)
 }

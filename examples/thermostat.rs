@@ -19,7 +19,7 @@ extern crate serde;
 use sensd::action::{EvaluationFunction, Comparison, IOCommand};
 use sensd::builders::ActionBuilder;
 use sensd::errors::ErrorType;
-use sensd::io::{IODirection, IOKind, IOType, DeferredDevice, IdType};
+use sensd::io::{IODirection, IOKind, RawValue, DeferredDevice, IdType};
 use sensd::settings::Settings;
 use sensd::storage::{Persistent, PollGroup, MappedCollection};
 
@@ -38,7 +38,7 @@ const OUTPUT_ID: IdType = 1;
 const FREQUENCY: std::time::Duration = std::time::Duration::from_secs(5);
 
 const THRESHOLD: i8 = 10;
-static mut EXTERNAL_VALUE: IOType = IOType::Int8(0);
+static mut EXTERNAL_VALUE: RawValue = RawValue::Int8(0);
 
 
 /// █▓▒░ Load settings and setup `PollGroup`.
@@ -99,14 +99,14 @@ fn build_subscribers(poller: &mut PollGroup) {
     println!("- Initializing subscriber for input ...");
 
     let name = format!("Subscriber for Input:{}", INPUT_ID);
-    let threshold = IOType::Int8(THRESHOLD);
+    let threshold = RawValue::Int8(THRESHOLD);
     let trigger = Comparison::LT;
 
     let evaluator = EvaluationFunction::Threshold(
         |value, threshold| 
-        if let IOType::Int8(thresh) = threshold {
-            if let IOType::Int8(val) = value {
-                IOType::Int8(thresh - val)
+        if let RawValue::Int8(thresh) = threshold {
+            if let RawValue::Int8(val) = value {
+                RawValue::Int8(thresh - val)
             } else {
                 panic!("Incorrect values")
             }
@@ -146,7 +146,7 @@ fn main() {
         .chain(range.rev())
         .cycle() {
         
-        unsafe { EXTERNAL_VALUE = IOType::Int8(value); }
+        unsafe { EXTERNAL_VALUE = RawValue::Int8(value); }
 
         poll(&mut poller)
             .expect("Error occurred during polling");

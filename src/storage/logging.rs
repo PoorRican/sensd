@@ -192,7 +192,7 @@ mod tests {
     use crate::action::IOCommand;
     use crate::builders::DeviceLogBuilder;
     use crate::helpers::Deferred;
-    use crate::io::{Device, DeviceType, IODirection, IOKind, IOType, IdType};
+    use crate::io::{Device, DeviceType, IODirection, IOKind, RawValue, IdType};
     use crate::storage::{Log, MappedCollection, Persistent};
     use std::ops::Deref;
     use std::path::Path;
@@ -203,8 +203,8 @@ mod tests {
         for _ in 0..count {
             let binding = device.lock().unwrap();
             let event = match binding.deref() {
-                DeviceType::Input(inner) => inner.generate_event(IOType::default()),
-                DeviceType::Output(inner) => inner.generate_event(IOType::default()),
+                DeviceType::Input(inner) => inner.generate_event(RawValue::default()),
+                DeviceType::Output(inner) => inner.generate_event(RawValue::default()),
             };
             log.lock().unwrap().push(event.timestamp, event).unwrap();
             thread::sleep(Duration::from_nanos(1)); // add delay so that we don't finish too quickly
@@ -216,7 +216,7 @@ mod tests {
         const SENSOR_NAME: &str = "test";
         const ID: IdType = 32;
         const COUNT: usize = 10;
-        const COMMAND: IOCommand = IOCommand::Input(move || IOType::default());
+        const COMMAND: IOCommand = IOCommand::Input(move || RawValue::default());
 
         /* NOTE: More complex `IOEvent` objects *could* be checked, but we are trusting `serde`.
            These tests only count the number of `IOEvent`'s added. */

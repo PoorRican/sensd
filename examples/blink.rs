@@ -11,7 +11,7 @@ extern crate serde;
 use std::sync::Arc;
 
 use sensd::action::IOCommand;
-use sensd::io::{IODirection, IOKind, IOType, IdType, DeviceType};
+use sensd::io::{IODirection, IOKind, RawValue, IdType, DeviceType};
 use sensd::settings::Settings;
 use sensd::storage::{PollGroup, MappedCollection, Persistent};
 use std::ops::DerefMut;
@@ -61,14 +61,14 @@ fn setup_devices(poller: &mut PollGroup) {
 /// Alternate boolean value to pass to output.
 ///
 /// Boolean value is modified 
-fn alternate_value(value: &mut IOType) {
-    if let IOType::Binary(inner) = value {
+fn alternate_value(value: &mut RawValue) {
+    if let RawValue::Binary(inner) = value {
         *value = match inner {
-            true => IOType::Binary(false),
-            false => IOType::Binary(true),
+            true => RawValue::Binary(false),
+            false => RawValue::Binary(true),
         };
     } else {
-        panic!("Variant is not `IOType::Binary`");
+        panic!("Variant is not `RawValue::Binary`");
     }
 }
 
@@ -81,7 +81,7 @@ fn main() {
 
     println!("█▓▒░ Beginning loop ░▒▓█\n");
 
-    let mut value = IOType::Binary(false);
+    let mut value = RawValue::Binary(false);
 
     loop {
 

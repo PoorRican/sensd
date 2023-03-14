@@ -130,10 +130,10 @@ impl HasLog for GenericInput {
 mod tests {
     use crate::action::{GPIOCommand, IOCommand, PublisherInstance};
     use crate::helpers::Deferrable;
-    use crate::io::{Device, GenericInput, IOType};
+    use crate::io::{Device, GenericInput, RawValue};
     use crate::storage::MappedCollection;
 
-    const DUMMY_OUTPUT: IOType = IOType::Float(1.2);
+    const DUMMY_OUTPUT: RawValue = RawValue::Float(1.2);
     const COMMAND: IOCommand = IOCommand::Input(move || DUMMY_OUTPUT);
 
     #[test]

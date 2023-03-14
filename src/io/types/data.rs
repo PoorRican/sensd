@@ -1,5 +1,5 @@
 use crate::io::{
-    IOKind, IOType,
+    IOKind, RawValue,
 };
 use serde::{Deserialize, Serialize};
 
@@ -8,5 +8,5 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, Default)]
 pub struct IOData {
     pub kind: IOKind,
-    pub value: IOType,
+    pub value: RawValue,
 }
