@@ -87,15 +87,7 @@ fn build_subscribers(poller: &mut PollGroup) {
 
     let evaluator = EvaluationFunction::Threshold(
         |value, threshold| 
-        if let RawValue::Float(thresh) = threshold {
-            if let RawValue::Float(val) = value {
-                RawValue::Float(thresh - val)
-            } else {
-                panic!("Incorrect values")
-            }
-        } else {
-            panic!("Incorrect values")
-        }
+        threshold - value
     );
 
     for (id, input) in poller.inputs.iter() {

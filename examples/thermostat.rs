@@ -104,15 +104,7 @@ fn build_subscribers(poller: &mut PollGroup) {
 
     let evaluator = EvaluationFunction::Threshold(
         |value, threshold| 
-        if let RawValue::Int8(thresh) = threshold {
-            if let RawValue::Int8(val) = value {
-                RawValue::Int8(thresh - val)
-            } else {
-                panic!("Incorrect values")
-            }
-        } else {
-            panic!("Incorrect values")
-        }
+        threshold - value
     );
     // TODO: output device should be passed to `::add_threshold()`
     builder.add_threshold(&name, threshold, trigger, evaluator, Some(output));
