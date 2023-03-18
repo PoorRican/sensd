@@ -57,15 +57,10 @@ fn init(name: &str) -> PollGroup {
     group
 }
 
-/// █▓▒░ Initialize "main" poller and add devices.
+/// █▓▒░ Add devices to `PollGroup`
 ///
-/// Initial formatting for basic devices is demonstrated.
-///
-/// # Returns
-/// `PollGroup` with incorporate devices.
-unsafe fn setup_poller() -> PollGroup {
-    let mut poller = init("main");
-
+/// Initial formatting for when using the `PollGroup::add_device()`  is demonstrated.
+unsafe fn setup_poller(poller: &mut PollGroup) {
     let config = vec![
         (
             "mock temp sensor",
@@ -83,7 +78,6 @@ unsafe fn setup_poller() -> PollGroup {
         ),
     ];
     poller.add_devices(&config).unwrap();
-    poller
 }
 
 /// █▓▒░ Add a single `ThresholdNotifier` to all device in `PollGroup`.
@@ -128,7 +122,9 @@ fn poll(poller: &mut PollGroup) -> Result<(), ErrorType> {
 
 
 fn main() {
-    let mut poller = unsafe { setup_poller() };
+    let mut poller = init("main");
+    unsafe { setup_poller(&mut poller) }
+
     build_subscribers(&mut poller);
 
     println!("█▓▒░ Beginning polling ░▒▓█\n");
