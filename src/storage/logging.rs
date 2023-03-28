@@ -57,7 +57,7 @@ impl Log {
 
     /// Append filename to path
     fn full_path(&self, path: &Option<String>) -> String {
-        let prefix = path.clone().unwrap_or_else(|| String::from(""));
+        let prefix = path.defer().unwrap_or_else(|| self.settings.data_root);
 
         format!("{}{}", prefix, self.filename())
     }

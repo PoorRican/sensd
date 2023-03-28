@@ -2,12 +2,12 @@ use chrono::Duration;
 use sensd::action::IOCommand;
 use sensd::io::{IODirection, IOKind, RawValue};
 use sensd::settings::Settings;
-use sensd::storage::PollGroup;
+use sensd::storage::Group;
 use std::sync::Arc;
 
 #[test]
 fn test_add_device() {
-    let mut poller: PollGroup = PollGroup::new("main", None);
+    let mut poller: Group = Group::new("main", None);
 
     let command = IOCommand::Input(move || RawValue::default());
     let config = vec![
@@ -35,7 +35,7 @@ fn test_add_device() {
 fn test_add_to_log() {
     let mut settings = Settings::default();
     settings.interval = Duration::nanoseconds(1);
-    let mut poller: PollGroup = PollGroup::new("main", Some(Arc::new(settings)));
+    let mut poller: Group = Group::new("main", Some(Arc::new(settings)));
 
     let command = IOCommand::Input(move || RawValue::default());
     let config = vec![

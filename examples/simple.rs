@@ -9,7 +9,7 @@
 //!
 //! ## █▓▒░ Global Variables
 //!
-//! Take note that the `PollGroup` singleton is not a global mutable static variable as this would
+//! Take note that the `Group` singleton is not a global mutable static variable as this would
 //! require unsafe code.
 //!
 //! ## █▓▒░ Operating Frequency
@@ -28,7 +28,7 @@ use sensd::builders::ActionBuilder;
 use sensd::errors::ErrorType;
 use sensd::io::{IODirection, IOKind, RawValue};
 use sensd::settings::Settings;
-use sensd::storage::{Persistent, PollGroup};
+use sensd::storage::{Persistent, Group};
 
 /// █▓▒░ Event Loop Operating frequency
 /// 
@@ -39,26 +39,26 @@ use sensd::storage::{Persistent, PollGroup};
 /// Refer to file notes about making this a mutable value
 const FREQUENCY: std::time::Duration = std::time::Duration::from_secs(1);
 
-/// █▓▒░ Load settings and setup `PollGroup`.
+/// █▓▒░ Load settings and setup `Group`.
 ///
 /// # Args
 /// name - Name to be converted to string
 ///
 /// # Returns
-/// Simgle initialized PollGroup
-fn init(name: &str) -> PollGroup {
+/// Simgle initialized Group
+fn init(name: &str) -> Group {
     let settings: Arc<Settings> = Arc::new(Settings::initialize());
     println!("Initialized settings");
 
-    let group = PollGroup::new(name.clone(), Some(settings));
+    let group = Group::new(name.clone(), Some(settings));
     println!("Initialized poll group: \"{}\"", name);
     group
 }
 
-/// █▓▒░ Setup and add devices to given `PollGroup`.
+/// █▓▒░ Setup and add devices to given `Group`.
 ///
 /// Initial formatting for basic devices is demonstrated.
-fn setup_poller(poller: &mut PollGroup) {
+fn setup_poller(poller: &mut Group) {
     let config = vec![
         (
             "test name",
@@ -78,11 +78,11 @@ fn setup_poller(poller: &mut PollGroup) {
     poller.add_devices(&config).unwrap();
 }
 
-/// █▓▒░ Add a single `ThresholdNotifier` to all device in `PollGroup`.
+/// █▓▒░ Add a single `ThresholdNotifier` to all device in `Group`.
 ///
 /// This demonstrates the initialization of `ThresholdNotifier` subscribers and shows how
-/// subscribers are added to `PollGroup` via `::.
-fn build_subscribers(poller: &mut PollGroup) {
+/// subscribers are added to `Group` via `::.
+fn build_subscribers(poller: &mut Group) {
     println!("\n█▓▒░ Building subscribers ...");
 
     let evaluator = EvaluationFunction::Threshold(
@@ -106,8 +106,8 @@ fn build_subscribers(poller: &mut PollGroup) {
     println!("\n... Finished Initializing subscribers\n");
 }
 
-/// █▓▒░ Handle polling of all devices in `PollGroup`
-fn poll(poller: &mut PollGroup) -> Result<(), ErrorType> {
+/// █▓▒░ Handle polling of all devices in `Group`
+fn poll(poller: &mut Group) -> Result<(), ErrorType> {
     match poller.poll() {
         Ok(_) => match poller.save(&None) {
             Ok(_) => println!("\n"),

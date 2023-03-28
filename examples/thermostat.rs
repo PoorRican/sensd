@@ -21,7 +21,7 @@ use sensd::builders::ActionBuilder;
 use sensd::errors::ErrorType;
 use sensd::io::{IODirection, IOKind, RawValue, DeferredDevice, IdType};
 use sensd::settings::Settings;
-use sensd::storage::{Persistent, PollGroup, MappedCollection};
+use sensd::storage::{Persistent, Group, MappedCollection};
 
 use std::sync::Arc;
 
@@ -41,26 +41,26 @@ const THRESHOLD: i8 = 10;
 static mut EXTERNAL_VALUE: RawValue = RawValue::Int8(0);
 
 
-/// █▓▒░ Load settings and setup `PollGroup`.
+/// █▓▒░ Load settings and setup `Group`.
 ///
 /// # Args
 /// name - Name to be converted to string
 ///
 /// # Returns
-/// Simgle initialized PollGroup
-fn init(name: &str) -> PollGroup {
+/// Simgle initialized Group
+fn init(name: &str) -> Group {
     let settings: Arc<Settings> = Arc::new(Settings::initialize());
     println!("Initialized settings");
 
-    let group = PollGroup::new(name.clone(), Some(settings));
+    let group = Group::new(name.clone(), Some(settings));
     println!("Initialized poll group: \"{}\"", name);
     group
 }
 
-/// █▓▒░ Add devices to `PollGroup`
+/// █▓▒░ Add devices to `Group`
 ///
-/// Initial formatting for when using the `PollGroup::add_device()`  is demonstrated.
-unsafe fn setup_poller(poller: &mut PollGroup) {
+/// Initial formatting for when using the `Group::add_device()`  is demonstrated.
+unsafe fn setup_poller(poller: &mut Group) {
     let config = vec![
         (
             "mock temp sensor",
@@ -80,8 +80,8 @@ unsafe fn setup_poller(poller: &mut PollGroup) {
     poller.add_devices(&config).unwrap();
 }
 
-/// █▓▒░ Add a single `ThresholdNotifier` to all device in `PollGroup`.
-fn build_subscribers(poller: &mut PollGroup) {
+/// █▓▒░ Add a single `ThresholdNotifier` to all device in `Group`.
+fn build_subscribers(poller: &mut Group) {
     println!("\n█▓▒░ Building subscribers ...");
 
     let input: DeferredDevice = poller.inputs.get(INPUT_ID).unwrap().clone();
@@ -106,8 +106,8 @@ fn build_subscribers(poller: &mut PollGroup) {
     println!("\n... Finished Initializing subscribers\n");
 }
 
-/// █▓▒░ Handle polling of all devices in `PollGroup`
-fn poll(poller: &mut PollGroup) -> Result<(), ErrorType> {
+/// █▓▒░ Handle polling of all devices in `Group`
+fn poll(poller: &mut Group) -> Result<(), ErrorType> {
     match poller.poll() {
         Ok(_) => match poller.save(&None) {
             Ok(_) => println!("\n"),

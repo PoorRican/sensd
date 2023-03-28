@@ -13,7 +13,7 @@ use std::sync::Arc;
 use sensd::action::IOCommand;
 use sensd::io::{IODirection, IOKind, RawValue, IdType, DeviceType};
 use sensd::settings::Settings;
-use sensd::storage::{PollGroup, MappedCollection, Persistent};
+use sensd::storage::{Group, MappedCollection, Persistent};
 use std::ops::DerefMut;
 
 /// █▓▒░ Event Loop Operating frequency
@@ -26,26 +26,26 @@ const FREQUENCY: std::time::Duration = std::time::Duration::from_secs(1);
 /// Hardcoded ID for output device
 const OUTPUT_ID: IdType = 0;
 
-/// █▓▒░ Load settings and setup `PollGroup`.
+/// █▓▒░ Load settings and setup `Group`.
 ///
 /// # Args
 /// name - Name to be converted to string
 ///
 /// # Returns
-/// Simgle initialized PollGroup
-fn init(name: &str) -> PollGroup {
+/// Simgle initialized Group
+fn init(name: &str) -> Group {
     let settings: Arc<Settings> = Arc::new(Settings::initialize());
     println!("Initialized settings");
 
-    let group = PollGroup::new(name.clone(), Some(settings));
+    let group = Group::new(name.clone(), Some(settings));
     println!("Initialized poll group: \"{}\"", name);
     group
 }
 
-/// █▓▒░ Build and add devices to `PollGroup`.
+/// █▓▒░ Build and add devices to `Group`.
 ///
-/// Use of `PollGroup::add_devices()` is demonstrated.
-fn setup_devices(poller: &mut PollGroup) {
+/// Use of `Group::add_devices()` is demonstrated.
+fn setup_devices(poller: &mut Group) {
     let config = vec![
         (
             "Mock Output",

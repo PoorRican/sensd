@@ -6,6 +6,6 @@ mod persistent;
 
 pub use collection::MappedCollection;
 pub use container::Container;
-pub use grouping::PollGroup;
+pub use grouping::Group;
 pub use logging::*;
 pub use persistent::Persistent;

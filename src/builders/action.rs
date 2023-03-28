@@ -4,7 +4,7 @@ use crate::action::{
 use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{DeferredDevice, DeviceType, DeviceWrapper, RawValue, IdType, IODirection};
-use crate::storage::{PollGroup, MappedCollection};
+use crate::storage::{Group, MappedCollection};
 use std::ops::DerefMut;
 
 /// Assist the user in dynamically initializing a single publisher for a single input.
@@ -29,7 +29,7 @@ impl ActionBuilder {
     /// # Notes
     /// This constructor method may be used directly, or alternatively
     /// `ActionBuilder::from_group()` may be used for indirectly constructing builder by only
-    /// supplying a reference to `PollGroup` and device id.
+    /// supplying a reference to `Group` and device id.
     ///
     /// # Args
     /// - device: Device to add pub/subs. Should be Input
@@ -48,25 +48,25 @@ impl ActionBuilder {
         })
     }
 
-    /// Helper function that extracts deferred device from `PollGroup`
+    /// Helper function that extracts deferred device from `Group`
     ///
     /// Device type container is determined by `direction`: inputs are taken from
-    /// `PollGroup::inputs`, and outputs are taken from `PollGroup::outputs`.
+    /// `Group::inputs`, and outputs are taken from `Group::outputs`.
     ///
-    /// Extracting devices from respective `PollGroup` containers grants indirection between device
+    /// Extracting devices from respective `Group` containers grants indirection between device
     /// ininitialization and pub/sub building.
     ///
     /// # Args
-    /// poller: Reference to `PollGroup`
+    /// poller: Reference to `Group`
     /// direction: IODirection which determines which container is used to retrieve deferred device
     /// id: id of device
     ///
     /// # Returns
     /// Result with deferred device or `ErrorType`.
     ///
-    /// If id doesn't exist in `PollGroup::inputs`, then an error with `DeviceKind::ContainerError`
+    /// If id doesn't exist in `Group::inputs`, then an error with `DeviceKind::ContainerError`
     /// and the appropriate message is returned.
-    fn extract_device(poller: &PollGroup,
+    fn extract_device(poller: &Group,
                       direction: IODirection,
                       id: IdType) -> Result<DeferredDevice, ErrorType> {
 
@@ -91,27 +91,27 @@ impl ActionBuilder {
 
     /// Indirect constructor for `ActionBuilder`.
     ///
-    /// Allows input device to be constructed and added to `PollGroup::inputs` seperately.
+    /// Allows input device to be constructed and added to `Group::inputs` seperately.
     /// Therefore, deferred device does not need to remain in scope and passed to
     /// `::new()`. This allows device building to be handled by an external function. Only the
     /// device id needs remain in scope.
     ///
     /// # Args
-    /// poller: Reference to `PollGroup`
+    /// poller: Reference to `Group`
     /// id: id of device
     ///
     /// # Returns
     /// Result containing `ActionBuilder` or `ErrorType`.
     ///
-    /// If id doesn't exist in `PollGroup::inputs`, then an error with `DeviceKind::ContainerError`
+    /// If id doesn't exist in `Group::inputs`, then an error with `DeviceKind::ContainerError`
     /// and the appropriate message is returned.
-    pub fn from_group(poller: &PollGroup, id: IdType) -> Result<Self, ErrorType> {
+    pub fn from_group(poller: &Group, id: IdType) -> Result<Self, ErrorType> {
         let input = Self::extract_device(poller, IODirection::Input, id)?;
         Self::new(input)
     }
 
     /// Associate a deferred output to builder.
-    pub fn attach_output(&mut self, poller: &PollGroup, id: IdType) -> Result<(), ErrorType> {
+    pub fn attach_output(&mut self, poller: &Group, id: IdType) -> Result<(), ErrorType> {
         let output = Self::extract_device(poller, IODirection::Output, id)?;
         self.output = Some(output);
         Ok(())
@@ -121,7 +121,7 @@ impl ActionBuilder {
     fn build_publisher() -> Deferred<PublisherInstance> {
         let binding = PublisherInstance::default();
         binding.deferred()
-        // TODO: add publisher to `PollGroup`
+        // TODO: add publisher to `Group`
     }
 
     /// Silently add publisher to input device.

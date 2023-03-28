@@ -16,12 +16,12 @@ use std::sync::Arc;
 ///
 /// `interval` dictates the duration between each poll,
 /// and `last_execution` field is working memory to store the time of the last successful poll.
-pub struct PollGroup {
+pub struct Group {
     _name: String,
     last_execution: DateTime<Utc>,
 
     /// Non-mutable storage of runtime settings
-    /// Ownership of settings should be given to `PollGroup`
+    /// Ownership of settings should be given to `Group`
     settings: Arc<Settings>,
 
     // internal containers
@@ -34,7 +34,7 @@ pub struct PollGroup {
     pub scheduled: Vec<Routine>,
 }
 
-impl PollGroup {
+impl Group {
     /// Iterate through container once. Call `get_event()` on each value.
     /// Update according to the lowest rate.
     pub fn poll(&mut self) -> Result<Vec<Result<IOEvent, ErrorType>>, ()> {
@@ -181,9 +181,9 @@ impl PollGroup {
     }
 }
 
-/// Only save and load log data since PollGroup is statically initialized
+/// Only save and load log data since Group is statically initialized
 /// If `&None` is given to either methods, then current directory is used.
-impl Persistent for PollGroup {
+impl Persistent for Group {
     fn save(&self, path: &Option<String>) -> Result<(), ErrorType> {
         let results = &[self.save_logs(path)];
         check_results(results)
