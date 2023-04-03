@@ -9,5 +9,6 @@
 .env
 
 # Persistent data
+.data/
 *.json
 *.csv

@@ -5,6 +5,7 @@ use std::fmt::Formatter;
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::ops::Deref;
+use std::path::Path;
 use std::sync::{Arc, Mutex, Weak};
 
 use crate::errors::{Error, ErrorKind, ErrorType};
@@ -55,11 +56,18 @@ impl Log {
         self.owner = Some(owner);
     }
 
-    /// Append filename to path
+    /// Full path to log file.
+    ///
+    /// No directories or files are created by this function.
+    ///
+    /// # Args:
+    /// path: Optional argument to override typical storage path
     fn full_path(&self, path: &Option<String>) -> String {
-        let prefix = path.defer().unwrap_or_else(|| self.settings.data_root);
+        let prefix = path.as_ref().unwrap_or_else(|| &self.settings.data_root);
+        let dir = Path::new(prefix);
 
-        format!("{}{}", prefix, self.filename())
+        let full_path = dir.join(self.filename());
+        String::from(full_path.to_str().unwrap())
     }
 
     pub fn new(id: IdType, settings: Option<Arc<Settings>>) -> Self {
@@ -238,7 +246,7 @@ mod tests {
             _log.save(&None).unwrap();
 
             // save filename for later
-            filename = _log.filename();
+            filename = _log.full_path(&None);
             // check that file exists
             assert!(Path::new(&filename).exists());
         };

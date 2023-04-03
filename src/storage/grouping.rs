@@ -7,6 +7,8 @@ use crate::settings::Settings;
 use crate::storage::{LogContainer, MappedCollection, Persistent};
 use chrono::{DateTime, Duration, Utc};
 use std::ops::DerefMut;
+use std::fs::create_dir_all;
+use std::path::Path;
 use std::sync::Arc;
 
 /// Mediator to periodically poll input devices of various types, and store the resulting `IOEvent` objects in a `Container`.
@@ -166,6 +168,13 @@ impl Group {
         check_results(&results)
     }
 
+    /// Dedicated directory for `Group`
+    ///
+    /// TODO: append group name to path to isolate data
+    pub fn dir(&self) -> &Path {
+        Path::new(self.settings.data_root.as_str())
+    }
+
     /// Save each individual log
     ///
     /// # Notes
@@ -178,6 +187,17 @@ impl Group {
             results.push(result);
         }
         check_results(&results)
+    }
+
+    /// Attempt to setup root data directory
+    pub fn setup_dir(&self) {
+        let path = self.dir();
+        match path.exists() {
+            true => (),
+            false => {
+                create_dir_all(path).expect("Could not create root data directory");
+            },
+        }
     }
 }
 
@@ -192,5 +212,35 @@ impl Persistent for Group {
     fn load(&mut self, path: &Option<String>) -> Result<(), ErrorType> {
         let results = &[self.load_logs(path)];
         check_results(results)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use crate::settings::Settings;
+    use crate::storage::Group;
+
+    use std::fs::remove_dir_all;
+
+    #[test]
+    fn test_setup_dir() {
+        // init `Group` and settings
+        let dir_name = String::from("test_root");
+        let mut _settings = Settings::default();
+        _settings.set_root(dir_name.clone());
+
+        let group = Group::new("main", Some(Arc::new(_settings)));
+
+        // assert directory path is correct
+        assert_eq!(dir_name.as_str(), group.dir().to_str().unwrap());
+
+        group.setup_dir();
+
+        // assert directory exists
+        assert!(group.dir().exists());
+
+        remove_dir_all(group.dir()).unwrap();
     }
 }
