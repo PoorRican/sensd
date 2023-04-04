@@ -8,7 +8,7 @@ use crate::storage::{LogContainer, MappedCollection, Persistent};
 use chrono::{DateTime, Duration, Utc};
 use std::ops::DerefMut;
 use std::fs::create_dir_all;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 /// Mediator to periodically poll input devices of various types, and store the resulting `IOEvent` objects in a `Container`.
@@ -19,7 +19,7 @@ use std::sync::Arc;
 /// `interval` dictates the duration between each poll,
 /// and `last_execution` field is working memory to store the time of the last successful poll.
 pub struct Group {
-    _name: String,
+    name: String,
     last_execution: DateTime<Utc>,
 
     /// Non-mutable storage of runtime settings
@@ -84,7 +84,7 @@ impl Group {
         let scheduled = Vec::default();
 
         Self {
-            _name: String::from(name),
+            name: String::from(name),
             settings,
             last_execution,
             logs,
@@ -170,9 +170,10 @@ impl Group {
 
     /// Dedicated directory for `Group`
     ///
-    /// TODO: append group name to path to isolate data
-    pub fn dir(&self) -> &Path {
-        Path::new(self.settings.data_root.as_str())
+    /// The dedicated directory for a `Group` is simply a sub-directory in the global path.
+    pub fn dir(&self) -> PathBuf {
+        let path = Path::new(self.settings.data_root.as_str());
+        path.join(self.name.as_str())
     }
 
     /// Save each individual log
@@ -201,7 +202,7 @@ impl Group {
     }
 }
 
-/// Only save and load log data since Group is statically initialized
+/// Only save and load log data since `Group` is statically initialized
 /// If `&None` is given to either methods, then current directory is used.
 impl Persistent for Group {
     fn save(&self, path: &Option<String>) -> Result<(), ErrorType> {
@@ -217,6 +218,7 @@ impl Persistent for Group {
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
     use std::sync::Arc;
 
     use crate::settings::Settings;
@@ -224,23 +226,42 @@ mod tests {
 
     use std::fs::remove_dir_all;
 
+    /// Test `Group::dir()`
     #[test]
-    fn test_setup_dir() {
+    fn test_dir() {
+        const DIR_NAME: &str = "test_root";
+        const GROUP_NAME: &str = "main";
+
         // init `Group` and settings
-        let dir_name = String::from("test_root");
+        let dir_name = String::from(DIR_NAME);
         let mut _settings = Settings::default();
         _settings.set_root(dir_name.clone());
 
-        let group = Group::new("main", Some(Arc::new(_settings)));
+        let expected = Path::new(DIR_NAME).join(GROUP_NAME);
+        let group = Group::new(GROUP_NAME, Some(Arc::new(_settings)));
 
         // assert directory path is correct
-        assert_eq!(dir_name.as_str(), group.dir().to_str().unwrap());
+        assert_eq!(expected.to_str().unwrap(), group.dir().to_str().unwrap());
+    }
 
+    /// Test `Group::setup_dir()`
+    #[test]
+    fn test_setup_dir() {
+        const DIR_NAME: &str = "test_root";
+        const GROUP_NAME: &str = "main";
+
+        // init `Group` and settings
+        let dir_name = String::from(DIR_NAME);
+        let mut _settings = Settings::default();
+        _settings.set_root(dir_name.clone());
+
+        let group = Group::new(GROUP_NAME, Some(Arc::new(_settings)));
+
+        // assert `setup_dir()` works as expected exists
         group.setup_dir();
-
-        // assert directory exists
         assert!(group.dir().exists());
 
-        remove_dir_all(group.dir()).unwrap();
+        remove_dir_all(group.dir().parent().unwrap())
+            .unwrap();
     }
 }
