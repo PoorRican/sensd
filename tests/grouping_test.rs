@@ -67,7 +67,7 @@ fn test_add_to_log() {
         poller.poll().unwrap();
 
         std::thread::sleep(std::time::Duration::from_nanos(
-            poller._interval().num_nanoseconds().unwrap() as u64,
+            poller.interval().num_nanoseconds().unwrap() as u64,
         ));
     }
 
