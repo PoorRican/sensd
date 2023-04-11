@@ -1,3 +1,4 @@
+//! High-level framework for building instances and relationships
 mod action;
 mod device_log;
 

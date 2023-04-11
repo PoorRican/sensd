@@ -1,3 +1,5 @@
+//! Data structures and interfaces to store data
+//!
 mod collection;
 mod container;
 mod grouping;

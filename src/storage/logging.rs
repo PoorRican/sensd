@@ -14,15 +14,22 @@ use crate::io::{DeferredDevice, DeviceTraits, DeviceType, IOEvent, IdType};
 use crate::settings::Settings;
 use crate::storage::{Container, MappedCollection, Persistent};
 
-// Defines a type alias `LogType` for a container of IOEvent and DateTime<Utc> objects.
+/// Hashmap type alias defines a type alias `LogType` for storing `IOEvent` by `DateTime<Utc>` keys.
 pub type LogType = Container<IOEvent, DateTime<Utc>>;
 
-/// Define the `Deferred` type as an Arc of a Mutex wrapping the generic type `T`.
+/// Primary container for storing `Log` instances.
 pub type LogContainer = Vec<Deferred<Log>>;
 
+/// Default filetype suffix.
+///
+/// Used by `Log::filename()`, but this should probably be moved to settings
 const FILETYPE: &str = ".json";
 
+/// Transparently enables a reference to `Log` to be shared.
 pub trait HasLog {
+    /// Property to return reference to field
+    ///
+    /// Upgrading of `Weak` reference should occur here
     fn log(&self) -> Option<Deferred<Log>>;
 
     fn add_to_log(&self, event: IOEvent) {
@@ -34,9 +41,12 @@ pub trait HasLog {
     }
 }
 
-// Encapsulates a `LogType` alongside a weak reference to a `Device`
+/// Log abstraction of `IOEvent` keyed by datetime
+///
+/// Encapsulates a `LogType` alongside a weak reference to a `Device`
 #[derive(Serialize, Deserialize, Default)]
 pub struct Log {
+    // TODO: split logs using ID
     id: IdType,
     #[serde(skip)]
     owner: Option<Weak<Mutex<DeviceType>>>,
@@ -47,11 +57,20 @@ pub struct Log {
 }
 
 impl Log {
+    /// Return reference to originating device.
+    ///
+    /// `sync::Weak` is upgraded to `Arc`
+    ///
+    /// # Errors
+    /// Panics if owner attribute is `None`
     pub fn owner(&self) -> DeferredDevice {
         // TODO: handle error if owner is None or if Weak has no Strong
-        self.owner.clone().unwrap().upgrade().unwrap()
+        self.owner.as_ref().unwrap().upgrade().unwrap()
     }
 
+    /// Set reference to owning device.
+    ///
+    /// `Arc` should be downgraded to `sync::Weak` and passed as reference.
     pub fn set_owner(&mut self, owner: Weak<Mutex<DeviceType>>) {
         self.owner = Some(owner);
     }
@@ -81,6 +100,7 @@ impl Log {
         }
     }
 
+    /// Generate generic filename based on settings, owner, and id
     pub fn filename(&self) -> String {
         let owner = self.owner();
         format!(
@@ -92,10 +112,12 @@ impl Log {
         )
     }
 
+    /// Iterator for log
     pub fn iter(&self) -> Iter<DateTime<Utc>, IOEvent> {
         self.log.iter()
     }
 
+    /// Returns true if owner
     pub fn orphan(&self) -> bool {
         match self.owner {
             Some(_) => false,

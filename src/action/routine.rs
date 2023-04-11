@@ -8,6 +8,9 @@ use std::sync::{Arc, Mutex, Weak};
 
 /// A `Command` that should be executed at a scheduled time *outside* of the normal event loop.
 ///
+/// A weak reference to originating log is maintained so that logging of events is automatically
+/// handled.
+///
 /// Typically these should exclusively be `Output` events, such as completing a time bound operation.
 ///
 /// # Example
@@ -49,13 +52,14 @@ impl Routine {
             command,
         }
     }
-    /// Main polling function
+    /// Main polling function 
     ///
-    /// Checks scheduled time, then executes command. `IOEvent` is automatically added to device log.
+    /// Acts as wrapper for `Command::execute()`. Checks scheduled time, then executes command.
+    /// `IOEvent` is automatically added to device log.
     ///
     /// # Returns
-    /// bool based on if execution was successful or not. This value should be used to drop `Routine` from
-    /// external store.
+    /// bool based on if execution was successful or not. This value should be used to drop
+    /// `Routine` from external store.
     pub fn attempt(&self) -> bool {
         let now = Utc::now();
         if now >= self.timestamp {

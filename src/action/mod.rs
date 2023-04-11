@@ -1,3 +1,4 @@
+//! Cybernetic abstractions
 mod command;
 mod commands;
 mod publisher;
