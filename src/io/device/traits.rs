@@ -1,6 +1,6 @@
 use core::fmt::Formatter;
 use chrono::Utc;
-use crate::action::GPIOCommand;
+use crate::action::IOCommand;
 use crate::helpers::{Deferred, Deferrable};
 use crate::io::{
     IdType, IOKind, DeviceMetadata, IODirection, RawValue, IOEvent,
@@ -68,7 +68,7 @@ pub trait Device: HasLog {
     }
 
     /// Setter for `command` field
-    fn add_command(&mut self, command: GPIOCommand);
+    fn add_command(&mut self, command: IOCommand);
 
     /// Setter for `log` field
     fn add_log(&mut self, log: Deferred<Log>);

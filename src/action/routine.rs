@@ -1,4 +1,4 @@
-use crate::action::{Command, GPIOCommand};
+use crate::action::{Command, IOCommand};
 use crate::errors::ErrorType;
 use crate::helpers::Deferred;
 use crate::io::{DeviceMetadata, IOEvent, RawValue};
@@ -32,7 +32,7 @@ pub struct Routine {
     /// Weak reference to log for originating device
     log: Weak<Mutex<Log>>,
 
-    command: GPIOCommand,
+    command: IOCommand,
 }
 
 impl Routine {
@@ -41,7 +41,7 @@ impl Routine {
         metadata: DeviceMetadata,
         value: RawValue,
         log: Deferred<Log>,
-        command: GPIOCommand,
+        command: IOCommand,
     ) -> Self {
         let log = Arc::downgrade(&log);
         Self {
@@ -101,7 +101,7 @@ impl HasLog for Routine {
 
 #[cfg(test)]
 mod tests {
-    use crate::action::{GPIOCommand, IOCommand, Routine};
+    use crate::action::{IOCommand, Routine};
     use crate::helpers::Deferrable;
     use crate::io::{DeviceMetadata, RawValue};
     use crate::storage::{Log, MappedCollection};
@@ -127,12 +127,11 @@ mod tests {
 
         let log = Log::new(metadata.id, None).deferred();
 
-        let func = IOCommand::Output(
+        let command = IOCommand::Output(
             move |val| unsafe {
             set_register(val);
             Ok(())
         });
-        let command = GPIOCommand::new(func, None);
 
         let timestamp = Utc::now() + Duration::microseconds(5);
         let value = RawValue::Binary(true);

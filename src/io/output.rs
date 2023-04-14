@@ -1,4 +1,4 @@
-use crate::action::{Command, GPIOCommand};
+use crate::action::{Command, IOCommand};
 use crate::errors::ErrorType;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{
@@ -14,7 +14,7 @@ pub struct GenericOutput {
     // cached state
     state: RawValue,
     log: Option<Deferred<Log>>,
-    command: Option<GPIOCommand>,
+    command: Option<IOCommand>,
 }
 
 impl Deferrable for GenericOutput {
@@ -57,7 +57,7 @@ impl Device for GenericOutput {
         &self.metadata
     }
 
-    fn add_command(&mut self, command: GPIOCommand) {
+    fn add_command(&mut self, command: IOCommand) {
         self.command = Some(command);
     }
 
@@ -110,7 +110,7 @@ impl HasLog for GenericOutput {
 
 #[cfg(test)]
 mod tests {
-    use crate::action::{GPIOCommand, IOCommand};
+    use crate::action::IOCommand;
     use crate::io::{Device, GenericOutput, RawValue};
     use crate::storage::MappedCollection;
 
@@ -121,7 +121,7 @@ mod tests {
     #[test]
     fn test_tx() {
         let mut output = GenericOutput::default();
-        output.command = Some(GPIOCommand::new(COMMAND, None));
+        output.command = Some(COMMAND);
 
         let value = RawValue::Binary(true);
         let event = output.tx(value).expect("Unknown error occurred in `tx()`");
@@ -140,7 +140,7 @@ mod tests {
         assert_eq!(log.try_lock().unwrap().length(), 0);
 
         let value = RawValue::Binary(true);
-        output.command = Some(GPIOCommand::new(COMMAND, None));
+        output.command = Some(COMMAND);
 
         // check `state` before `::write()`
         assert_ne!(value, *output.state());

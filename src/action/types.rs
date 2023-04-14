@@ -1,6 +1,9 @@
 //! Type aliases for functions and closures to assist `ActionBuilder`.
 //! These aliases allow for strongly structuring the dynamic initialization of subscriber/command instances.
 use crate::io::{IODirection, RawValue};
+use crate::errors::ErrorType;
+
+use super::Command;
 
 /// Implementation of Command design pattern for low-level I/O code
 ///
@@ -30,6 +33,39 @@ impl IOCommand {
     }
 }
 
+impl Command<RawValue> for IOCommand {
+    /// Execute internally stored function.
+    ///
+    /// In summary, input command returns a value, output command accepts a value.
+    ///
+    /// # Args
+    /// value: Arbitrary value to pass to output. If passed to an input, an error is printed, but no panic occurs.
+    ///
+    /// # Returns
+    /// If internal function is `IOCommand::Input`, then the value that is read from device is returned.
+    /// Otherwise, if `IOCommand::Output`, then `None` is returned.
+    fn execute(&self, value: Option<RawValue>) -> Result<Option<RawValue>, ErrorType> {
+        match self {
+            Self::Input(inner) => {
+                // throw warning for unused value
+                if let Some(_) = value {
+                    unused_value()
+                }
+
+                let read_value = inner();
+
+                Ok(Some(read_value))
+            }
+            Self::Output(inner) => {
+                let unwrapped_value = value.expect("No value was passed to write...");
+                let _ = inner(unwrapped_value); // TODO: handle bad result
+
+                Ok(None)
+            }
+        }
+    }
+}
+
 /// Container for data processing functions.
 ///
 /// Variants are function types that at minimum accept input data, and return a `RawValue` to be
@@ -41,4 +77,11 @@ impl IOCommand {
 pub enum EvaluationFunction {
     /// Calculate value to write based on threshold parameter and input value
     Threshold(fn(value: RawValue, threshold: RawValue) -> RawValue)
+}
+
+
+/// Print a warning on console stderr
+fn unused_value() {
+    const MSG: &str = "Unused value passed when reading input...";
+    eprintln!("{}", MSG);
 }

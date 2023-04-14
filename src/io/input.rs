@@ -1,4 +1,4 @@
-use crate::action::{Command, GPIOCommand, Publisher, PublisherInstance};
+use crate::action::{Command, IOCommand, Publisher, PublisherInstance};
 use crate::errors::ErrorType;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::DeviceType;
@@ -13,7 +13,7 @@ pub struct GenericInput {
     metadata: DeviceMetadata,
     log: Option<Deferred<Log>>,
     publisher: Option<Deferred<PublisherInstance>>,
-    command: Option<GPIOCommand>,
+    command: Option<IOCommand>,
 }
 
 impl Deferrable for GenericInput {
@@ -55,7 +55,7 @@ impl Device for GenericInput {
         &self.metadata
     }
 
-    fn add_command(&mut self, command: GPIOCommand) {
+    fn add_command(&mut self, command: IOCommand) {
         self.command = Some(command);
     }
 
@@ -128,7 +128,7 @@ impl HasLog for GenericInput {
 // Testing
 #[cfg(test)]
 mod tests {
-    use crate::action::{GPIOCommand, IOCommand, PublisherInstance};
+    use crate::action::{IOCommand, PublisherInstance};
     use crate::helpers::Deferrable;
     use crate::io::{Device, GenericInput, RawValue};
     use crate::storage::MappedCollection;
@@ -140,7 +140,7 @@ mod tests {
     fn test_rx() {
         let mut input = GenericInput::default();
 
-        input.command = Some(GPIOCommand::new(COMMAND, None));
+        input.command = Some(COMMAND);
 
         let event = input.rx().unwrap();
         assert_eq!(event.data.value, DUMMY_OUTPUT);
@@ -151,7 +151,7 @@ mod tests {
         let mut input = GenericInput::default();
         let log = input.init_log(None);
 
-        input.command = Some(GPIOCommand::new(COMMAND, None));
+        input.command = Some(COMMAND);
 
         assert_eq!(log.try_lock().unwrap().length(), 0);
 
