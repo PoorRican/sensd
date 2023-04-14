@@ -5,14 +5,10 @@ use crate::io::{IOEvent, RawValue};
 use std::fmt::{Display, Formatter};
 use std::sync::{Arc, Mutex};
 
-/// Generic command that monitors a threshold
-pub trait ThresholdMonitor: Subscriber {
-    fn threshold(&self) -> RawValue;
-}
-
 #[derive(Debug, Clone)]
-/// Enum used by `ThresholdMonitor` logic
 /// Controls when comparison of external value and threshold returns `true`.
+///
+/// Used by `Subscriber::evaluate()`
 pub enum Comparison {
     GT,
     LT,
@@ -67,13 +63,8 @@ where
             evaluator,
         }
     }
-}
 
-impl<F> ThresholdMonitor for ThresholdAction<F>
-where
-    F: FnMut(RawValue) -> Result<IOEvent, ErrorType>
-{
-    fn threshold(&self) -> RawValue {
+    pub fn threshold(&self) -> RawValue {
         self.threshold
     }
 }
@@ -111,6 +102,9 @@ where
         &self.publisher
     }
 
+    /// Assign publisher if field is `None`.
+    ///
+    /// Silently fails if publisher is already populated.
     fn add_publisher(&mut self, publisher: Deferred<PublisherInstance>) {
         match self.publisher {
             None => self.publisher = Some(publisher),

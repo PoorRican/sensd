@@ -1,3 +1,4 @@
+//! Datalogging of `IOEvent` objects
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::Iter;

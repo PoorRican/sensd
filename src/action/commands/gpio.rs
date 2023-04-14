@@ -15,9 +15,9 @@ impl GPIOCommand {
         Self { func }
     }
 
-pub fn boxed(self) -> BoxedCommand<RawValue> {
-    Box::new(self)
-}
+    pub fn boxed(self) -> BoxedCommand<RawValue> {
+        Box::new(self)
+    }
 
     pub fn direction(&self) -> IODirection {
         match self.func {
