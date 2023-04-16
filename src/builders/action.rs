@@ -139,7 +139,11 @@ impl ActionBuilder {
         }
     }
 
-    /// Associate a `ThresholdMonitor` to input
+    /// Build and attach a `ThresholdAction` subscriber
+    ///
+    /// TODO: raise an error if device type is not numeric (ie: RawValue::Boolean)
+    /// TODO: check that `evaluator` is `EvaluationFunction::Threshold`
+    /// TODO: assert `output` is output-type
     pub fn add_threshold(
         &mut self,
         name: &str,
@@ -148,36 +152,16 @@ impl ActionBuilder {
         evaluator: EvaluationFunction,
         output: Option<DeferredDevice>,
     ) {
-        // TODO: raise an error if device type is not numeric (ie: RawValue::Boolean)
-        // TODO: check that `evaluator` is `EvaluationFunction::Threshold`
         self.check_publisher();
 
-        let command;
-        // construct simple command that writes to output device
-        if let Some(output) = output {
-            let _command = move |val: RawValue| {
-                let mut binding = output.try_lock().unwrap();
-                let device = binding.deref_mut();
-                if let DeviceType::Output(inner) = device {
-                    inner.write(val)
-                } else {
-                    Err(Error::new(ErrorKind::DeviceError,
-                                   "Command encountered error. Expected Output device."))
-                }
-            };
-            command = Some(_command);
-        } else {
-            command = None;
-        }
-
         // construct subscriber
-        let _subscriber = ThresholdAction::new(name.to_string(), threshold, trigger, command, evaluator);
-        let subscriber = _subscriber.deferred();
+        let action = ThresholdAction::new(name.to_string(), threshold, trigger, output, evaluator);
+        let subscriber = action.deferred();
 
         // add subscriber to publisher
         self.publisher.lock().unwrap().subscribe(subscriber.clone());
 
-        // add reverse reference to publisher from subscriber
+        // add reverse reference to publisher
         subscriber
             .lock()
             .unwrap()

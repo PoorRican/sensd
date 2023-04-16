@@ -26,7 +26,7 @@ pub struct Routine {
     /// A copy is used to avoid locking issues since scheduled commands might be time critical.
     metadata: DeviceMetadata,
 
-    /// Value to pass to `GPIOCommand`
+    /// Value to pass to `IOCommand`
     value: RawValue,
 
     /// Weak reference to log for originating device

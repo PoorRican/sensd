@@ -1,14 +1,15 @@
 use crate::action::{PublisherInstance, Subscriber, SubscriberType, EvaluationFunction};
-use crate::errors::ErrorType;
+use crate::errors::{ErrorType, Error, ErrorKind};
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::{IOEvent, RawValue};
+use crate::io::{IOEvent, RawValue, DeferredDevice, DeviceType};
 use std::fmt::{Display, Formatter};
+use std::ops::DerefMut;
 use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone)]
 /// Controls when comparison of external value and threshold returns `true`.
 ///
-/// Used by `Subscriber::evaluate()`
+/// Used by `ThresholdAction::evaluate()`
 pub enum Comparison {
     GT,
     LT,
@@ -28,72 +29,85 @@ impl Display for Comparison {
     }
 }
 
-/// Perform an action if threshold is exceeded
+/// Subscriber that writes to output if threshold is exceeded.
 #[derive(Clone)]
-pub struct ThresholdAction<F>
-where
-    F: FnMut(RawValue) -> Result<IOEvent, ErrorType>
-{
+pub struct ThresholdAction {
     name: String,
     threshold: RawValue,
     publisher: Option<Deferred<PublisherInstance>>,
 
     trigger: Comparison,
-    command: Option<F>,
     evaluator: EvaluationFunction,
+    output: Option<DeferredDevice>,
 }
 
-impl<F> ThresholdAction<F>
-where
-    F: FnMut(RawValue) -> Result<IOEvent, ErrorType>
-{
+impl ThresholdAction {
+    /// Initialize a blank `ThresholdAction` without an associated publisher.
     pub fn new(
         name: String,
         threshold: RawValue,
         trigger: Comparison,
-        command: Option<F>,
+        output: Option<DeferredDevice>,
         evaluator: EvaluationFunction,
     ) -> Self {
+
         Self {
             name,
             threshold,
             publisher: None,
             trigger,
-            command,
+            output,
             evaluator,
         }
     }
 
+    /// Getter for internal `threshold` value
     pub fn threshold(&self) -> RawValue {
         self.threshold
     }
+
+    /// Pass value to output device
+    fn write(&self, value: RawValue) -> Result<IOEvent, ErrorType> {
+        if let Some(inner) = self.output.clone() {
+            let mut binding = inner.try_lock().unwrap();
+            let device = binding.deref_mut();
+            match device {
+                DeviceType::Output(output) => output.write(value),
+                _ => Err(Error::new(ErrorKind::DeviceError,
+                                    "Associated output device is misconfigured."))
+            }
+        } else {
+            Err(Error::new(ErrorKind::DeviceError,
+                           "ThresholdAction has no device associated as output."))
+        }
+    }
 }
 
-impl<F> Subscriber for ThresholdAction<F>
-where
-    F: FnMut(RawValue) -> Result<IOEvent, ErrorType>
-{
+impl Subscriber for ThresholdAction {
     fn name(&self) -> String {
         self.name.clone()
     }
 
+    /// Write to output if threshold is exceeded.
+    ///
+    /// `EvaluationFunction::Threshold` is used to determine output value.
     fn evaluate(&mut self, data: &IOEvent) {
-        let value = data.data.value;
+        let input = data.data.value;
         let exceeded = match &self.trigger {
-            &Comparison::GT => value > self.threshold,
-            &Comparison::GTE => value >= self.threshold,
-            &Comparison::LT => value < self.threshold,
-            &Comparison::LTE => value <= self.threshold,
+            &Comparison::GT =>  input > self.threshold,
+            &Comparison::GTE => input >= self.threshold,
+            &Comparison::LT =>  input < self.threshold,
+            &Comparison::LTE => input <= self.threshold,
         };
         if exceeded {
             let EvaluationFunction::Threshold(evaluator) = self.evaluator;
-            let output = (evaluator)(self.threshold, value);
+            let output = (evaluator)(self.threshold, input);
 
-            let msg = format!("{} {} {}", value, &self.trigger, self.threshold);
+            let msg = format!("{} {} {}", input, &self.trigger, self.threshold);
             self.notify(msg.as_str());
 
-            if let Some(command) = &mut self.command {
-                let _ = (command)(output);
+            if let Some(_) = self.output {
+                self.write(output).unwrap();
             }
         }
     }
@@ -113,10 +127,7 @@ where
     }
 }
 
-impl<F> Deferrable for ThresholdAction<F>
-where
-    F: FnMut(RawValue) -> Result<IOEvent, ErrorType> + 'static
-{
+impl Deferrable for ThresholdAction {
     type Inner = SubscriberType;
 
     fn deferred(self) -> Deferred<Self::Inner> {
