@@ -32,7 +32,7 @@ impl ActionBuilder {
     /// supplying a reference to `Group` and device id.
     ///
     /// # Args
-    /// - device: Device to add pub/subs. Should be Input
+    /// - input: Device to add pub/subs
     pub fn new(input: DeferredDevice) -> Result<Self, ErrorType> {
         if input.is_output() {
             return Err(Error::new(
@@ -57,7 +57,7 @@ impl ActionBuilder {
     /// ininitialization and pub/sub building.
     ///
     /// # Args
-    /// poller: Reference to `Group`
+    /// group: Reference to `Group`
     /// direction: IODirection which determines which container is used to retrieve deferred device
     /// id: id of device
     ///
@@ -66,17 +66,17 @@ impl ActionBuilder {
     ///
     /// If id doesn't exist in `Group::inputs`, then an error with `DeviceKind::ContainerError`
     /// and the appropriate message is returned.
-    fn extract_device(poller: &Group,
+    fn extract_device(group: &Group,
                       direction: IODirection,
                       id: IdType) -> Result<DeferredDevice, ErrorType> {
 
         let result;
         match direction {
             IODirection::Output => {
-                result = poller.inputs.get(id);
+                result = group.inputs.get(id);
             }
             IODirection::Input => {
-                result = poller.outputs.get(id);
+                result = group.outputs.get(id);
             }
         };
 
@@ -97,7 +97,7 @@ impl ActionBuilder {
     /// device id needs remain in scope.
     ///
     /// # Args
-    /// poller: Reference to `Group`
+    /// group: Reference to `Group`
     /// id: id of device
     ///
     /// # Returns
@@ -105,14 +105,14 @@ impl ActionBuilder {
     ///
     /// If id doesn't exist in `Group::inputs`, then an error with `DeviceKind::ContainerError`
     /// and the appropriate message is returned.
-    pub fn from_group(poller: &Group, id: IdType) -> Result<Self, ErrorType> {
-        let input = Self::extract_device(poller, IODirection::Input, id)?;
+    pub fn from_group(group: &Group, id: IdType) -> Result<Self, ErrorType> {
+        let input = Self::extract_device(group, IODirection::Input, id)?;
         Self::new(input)
     }
 
     /// Associate a deferred output to builder.
-    pub fn attach_output(&mut self, poller: &Group, id: IdType) -> Result<(), ErrorType> {
-        let output = Self::extract_device(poller, IODirection::Output, id)?;
+    pub fn attach_output(&mut self, group: &Group, id: IdType) -> Result<(), ErrorType> {
+        let output = Self::extract_device(group, IODirection::Output, id)?;
         self.output = Some(output);
         Ok(())
     }
