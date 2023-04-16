@@ -7,12 +7,12 @@ use crate::io::{DeferredDevice, DeviceType, DeviceWrapper, RawValue, IdType, IOD
 use crate::storage::{Group, MappedCollection};
 use std::ops::DerefMut;
 
-/// Assist the user in dynamically initializing a single publisher for a single input.
-/// Since an input device has a one-to-one relationship with a `PublisherInstance`, helper functions
-/// help build subscribers by dynamically building commands.
+/// Builder class that builds and attaches subscribers for inputs.
 ///
-/// # Notes
-/// Return types should be checked here, if anywhere.
+/// A `PublisherInstance` is built and attached to input. Then subsequent methods are used to
+/// build subscribers and associate with inputs and outputs.
+///
+/// TODO: Check that `RawValue` variants are compatible
 pub struct ActionBuilder {
     input: DeferredDevice,
     output: Option<DeferredDevice>,
