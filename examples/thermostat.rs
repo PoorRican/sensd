@@ -16,7 +16,7 @@ extern crate chrono;
 extern crate sensd;
 extern crate serde;
 
-use sensd::action::{EvaluationFunction, Comparison, IOCommand};
+use sensd::action::{Comparison, IOCommand};
 use sensd::builders::ActionBuilder;
 use sensd::errors::ErrorType;
 use sensd::io::{IODirection, IOKind, RawValue, DeferredDevice, IdType};
@@ -96,12 +96,7 @@ fn build_subscribers(poller: &mut Group) {
     let threshold = RawValue::Int8(THRESHOLD);
     let trigger = Comparison::LT;
 
-    let evaluator = EvaluationFunction::Threshold(
-        |value, threshold| 
-        threshold - value
-    );
-    // TODO: output device should be passed to `::add_threshold()`
-    builder.add_threshold(&name, threshold, trigger, evaluator, Some(output));
+    builder.add_threshold(&name, threshold, trigger, Some(output));
 
     println!("\n... Finished Initializing subscribers\n");
 }

@@ -1,5 +1,5 @@
 use crate::action::{
-    EvaluationFunction, Comparison, Publisher, PublisherInstance, ThresholdAction,
+    Comparison, Publisher, PublisherInstance, ThresholdAction,
 };
 use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::{Deferrable, Deferred};
@@ -149,13 +149,12 @@ impl ActionBuilder {
         name: &str,
         threshold: RawValue,
         trigger: Comparison,
-        evaluator: EvaluationFunction,
         output: Option<DeferredDevice>,
     ) {
         self.check_publisher();
 
         // construct subscriber
-        let action = ThresholdAction::new(name.to_string(), threshold, trigger, output, evaluator);
+        let action = ThresholdAction::new(name.to_string(), threshold, trigger, output);
         let subscriber = action.deferred();
 
         // add subscriber to publisher

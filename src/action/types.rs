@@ -66,19 +66,6 @@ impl Command<RawValue> for IOCommand {
     }
 }
 
-/// Container for data processing functions.
-///
-/// Variants are function types that at minimum accept input data, and return a `RawValue` to be
-/// passed to `IOCommand`.
-///
-// TODO: rename to "Evaluator"
-// TODO: Return type for threshold should be `Option`
-#[derive(Clone)]
-pub enum EvaluationFunction {
-    /// Calculate value to write based on threshold parameter and input value
-    Threshold(fn(value: RawValue, threshold: RawValue) -> RawValue)
-}
-
 
 /// Print a warning on console stderr
 fn unused_value() {

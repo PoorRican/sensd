@@ -1,4 +1,4 @@
-use sensd::action::{Comparison, IOCommand, EvaluationFunction};
+use sensd::action::{Comparison, IOCommand};
 use sensd::builders::{ActionBuilder, DeviceLogBuilder};
 use sensd::helpers::*;
 use sensd::io::{DeviceTraits, DeviceType, GenericInput, IODirection, IOKind, RawValue, IdType};
@@ -17,19 +17,7 @@ fn test_action_builder() {
     let name = "Subscriber for Input";
     let threshold = RawValue::Float(1.0);
     let trigger = Comparison::GT;
-    let evaluator = EvaluationFunction::Threshold(
-        |value, threshold| 
-        if let RawValue::Int8(thresh) = threshold {
-            if let RawValue::Int8(val) = value {
-                RawValue::Int8(thresh - val)
-            } else {
-                panic!("Incorrect values")
-            }
-        } else {
-            panic!("Incorrect values")
-        }
-    );
-    builder.add_threshold(&name, threshold, trigger, evaluator, None);
+    builder.add_threshold(&name, threshold, trigger, None);
 
     // perform assertions
     let binding = input.lock().unwrap();

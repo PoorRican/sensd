@@ -23,7 +23,7 @@ extern crate serde;
 
 use std::sync::Arc;
 
-use sensd::action::{Comparison, IOCommand, EvaluationFunction};
+use sensd::action::{Comparison, IOCommand};
 use sensd::builders::ActionBuilder;
 use sensd::errors::ErrorType;
 use sensd::io::{IODirection, IOKind, RawValue};
@@ -85,11 +85,6 @@ fn setup_poller(poller: &mut Group) {
 fn build_subscribers(poller: &mut Group) {
     println!("\n█▓▒░ Building subscribers ...");
 
-    let evaluator = EvaluationFunction::Threshold(
-        |value, threshold| 
-        threshold - value
-    );
-
     for (id, input) in poller.inputs.iter() {
         println!("\n- Initializing builder ...");
 
@@ -100,7 +95,7 @@ fn build_subscribers(poller: &mut Group) {
         let name = format!("Subscriber for Input:{}", id);
         let threshold = RawValue::Float(1.0);
         let trigger = Comparison::GT;
-        builder.add_threshold(&name, threshold, trigger, evaluator.clone(), None);
+        builder.add_threshold(&name, threshold, trigger, None);
     }
 
     println!("\n... Finished Initializing subscribers\n");
