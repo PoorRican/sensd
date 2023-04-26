@@ -1,9 +1,11 @@
-use sensd::action::{BaseCommandFactory, Comparison, IOCommand, SimpleNotifier};
+use sensd::action::{Comparison, IOCommand, EvaluationFunction};
 use sensd::builders::{ActionBuilder, DeviceLogBuilder};
 use sensd::helpers::*;
-use sensd::io::{DeviceTraits, DeviceType, GenericInput, IODirection, IOKind, IOType, IdType};
+use sensd::io::{DeviceTraits, DeviceType, GenericInput, IODirection, IOKind, RawValue, IdType};
 use std::ops::Deref;
 
+/// Check that action builder sets correct values
+/// At the moment, functionality is not checked here
 #[test]
 fn test_action_builder() {
     let _input = GenericInput::default();
@@ -13,18 +15,30 @@ fn test_action_builder() {
     let mut builder = ActionBuilder::new(input.clone()).unwrap();
 
     let name = "Subscriber for Input";
-    let threshold = IOType::Float(1.0);
+    let threshold = RawValue::Float(1.0);
     let trigger = Comparison::GT;
-    let factory: BaseCommandFactory =
-        |value, threshold| SimpleNotifier::command(format!("{} exceeded {}", value, threshold));
-    builder.add_threshold(&name, threshold, trigger, factory);
+    let evaluator = EvaluationFunction::Threshold(
+        |value, threshold| 
+        if let RawValue::Int8(thresh) = threshold {
+            if let RawValue::Int8(val) = value {
+                RawValue::Int8(thresh - val)
+            } else {
+                panic!("Incorrect values")
+            }
+        } else {
+            panic!("Incorrect values")
+        }
+    );
+    builder.add_threshold(&name, threshold, trigger, evaluator, None);
 
+    // perform assertions
     let binding = input.lock().unwrap();
     let device = binding.deref();
     if let DeviceType::Input(inner) = device {
         assert!(inner.has_publisher());
     }
 }
+
 
 #[test]
 fn test_device_log_builder() {
@@ -33,7 +47,7 @@ fn test_device_log_builder() {
     const DIRECTION: IODirection = IODirection::Input;
     const KIND: IOKind = IOKind::Unassigned;
 
-    let command = IOCommand::Input(move || IOType::default());
+    let command = IOCommand::Input(move || RawValue::default());
     let builder = DeviceLogBuilder::new(NAME, &ID, &Some(KIND), &DIRECTION, &command, None);
     let (device, log) = builder.get();
 

@@ -1,21 +1,15 @@
-use crate::action::{PublisherInstance, Subscriber, ThresholdMonitor};
+use crate::action::{PublisherInstance, Subscriber};
 use crate::helpers::Deferred;
-use crate::io::{DeviceType, IOEvent, IOType};
+use crate::io::{DeviceType, IOEvent, RawValue};
 
-/// Subscriber routine to actively maintain an arbitrary threshold using PID
+/// Subscriber routine abstracting a PID controller
 pub struct PIDMonitor {
     name: String,
-    threshold: IOType,
+    _threshold: RawValue,
     publisher: Option<Deferred<PublisherInstance>>,
 
     // TODO: check that device is output
     _output: Deferred<DeviceType>,
-}
-
-impl ThresholdMonitor for PIDMonitor {
-    fn threshold(&self) -> IOType {
-        self.threshold
-    }
 }
 
 impl Subscriber for PIDMonitor {

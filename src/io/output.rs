@@ -1,8 +1,8 @@
-use crate::action::{Command, GPIOCommand};
+use crate::action::{Command, IOCommand};
 use crate::errors::ErrorType;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{
-    no_internal_closure, Device, DeviceMetadata, DeviceType, IODirection, IOEvent, IOKind, IOType,
+    no_internal_closure, Device, DeviceMetadata, DeviceType, IODirection, IOEvent, IOKind, RawValue,
     IdType,
 };
 use crate::storage::{HasLog, Log};
@@ -12,9 +12,9 @@ use std::sync::{Arc, Mutex};
 pub struct GenericOutput {
     metadata: DeviceMetadata,
     // cached state
-    state: IOType,
+    state: RawValue,
     log: Option<Deferred<Log>>,
-    command: Option<GPIOCommand>,
+    command: Option<IOCommand>,
 }
 
 impl Deferrable for GenericOutput {
@@ -40,7 +40,7 @@ impl Device for GenericOutput {
         Self: Sized,
     {
         let kind = kind.unwrap_or_default();
-        let state = IOType::default();
+        let state = RawValue::default();
         let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Output);
 
         let command = None;
@@ -57,7 +57,7 @@ impl Device for GenericOutput {
         &self.metadata
     }
 
-    fn add_command(&mut self, command: GPIOCommand) {
+    fn add_command(&mut self, command: IOCommand) {
         self.command = Some(command);
     }
 
@@ -67,9 +67,8 @@ impl Device for GenericOutput {
 }
 
 impl GenericOutput {
-    /// Return a mock value
-    pub fn tx(&self, value: IOType) -> Result<IOEvent, ErrorType> {
-        // Execute GPIO command
+    /// Execute low-level GPIO command
+    fn tx(&self, value: RawValue) -> Result<IOEvent, ErrorType> {
         if let Some(command) = &self.command {
             command.execute(Some(value)).unwrap();
         } else {
@@ -85,7 +84,7 @@ impl GenericOutput {
     ///
     /// # Notes
     /// This method will fail if there is no associated log
-    pub fn write(&mut self, value: IOType) -> Result<IOEvent, ErrorType> {
+    pub fn write(&mut self, value: RawValue) -> Result<IOEvent, ErrorType> {
         let event = self.tx(value).expect("Error returned by `tx()`");
 
         // update cached state
@@ -98,7 +97,7 @@ impl GenericOutput {
 
     /// Immutable reference to cached state
     /// `state` field should be updated by `write()`
-    pub fn state(&self) -> &IOType {
+    pub fn state(&self) -> &RawValue {
         &self.state
     }
 }
@@ -111,8 +110,8 @@ impl HasLog for GenericOutput {
 
 #[cfg(test)]
 mod tests {
-    use crate::action::{GPIOCommand, IOCommand};
-    use crate::io::{Device, GenericOutput, IOType};
+    use crate::action::IOCommand;
+    use crate::io::{Device, GenericOutput, RawValue};
     use crate::storage::MappedCollection;
 
     /// Dummy output command for testing.
@@ -122,9 +121,9 @@ mod tests {
     #[test]
     fn test_tx() {
         let mut output = GenericOutput::default();
-        output.command = Some(GPIOCommand::new(COMMAND, None));
+        output.command = Some(COMMAND);
 
-        let value = IOType::Binary(true);
+        let value = RawValue::Binary(true);
         let event = output.tx(value).expect("Unknown error occurred in `tx()`");
 
         assert_eq!(value, event.data.value);
@@ -140,8 +139,8 @@ mod tests {
 
         assert_eq!(log.try_lock().unwrap().length(), 0);
 
-        let value = IOType::Binary(true);
-        output.command = Some(GPIOCommand::new(COMMAND, None));
+        let value = RawValue::Binary(true);
+        output.command = Some(COMMAND);
 
         // check `state` before `::write()`
         assert_ne!(value, *output.state());

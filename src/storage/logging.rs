@@ -1,3 +1,4 @@
+//! Datalogging of `IOEvent` objects
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::Iter;
@@ -5,6 +6,7 @@ use std::fmt::Formatter;
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::ops::Deref;
+use std::path::Path;
 use std::sync::{Arc, Mutex, Weak};
 
 use crate::errors::{Error, ErrorKind, ErrorType};
@@ -13,15 +15,22 @@ use crate::io::{DeferredDevice, DeviceTraits, DeviceType, IOEvent, IdType};
 use crate::settings::Settings;
 use crate::storage::{Container, MappedCollection, Persistent};
 
-// Defines a type alias `LogType` for a container of IOEvent and DateTime<Utc> objects.
+/// Hashmap type alias defines a type alias `LogType` for storing `IOEvent` by `DateTime<Utc>` keys.
 pub type LogType = Container<IOEvent, DateTime<Utc>>;
 
-/// Define the `Deferred` type as an Arc of a Mutex wrapping the generic type `T`.
+/// Primary container for storing `Log` instances.
 pub type LogContainer = Vec<Deferred<Log>>;
 
+/// Default filetype suffix.
+///
+/// Used by `Log::filename()`, but this should probably be moved to settings
 const FILETYPE: &str = ".json";
 
+/// Transparently enables a reference to `Log` to be shared.
 pub trait HasLog {
+    /// Property to return reference to field
+    ///
+    /// Upgrading of `Weak` reference should occur here
     fn log(&self) -> Option<Deferred<Log>>;
 
     fn add_to_log(&self, event: IOEvent) {
@@ -33,9 +42,12 @@ pub trait HasLog {
     }
 }
 
-// Encapsulates a `LogType` alongside a weak reference to a `Device`
+/// Log abstraction of `IOEvent` keyed by datetime
+///
+/// Encapsulates a `LogType` alongside a weak reference to a `Device`
 #[derive(Serialize, Deserialize, Default)]
 pub struct Log {
+    // TODO: split logs using ID
     id: IdType,
     #[serde(skip)]
     owner: Option<Weak<Mutex<DeviceType>>>,
@@ -46,20 +58,36 @@ pub struct Log {
 }
 
 impl Log {
+    /// Return reference to originating device.
+    ///
+    /// `sync::Weak` is upgraded to `Arc`
+    ///
+    /// # Errors
+    /// Panics if owner attribute is `None`
     pub fn owner(&self) -> DeferredDevice {
         // TODO: handle error if owner is None or if Weak has no Strong
-        self.owner.clone().unwrap().upgrade().unwrap()
+        self.owner.as_ref().unwrap().upgrade().unwrap()
     }
 
+    /// Set reference to owning device.
+    ///
+    /// `Arc` should be downgraded to `sync::Weak` and passed as reference.
     pub fn set_owner(&mut self, owner: Weak<Mutex<DeviceType>>) {
         self.owner = Some(owner);
     }
 
-    /// Append filename to path
+    /// Full path to log file.
+    ///
+    /// No directories or files are created by this function.
+    ///
+    /// # Args:
+    /// path: Optional argument to override typical storage path
     fn full_path(&self, path: &Option<String>) -> String {
-        let prefix = path.clone().unwrap_or_else(|| String::from(""));
+        let prefix = path.as_ref().unwrap_or_else(|| &self.settings.data_root);
+        let dir = Path::new(prefix);
 
-        format!("{}{}", prefix, self.filename())
+        let full_path = dir.join(self.filename());
+        String::from(full_path.to_str().unwrap())
     }
 
     pub fn new(id: IdType, settings: Option<Arc<Settings>>) -> Self {
@@ -73,6 +101,7 @@ impl Log {
         }
     }
 
+    /// Generate generic filename based on settings, owner, and id
     pub fn filename(&self) -> String {
         let owner = self.owner();
         format!(
@@ -84,10 +113,12 @@ impl Log {
         )
     }
 
+    /// Iterator for log
     pub fn iter(&self) -> Iter<DateTime<Utc>, IOEvent> {
         self.log.iter()
     }
 
+    /// Returns true if owner
     pub fn orphan(&self) -> bool {
         match self.owner {
             Some(_) => false,
@@ -121,10 +152,11 @@ impl MappedCollection<IOEvent, DateTime<Utc>> for Log {
 // Implement save/load operations for `Log`
 impl Persistent for Log {
     fn save(&self, path: &Option<String>) -> Result<(), ErrorType> {
+        let owner_name = self.owner().try_lock().unwrap().name();
         if self.log.is_empty() {
             Err(Error::new(
                 ErrorKind::ContainerEmpty,
-                "Log is empty. Will not save.",
+                format!("Log for '{}'. Nothing to save.", owner_name).as_str(),
             ))
         } else {
             let file = writable_or_create(self.full_path(path));
@@ -191,7 +223,7 @@ mod tests {
     use crate::action::IOCommand;
     use crate::builders::DeviceLogBuilder;
     use crate::helpers::Deferred;
-    use crate::io::{Device, DeviceType, IODirection, IOKind, IOType, IdType};
+    use crate::io::{Device, DeviceType, IODirection, IOKind, RawValue, IdType};
     use crate::storage::{Log, MappedCollection, Persistent};
     use std::ops::Deref;
     use std::path::Path;
@@ -202,8 +234,8 @@ mod tests {
         for _ in 0..count {
             let binding = device.lock().unwrap();
             let event = match binding.deref() {
-                DeviceType::Input(inner) => inner.generate_event(IOType::default()),
-                DeviceType::Output(inner) => inner.generate_event(IOType::default()),
+                DeviceType::Input(inner) => inner.generate_event(RawValue::default()),
+                DeviceType::Output(inner) => inner.generate_event(RawValue::default()),
             };
             log.lock().unwrap().push(event.timestamp, event).unwrap();
             thread::sleep(Duration::from_nanos(1)); // add delay so that we don't finish too quickly
@@ -215,10 +247,10 @@ mod tests {
         const SENSOR_NAME: &str = "test";
         const ID: IdType = 32;
         const COUNT: usize = 10;
-        const COMMAND: IOCommand = IOCommand::Input(move || IOType::default());
+        const COMMAND: IOCommand = IOCommand::Input(move || RawValue::default());
 
         /* NOTE: More complex `IOEvent` objects *could* be checked, but we are trusting `serde`.
-        These tests only count the number of `IOEvent`'s added. */
+           These tests only count the number of `IOEvent`'s added. */
 
         let filename;
         // test save
@@ -237,7 +269,7 @@ mod tests {
             _log.save(&None).unwrap();
 
             // save filename for later
-            filename = _log.filename();
+            filename = _log.full_path(&None);
             // check that file exists
             assert!(Path::new(&filename).exists());
         };

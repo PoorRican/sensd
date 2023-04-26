@@ -2,6 +2,7 @@ use crate::errors::ErrorType;
 use crate::io::IdTraits;
 
 /// Define a basic interface to interact with underlying data.
+///
 /// T is the data type being stored and K is the key type to access stored data.
 ///
 /// Generics should be agnostic to underlying implementation aside from the fact that key should

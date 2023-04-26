@@ -1,9 +1,17 @@
 use crate::errors::ErrorType;
-use crate::io::IOType;
+use crate::io::RawValue;
 
-pub type CommandType<T> = Box<dyn Command<T>>;
+pub type BoxedCommand<T> = Box<dyn Command<T>>;
 
 /// Abstraction for single atomic output operation
 pub trait Command<T> {
-    fn execute(&self, value: Option<IOType>) -> Result<Option<T>, ErrorType>;
+    /// Execute arbitrary command
+    ///
+    /// # Args
+    /// value: Arbitrary value to be passed to command.
+    ///        This is used by `IOCommand::Output`.
+    ///
+    /// # Returns
+    /// Result containing optional value for `Ok` or `ErrorType`
+    fn execute(&self, value: Option<RawValue>) -> Result<Option<T>, ErrorType>;
 }

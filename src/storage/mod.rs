@@ -1,3 +1,5 @@
+//! Data structures and interfaces to store data
+//!
 mod collection;
 mod container;
 mod grouping;
@@ -6,6 +8,6 @@ mod persistent;
 
 pub use collection::MappedCollection;
 pub use container::Container;
-pub use grouping::PollGroup;
+pub use grouping::Group;
 pub use logging::*;
 pub use persistent::Persistent;

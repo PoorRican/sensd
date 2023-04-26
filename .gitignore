@@ -1,9 +1,14 @@
 /target
-migrations
 
+# IDE data
 .idea/
+/tags
+/.vimspector.json
 
+# Secrets
 .env
 
+# Persistent data
+.data/
 *.json
 *.csv

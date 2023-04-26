@@ -1,4 +1,4 @@
-/// Encapsulate IO for devices
+//! Encapsulate IO for devices
 mod calibrated;
 mod device;
 mod event;

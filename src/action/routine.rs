@@ -1,12 +1,15 @@
-use crate::action::{Command, GPIOCommand};
+use crate::action::{Command, IOCommand};
 use crate::errors::ErrorType;
 use crate::helpers::Deferred;
-use crate::io::{DeviceMetadata, IOEvent, IOType};
+use crate::io::{DeviceMetadata, IOEvent, RawValue};
 use crate::storage::{HasLog, Log};
 use chrono::{DateTime, Utc};
 use std::sync::{Arc, Mutex, Weak};
 
 /// A `Command` that should be executed at a scheduled time *outside* of the normal event loop.
+///
+/// A weak reference to originating log is maintained so that logging of events is automatically
+/// handled.
 ///
 /// Typically these should exclusively be `Output` events, such as completing a time bound operation.
 ///
@@ -19,25 +22,26 @@ pub struct Routine {
     timestamp: DateTime<Utc>,
 
     /// Copy of owning device metadata
+    ///
     /// A copy is used to avoid locking issues since scheduled commands might be time critical.
     metadata: DeviceMetadata,
 
-    /// Value to pass to `GPIOCommand`
-    value: IOType,
+    /// Value to pass to `IOCommand`
+    value: RawValue,
 
     /// Weak reference to log for originating device
     log: Weak<Mutex<Log>>,
 
-    command: GPIOCommand,
+    command: IOCommand,
 }
 
 impl Routine {
     pub fn new(
         timestamp: DateTime<Utc>,
         metadata: DeviceMetadata,
-        value: IOType,
+        value: RawValue,
         log: Deferred<Log>,
-        command: GPIOCommand,
+        command: IOCommand,
     ) -> Self {
         let log = Arc::downgrade(&log);
         Self {
@@ -48,13 +52,14 @@ impl Routine {
             command,
         }
     }
-    /// Main polling function
+    /// Main polling function 
     ///
-    /// Checks scheduled time, then executes command. `IOEvent` is automatically added to device log.
+    /// Acts as wrapper for `Command::execute()`. Checks scheduled time, then executes command.
+    /// `IOEvent` is automatically added to device log.
     ///
     /// # Returns
-    /// bool based on if execution was successful or not. This value should be used to drop `Routine` from
-    /// external store.
+    /// bool based on if execution was successful or not. This value should be used to drop
+    /// `Routine` from external store.
     pub fn attempt(&self) -> bool {
         let now = Utc::now();
         if now >= self.timestamp {
@@ -77,7 +82,7 @@ impl Routine {
 }
 
 impl Command<IOEvent> for Routine {
-    fn execute(&self, value: Option<IOType>) -> Result<Option<IOEvent>, ErrorType> {
+    fn execute(&self, value: Option<RawValue>) -> Result<Option<IOEvent>, ErrorType> {
         match self.command.execute(value) {
             Ok(_) => {
                 let event = IOEvent::generate(&self.metadata, self.timestamp, value.unwrap());
@@ -96,20 +101,20 @@ impl HasLog for Routine {
 
 #[cfg(test)]
 mod tests {
-    use crate::action::{GPIOCommand, IOCommand, Routine};
+    use crate::action::{IOCommand, Routine};
     use crate::helpers::Deferrable;
-    use crate::io::{DeviceMetadata, IOType};
+    use crate::io::{DeviceMetadata, RawValue};
     use crate::storage::{Log, MappedCollection};
     use chrono::{Duration, Utc};
 
-    const REGISTER_DEFAULT: IOType = IOType::Binary(false);
-    static mut REGISTER: IOType = REGISTER_DEFAULT;
+    const REGISTER_DEFAULT: RawValue = RawValue::Binary(false);
+    static mut REGISTER: RawValue = REGISTER_DEFAULT;
 
     unsafe fn reset_register() {
         REGISTER = REGISTER_DEFAULT;
     }
 
-    unsafe fn set_register(val: IOType) {
+    unsafe fn set_register(val: RawValue) {
         REGISTER = val;
     }
 
@@ -122,14 +127,14 @@ mod tests {
 
         let log = Log::new(metadata.id, None).deferred();
 
-        let func = IOCommand::Output(move |val| unsafe {
+        let command = IOCommand::Output(
+            move |val| unsafe {
             set_register(val);
             Ok(())
         });
-        let command = GPIOCommand::new(func, None);
 
         let timestamp = Utc::now() + Duration::microseconds(5);
-        let value = IOType::Binary(true);
+        let value = RawValue::Binary(true);
         let routine = Routine::new(timestamp, metadata, value, log.clone(), command);
 
         unsafe {

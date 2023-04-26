@@ -1,12 +1,12 @@
-//! Provide Low-level Device Functionality
-use crate::action::GPIOCommand;
-use crate::errors::*;
-use crate::helpers::{Deferrable, Deferred};
-use crate::io::{DeviceMetadata, IODirection, IOEvent, IOKind, IOType, IdType};
+use core::fmt::Formatter;
+use chrono::Utc;
+use crate::action::IOCommand;
+use crate::helpers::{Deferred, Deferrable};
+use crate::io::{
+    IdType, IOKind, DeviceMetadata, IODirection, RawValue, IOEvent,
+};
 use crate::settings::Settings;
 use crate::storage::{HasLog, Log};
-use chrono::Utc;
-use std::fmt::Formatter;
 use std::sync::Arc;
 
 /// Defines a minimum interface for interacting with GPIO devices.
@@ -62,13 +62,13 @@ pub trait Device: HasLog {
     ///
     /// Additionally, internally generating timestamp adds a layer of separation between
     /// device trait objects and any of it's owners (i.e.: `PollGroup`).
-    fn generate_event(&self, value: IOType) -> IOEvent {
+    fn generate_event(&self, value: RawValue) -> IOEvent {
         let dt = Utc::now();
         IOEvent::generate(self.metadata(), dt, value)
     }
 
     /// Setter for `command` field
-    fn add_command(&mut self, command: GPIOCommand);
+    fn add_command(&mut self, command: IOCommand);
 
     /// Setter for `log` field
     fn add_log(&mut self, log: Deferred<Log>);
@@ -81,6 +81,14 @@ pub trait Device: HasLog {
     }
 }
 
+pub trait DeviceTraits {
+    fn name(&self) -> String;
+    fn id(&self) -> IdType;
+    fn kind(&self) -> IOKind;
+    fn direction(&self) -> IODirection;
+}
+
+
 impl std::fmt::Debug for dyn Device {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -92,8 +100,4 @@ impl std::fmt::Debug for dyn Device {
             self.metadata().kind
         )
     }
-}
-
-pub fn no_internal_closure() -> Box<dyn std::error::Error> {
-    Error::new(ErrorKind::CommandError, "Device has no internal closure")
 }

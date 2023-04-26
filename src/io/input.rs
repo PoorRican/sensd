@@ -1,7 +1,7 @@
-use crate::action::{Command, GPIOCommand, Publisher, PublisherInstance};
+use crate::action::{Command, IOCommand, Publisher, PublisherInstance};
 use crate::errors::ErrorType;
 use crate::helpers::{Deferrable, Deferred};
-use crate::io::types::DeviceType;
+use crate::io::DeviceType;
 use crate::io::{
     no_internal_closure, Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType,
 };
@@ -13,7 +13,7 @@ pub struct GenericInput {
     metadata: DeviceMetadata,
     log: Option<Deferred<Log>>,
     publisher: Option<Deferred<PublisherInstance>>,
-    command: Option<GPIOCommand>,
+    command: Option<IOCommand>,
 }
 
 impl Deferrable for GenericInput {
@@ -55,7 +55,7 @@ impl Device for GenericInput {
         &self.metadata
     }
 
-    fn add_command(&mut self, command: GPIOCommand) {
+    fn add_command(&mut self, command: IOCommand) {
         self.command = Some(command);
     }
 
@@ -65,9 +65,8 @@ impl Device for GenericInput {
 }
 
 impl GenericInput {
-    /// Return a mock value
-    pub fn rx(&self) -> Result<IOEvent, ErrorType> {
-        // Execute GPIO command
+    /// Execute low-level GPIO command
+    fn rx(&self) -> Result<IOEvent, ErrorType> {
         let read_value = if let Some(command) = &self.command {
             let result = command.execute(None).unwrap();
             result.unwrap()
@@ -129,19 +128,19 @@ impl HasLog for GenericInput {
 // Testing
 #[cfg(test)]
 mod tests {
-    use crate::action::{GPIOCommand, IOCommand, PublisherInstance};
+    use crate::action::{IOCommand, PublisherInstance};
     use crate::helpers::Deferrable;
-    use crate::io::{Device, GenericInput, IOType};
+    use crate::io::{Device, GenericInput, RawValue};
     use crate::storage::MappedCollection;
 
-    const DUMMY_OUTPUT: IOType = IOType::Float(1.2);
+    const DUMMY_OUTPUT: RawValue = RawValue::Float(1.2);
     const COMMAND: IOCommand = IOCommand::Input(move || DUMMY_OUTPUT);
 
     #[test]
     fn test_rx() {
         let mut input = GenericInput::default();
 
-        input.command = Some(GPIOCommand::new(COMMAND, None));
+        input.command = Some(COMMAND);
 
         let event = input.rx().unwrap();
         assert_eq!(event.data.value, DUMMY_OUTPUT);
@@ -152,7 +151,7 @@ mod tests {
         let mut input = GenericInput::default();
         let log = input.init_log(None);
 
-        input.command = Some(GPIOCommand::new(COMMAND, None));
+        input.command = Some(COMMAND);
 
         assert_eq!(log.try_lock().unwrap().length(), 0);
 

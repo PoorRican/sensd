@@ -1,4 +1,4 @@
-use crate::action::{GPIOCommand, IOCommand};
+use crate::action::IOCommand;
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::{
     DeferredDevice, Device, DeviceType, GenericInput, GenericOutput, IODirection, IOKind, IdType,
@@ -50,7 +50,7 @@ impl DeviceLogBuilder {
         Self {
             device: wrapped,
             log,
-            command: *command,
+            command: command.clone(),
         }
     }
 
@@ -63,14 +63,14 @@ impl DeviceLogBuilder {
     /// # Notes
     /// Alignment of command and device type is checked in `::new()` by `check_command_alignment()`
     pub fn setup_command(&self) {
-        let gpio = GPIOCommand::new(self.command, Some(self.device.clone()));
+        let command = self.command.clone();
 
         let mut binding = self.device.lock().unwrap();
         let device = binding.deref_mut();
 
         match device {
-            DeviceType::Input(inner) => inner.add_command(gpio),
-            DeviceType::Output(inner) => inner.add_command(gpio),
+            DeviceType::Input(inner) => inner.add_command(command),
+            DeviceType::Output(inner) => inner.add_command(command),
         }
     }
 }
