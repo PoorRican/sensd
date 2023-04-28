@@ -1,5 +1,6 @@
 //! Cybernetic abstractions
 mod command;
+mod handler;
 mod publisher;
 mod routine;
 mod subscriber;
@@ -7,6 +8,7 @@ mod subscribers;
 mod types;
 
 pub use command::*;
+pub use handler::*;
 pub use publisher::*;
 pub use routine::*;
 pub use subscriber::*;

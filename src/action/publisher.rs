@@ -10,7 +10,7 @@
 //! `Input::publisher().notify()` should also be called as well. `notify()` should thereby call
 //! `Subscriber::evaluate()` on any listeners.
 
-use crate::action::SubscriberType;
+use crate::action::{SubscriberType, SchedRoutineHandler};
 use crate::helpers::{Deferrable, Deferred};
 use crate::io::IOEvent;
 use std::sync::{Arc, Mutex};
@@ -28,9 +28,17 @@ pub trait Publisher: Deferrable {
 }
 
 /// Concrete instance of publisher object
-#[derive(Default, Clone)]
+#[derive(Default)]
 pub struct PublisherInstance {
     subscribers: Vec<Deferred<SubscriberType>>,
+    scheduled: SchedRoutineHandler,
+}
+
+impl PublisherInstance {
+    /// Attempt to run scheduled `Routine` structs
+    pub fn check_scheduled(&mut self) {
+        self.scheduled.check_scheduled()
+    }
 }
 
 impl Publisher for PublisherInstance {

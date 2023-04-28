@@ -34,7 +34,10 @@ impl Display for Comparison {
 /// If the threshold is exceeded, then the subscriber can be setup to notify, and/or actuate an
 /// output in a binary fashion. The intention for this subscriber is not to be accurate, but
 /// rather, provide loose control. Output device is actuated as long as threshold is exceeded. In
-/// the future, upper and lower thresholds will be added.
+/// the future, upper and lower thresholds will be added for fine tuning of action execution.
+///
+/// Unlike the `PIDController` subscriber, `ThresholdAction` does not create a `Routine`. Instead,
+/// it is intended to implement on/off behavior.
 ///
 /// # Scenarios
 ///
