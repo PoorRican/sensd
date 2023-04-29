@@ -34,11 +34,12 @@ pub trait HasLog {
     fn log(&self) -> Option<Deferred<Log>>;
 
     fn add_to_log(&self, event: IOEvent) {
-        let log = self.log().expect("No log is associated");
-        log.try_lock()
-            .unwrap()
-            .push(event.timestamp, event)
-            .expect("Unknown error when adding event to log");
+        if let Some(log) = self.log() {
+            log.try_lock()
+                .unwrap()
+                .push(event.timestamp, event)
+                .expect("Unknown error when adding event to log");
+        }
     }
 }
 
