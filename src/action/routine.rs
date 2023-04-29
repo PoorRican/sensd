@@ -52,14 +52,16 @@ impl Routine {
             command,
         }
     }
+
     /// Main polling function 
     ///
-    /// Acts as wrapper for `Command::execute()`. Checks scheduled time, then executes command.
+    /// Acts as wrapper for [`Command::execute()`]. Checks scheduled time, then executes command.
     /// `IOEvent` is automatically added to device log.
     ///
     /// # Returns
-    /// bool based on if execution was successful or not. This value should be used to drop
-    /// `Routine` from external store.
+    /// The returned value should be used for dropping [`Routine`] from external collection
+    /// `true`: if execution of [`IOCommand`] was successful
+    /// `false`: if [`IOCommand`] has not been executed
     pub fn attempt(&self) -> bool {
         let now = Utc::now();
         if now >= self.timestamp {
@@ -95,7 +97,10 @@ impl Command<IOEvent> for Routine {
 
 impl HasLog for Routine {
     fn log(&self) -> Option<Deferred<Log>> {
-        Some(self.log.upgrade().unwrap())
+        Some(
+            self.log.upgrade()
+                .unwrap()
+             )
     }
 }
 
