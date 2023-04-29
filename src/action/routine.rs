@@ -23,32 +23,45 @@ pub struct Routine {
 
     /// Copy of owning device metadata
     ///
-    /// A copy is used to avoid locking issues since scheduled commands might be time critical.
+    /// A copy of metadata avoids possible locking issues from deferred [`DeviceMetadata`] types.
+    /// Avoidance of locking issues is crucial to since execution of [`Routine`] is assumed to be
+    /// critical and should be executed in real-time.
+    // TODO: create as optional once issue #96 has been implemented
     metadata: DeviceMetadata,
 
     /// Value to pass to `IOCommand`
     value: RawValue,
 
     /// Weak reference to log for originating device
-    log: Weak<Mutex<Log>>,
+    log: Option<Weak<Mutex<Log>>>,
 
     command: IOCommand,
 }
 
 impl Routine {
-    pub fn new(
+    pub fn new<M, L>(
         timestamp: DateTime<Utc>,
-        metadata: DeviceMetadata,
+        metadata: M,
         value: RawValue,
-        log: Deferred<Log>,
+        log: L,
         command: IOCommand,
-    ) -> Self {
-        let log = Arc::downgrade(&log);
+    ) -> Self where 
+        M: Into<Option<DeviceMetadata>>,
+        L: Into<Option<Deferred<Log>>>,
+    {
+        // downgrade `Deferred` reference to `sync::Weak` reference
+        let weak_log: Option<Weak<Mutex<Log>>>;
+        if let Some(log) = log.into() {
+            weak_log = Some(Arc::downgrade(&log));
+        } else {
+            weak_log = None;
+        }
+
         Self {
             timestamp,
-            metadata,
+            metadata: metadata.into().unwrap_or_default(),
             value,
-            log,
+            log: weak_log,
             command,
         }
     }
@@ -97,15 +110,16 @@ impl Command<IOEvent> for Routine {
 
 impl HasLog for Routine {
     fn log(&self) -> Option<Deferred<Log>> {
-        Some(
-            self.log.upgrade()
-                .unwrap()
-             )
+        if let Some(log) = self.log.clone() {
+            log.upgrade()
+        } else {
+            None
+        }
     }
 }
 
 #[cfg(test)]
-mod tests {
+mod functionality_tests {
     use crate::action::{IOCommand, Routine};
     use crate::helpers::Deferrable;
     use crate::io::{DeviceMetadata, RawValue};
@@ -155,5 +169,63 @@ mod tests {
             assert_eq!(REGISTER, value);
         }
         assert_eq!(log.try_lock().unwrap().length(), 1);
+    }
+}
+
+#[cfg(test)]
+mod meta_tests {
+    use chrono::Utc;
+
+    use crate::{io::{DeviceMetadata, RawValue}, action::{IOCommand, Routine}, storage::Log, helpers::Deferrable};
+    #[test]
+    fn test_constructor_w_none() {
+        let timestamp = Utc::now();
+        let value = RawValue::Binary(true);
+        let command = IOCommand::Output(|_| { Ok(()) });
+
+        let routine = Routine::new(timestamp, None, value, None, command);
+
+        assert!(routine.attempt());
+    }
+
+    #[test]
+    fn test_constructor_w_device() {
+        let metadata = DeviceMetadata::default();
+
+        let timestamp = Utc::now();
+        let value = RawValue::Binary(true);
+        let command = IOCommand::Output(|_| { Ok(()) });
+
+        let routine = Routine::new(timestamp, metadata, value, None, command);
+
+        assert!(routine.attempt());
+    }
+
+    #[test]
+    fn test_constructor_w_log() {
+        let log = Log::default().deferred();
+
+        let timestamp = Utc::now();
+        let value = RawValue::Binary(true);
+        let command = IOCommand::Output(|_| { Ok(()) });
+
+
+        let routine = Routine::new(timestamp, None, value, log.clone(), command);
+        assert!(routine.attempt());
+    }
+
+    #[test]
+    fn test_constructor_w_both() {
+        let metadata = DeviceMetadata::default();
+
+        let log = Log::default().deferred();
+
+        let timestamp = Utc::now();
+        let value = RawValue::Binary(true);
+        let command = IOCommand::Output(|_| { Ok(()) });
+
+
+        let routine = Routine::new(timestamp, metadata, value, log.clone(), command);
+        assert!(routine.attempt());
     }
 }
