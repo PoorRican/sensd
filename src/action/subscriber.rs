@@ -54,6 +54,6 @@ pub trait Subscriber {
         println!("{}", msg);
     }
 
-    fn as_subscriber(self) -> Box<dyn Subscriber>;
+    fn into_subscriber(self) -> Box<dyn Subscriber>;
 }
 

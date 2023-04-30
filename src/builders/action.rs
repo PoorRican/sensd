@@ -153,7 +153,7 @@ impl ActionBuilder {
 
         // construct subscriber
         let action = ThresholdAction::new(name.to_string(), threshold, trigger, output);
-        let subscriber = Def::new(action.as_subscriber());
+        let subscriber = Def::new(action.into_subscriber());
 
         // add subscriber to publisher
         self.publisher.try_lock().unwrap().subscribe(subscriber.clone());

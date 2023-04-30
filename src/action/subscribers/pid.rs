@@ -32,7 +32,7 @@ impl Subscriber for PIDMonitor {
         }
     }
 
-    fn as_subscriber(self) -> Box<dyn Subscriber> {
+    fn into_subscriber(self) -> Box<dyn Subscriber> {
         Box::new(self)
     }
 }
