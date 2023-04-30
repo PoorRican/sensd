@@ -3,7 +3,7 @@
 //! # Description 
 //!
 //! This example displays the use of the "ThresholdAction" subscriber. Two input devices are
-//! initalized using the `DeviceLog` builder - both devices return a static float value.
+//! initialized using the `DeviceLog` builder - both devices return a static float value.
 //!
 //! # Note
 //!
@@ -14,7 +14,7 @@
 //!
 //! ## █▓▒░ Operating Frequency
 //! Device polling is not multi-threaded and the frequency of the event loop is determined by a
-//! static frequency `FREQUENCY`. There might be a usecase where frequency needs to be modulated,
+//! static frequency `FREQUENCY`. There might be a use case where frequency needs to be modulated,
 //! such as during a control cycle for more accurate control. Reduced polling time might be useful
 //! in embedded scenarios requiring both power conservation and accurate control.
 extern crate chrono;
@@ -45,7 +45,7 @@ const FREQUENCY: std::time::Duration = std::time::Duration::from_secs(1);
 /// name - Name to be converted to string
 ///
 /// # Returns
-/// Simgle initialized Group
+/// Single initialized Group
 fn init(name: &str) -> Group {
     let settings: Arc<Settings> = Arc::new(Settings::initialize());
     println!("Initialized settings");

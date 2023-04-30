@@ -52,7 +52,7 @@ impl ActionBuilder {
     /// `Group::inputs`, and outputs are taken from `Group::outputs`.
     ///
     /// Extracting devices from respective `Group` containers grants indirection between device
-    /// ininitialization and pub/sub building.
+    /// initialization and pub/sub building.
     ///
     /// # Args
     /// group: Reference to `Group`
@@ -89,7 +89,7 @@ impl ActionBuilder {
 
     /// Indirect constructor for `ActionBuilder`.
     ///
-    /// Allows input device to be constructed and added to `Group::inputs` seperately.
+    /// Allows input device to be constructed and added to `Group::inputs` separately.
     /// Therefore, deferred device does not need to remain in scope and passed to
     /// `::new()`. This allows device building to be handled by an external function. Only the
     /// device id needs remain in scope.

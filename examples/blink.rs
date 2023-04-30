@@ -32,7 +32,7 @@ const OUTPUT_ID: IdType = 0;
 /// name - Name to be converted to string
 ///
 /// # Returns
-/// Simgle initialized Group
+/// Single initialized Group
 fn init(name: &str) -> Group {
     let settings: Arc<Settings> = Arc::new(Settings::initialize());
     println!("Initialized settings");
