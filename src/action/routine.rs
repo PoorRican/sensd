@@ -1,6 +1,6 @@
 use crate::action::{Command, IOCommand};
 use crate::errors::ErrorType;
-use crate::helpers::Deferred;
+use crate::helpers::Def;
 use crate::io::{DeviceMetadata, IOEvent, RawValue};
 use crate::storage::{HasLog, Log};
 use chrono::{DateTime, Utc};
@@ -47,19 +47,21 @@ impl Routine {
         command: IOCommand,
     ) -> Self where 
         M: Into<Option<DeviceMetadata>>,
-        L: Into<Option<Deferred<Log>>>,
+        L: Into<Option<Def<Log>>>,
     {
-        // downgrade `Deferred` reference to `sync::Weak` reference
+        // downgrade `Def` reference to `sync::Weak` reference
         let weak_log: Option<Weak<Mutex<Log>>>;
         if let Some(log) = log.into() {
-            weak_log = Some(Arc::downgrade(&log));
+            weak_log = Some(Arc::downgrade(&log.into()));
         } else {
             weak_log = None;
         }
 
+        let metadata: DeviceMetadata = metadata.into().unwrap_or_default();
+
         Self {
             timestamp,
-            metadata: metadata.into().unwrap_or_default(),
+            metadata,
             value,
             log: weak_log,
             command,
@@ -109,19 +111,20 @@ impl Command<IOEvent> for Routine {
 }
 
 impl HasLog for Routine {
-    fn log(&self) -> Option<Deferred<Log>> {
-        if let Some(log) = self.log.clone() {
-            log.upgrade()
-        } else {
-            None
-        }
+    fn log(&self) -> Option<Def<Log>> {
+        if let Some(weak_log) = self.log.clone() {
+            if let Some(weak_ref) = weak_log.upgrade() {
+                return Some(Def::from(weak_ref))
+            }
+        } 
+        None
     }
 }
 
 #[cfg(test)]
 mod functionality_tests {
     use crate::action::{IOCommand, Routine};
-    use crate::helpers::Deferrable;
+    use crate::helpers::Def;
     use crate::io::{DeviceMetadata, RawValue};
     use crate::storage::{Log, MappedCollection};
     use chrono::{Duration, Utc};
@@ -144,7 +147,7 @@ mod functionality_tests {
         }
         let metadata = DeviceMetadata::default();
 
-        let log = Log::new(metadata.id, None).deferred();
+        let log = Def::new(Log::new(metadata.id, None));
 
         let command = IOCommand::Output(
             move |val| unsafe {
@@ -176,7 +179,7 @@ mod functionality_tests {
 mod meta_tests {
     use chrono::Utc;
 
-    use crate::{io::{DeviceMetadata, RawValue}, action::{IOCommand, Routine}, storage::Log, helpers::Deferrable};
+    use crate::{io::{DeviceMetadata, RawValue}, action::{IOCommand, Routine}, storage::Log, helpers::Def};
     #[test]
     fn test_constructor_w_none() {
         let timestamp = Utc::now();
@@ -203,7 +206,7 @@ mod meta_tests {
 
     #[test]
     fn test_constructor_w_log() {
-        let log = Log::default().deferred();
+        let log = Def::new(Log::default());
 
         let timestamp = Utc::now();
         let value = RawValue::Binary(true);
@@ -218,7 +221,7 @@ mod meta_tests {
     fn test_constructor_w_both() {
         let metadata = DeviceMetadata::default();
 
-        let log = Log::default().deferred();
+        let log = Def::new(Log::default());
 
         let timestamp = Utc::now();
         let value = RawValue::Binary(true);

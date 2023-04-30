@@ -1,10 +1,9 @@
-use crate::action::{PublisherInstance, Subscriber, SubscriberType};
+use crate::action::{PublisherInstance, Subscriber};
 use crate::errors::{ErrorType, Error, ErrorKind};
-use crate::helpers::{Deferrable, Deferred};
+use crate::helpers::Def;
 use crate::io::{IOEvent, RawValue, DeferredDevice, DeviceType};
 use std::fmt::{Display, Formatter};
 use std::ops::DerefMut;
-use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone)]
 /// Controls when comparison of external value and threshold returns `true`.
@@ -52,7 +51,7 @@ impl Display for Comparison {
 pub struct ThresholdAction {
     name: String,
     threshold: RawValue,
-    publisher: Option<Deferred<PublisherInstance>>,
+    publisher: Option<Def<PublisherInstance>>,
 
     trigger: Comparison,
     output: Option<DeferredDevice>,
@@ -106,6 +105,7 @@ impl ThresholdAction {
                            "ThresholdAction has no device associated as output."))
         }
     }
+
 }
 
 impl Subscriber for ThresholdAction {
@@ -138,25 +138,21 @@ impl Subscriber for ThresholdAction {
         }
     }
 
-    fn publisher(&self) -> &Option<Deferred<PublisherInstance>> {
+    fn publisher(&self) -> &Option<Def<PublisherInstance>> {
         &self.publisher
     }
 
     /// Assign publisher if field is `None`.
     ///
     /// Silently fails if publisher is already populated.
-    fn add_publisher(&mut self, publisher: Deferred<PublisherInstance>) {
+    fn add_publisher(&mut self, publisher: Def<PublisherInstance>) {
         match self.publisher {
             None => self.publisher = Some(publisher),
             Some(_) => (),
         }
     }
-}
 
-impl Deferrable for ThresholdAction {
-    type Inner = SubscriberType;
-
-    fn deferred(self) -> Deferred<Self::Inner> {
-        return Arc::new(Mutex::new(Box::new(self)));
+    fn as_subscriber(self) -> Box<dyn Subscriber> {
+        Box::new(self)
     }
 }

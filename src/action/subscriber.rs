@@ -1,8 +1,6 @@
 use crate::action::PublisherInstance;
-use crate::helpers::Deferred;
+use crate::helpers::Def;
 use crate::io::{IOEvent, DeferredDevice};
-
-pub type SubscriberType = Box<dyn Subscriber>;
 
 /// Subscriber design pattern for performing actions based on inputs
 ///
@@ -20,11 +18,11 @@ pub trait Subscriber {
     fn evaluate(&mut self, data: &IOEvent);
 
     /// Reference to `PublisherInstance`
-    fn publisher(&self) -> &Option<Deferred<PublisherInstance>>;
+    fn publisher(&self) -> &Option<Def<PublisherInstance>>;
     /// Set publisher field
     ///
     /// This interface function is used by `ActionBuilder`
-    fn add_publisher(&mut self, publisher: Deferred<PublisherInstance>);
+    fn add_publisher(&mut self, publisher: Def<PublisherInstance>);
     /// Get boolean if a publisher is assigned or not.
     ///
     /// During the build process (handled by `ActionBuilder`), a publisher is not
@@ -55,4 +53,7 @@ pub trait Subscriber {
     fn notify(&self, msg: &str) {
         println!("{}", msg);
     }
+
+    fn as_subscriber(self) -> Box<dyn Subscriber>;
 }
+

@@ -1,28 +1,19 @@
 use crate::action::{Command, IOCommand};
 use crate::errors::ErrorType;
-use crate::helpers::{Deferrable, Deferred};
+use crate::helpers::Def;
 use crate::io::{
-    no_internal_closure, Device, DeviceMetadata, DeviceType, IODirection, IOEvent, IOKind, RawValue,
+    no_internal_closure, Device, DeviceMetadata, IODirection, IOEvent, IOKind, RawValue,
     IdType,
 };
 use crate::storage::{HasLog, Log};
-use std::sync::{Arc, Mutex};
 
 #[derive(Default)]
 pub struct GenericOutput {
     metadata: DeviceMetadata,
     // cached state
     state: RawValue,
-    log: Option<Deferred<Log>>,
+    log: Option<Def<Log>>,
     command: Option<IOCommand>,
-}
-
-impl Deferrable for GenericOutput {
-    type Inner = DeviceType;
-    /// Return wrapped `OutputType` in `Deferred`
-    fn deferred(self) -> Deferred<Self::Inner> {
-        Arc::new(Mutex::new(DeviceType::Output(self)))
-    }
 }
 
 // Implement traits
@@ -35,7 +26,7 @@ impl Device for GenericOutput {
     /// * `id`: arbitrary, numeric ID to differentiate from other devices
     ///
     /// returns: GenericOutput
-    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Option<Deferred<Log>>) -> Self
+    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Option<Def<Log>>) -> Self
     where
         Self: Sized,
     {
@@ -61,7 +52,7 @@ impl Device for GenericOutput {
         self.command = Some(command);
     }
 
-    fn add_log(&mut self, log: Deferred<Log>) {
+    fn add_log(&mut self, log: Def<Log>) {
         self.log = Some(log)
     }
 }
@@ -103,7 +94,7 @@ impl GenericOutput {
 }
 
 impl HasLog for GenericOutput {
-    fn log(&self) -> Option<Deferred<Log>> {
+    fn log(&self) -> Option<Def<Log>> {
         self.log.clone()
     }
 }

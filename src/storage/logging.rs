@@ -2,7 +2,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::Iter;
-use std::fmt::Formatter;
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::ops::Deref;
@@ -10,7 +9,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex, Weak};
 
 use crate::errors::{Error, ErrorKind, ErrorType};
-use crate::helpers::{writable_or_create, Deferrable, Deferred};
+use crate::helpers::{writable_or_create, Def};
 use crate::io::{DeferredDevice, DeviceTraits, DeviceType, IOEvent, IdType};
 use crate::settings::Settings;
 use crate::storage::{Container, MappedCollection, Persistent};
@@ -19,7 +18,7 @@ use crate::storage::{Container, MappedCollection, Persistent};
 pub type LogType = Container<IOEvent, DateTime<Utc>>;
 
 /// Primary container for storing `Log` instances.
-pub type LogContainer = Vec<Deferred<Log>>;
+pub type LogContainer = Vec<Def<Log>>;
 
 /// Default filetype suffix.
 ///
@@ -31,7 +30,7 @@ pub trait HasLog {
     /// Property to return reference to field
     ///
     /// Upgrading of `Weak` reference should occur here
-    fn log(&self) -> Option<Deferred<Log>>;
+    fn log(&self) -> Option<Def<Log>>;
 
     fn add_to_log(&self, event: IOEvent) {
         if let Some(log) = self.log() {
@@ -67,7 +66,10 @@ impl Log {
     /// Panics if owner attribute is `None`
     pub fn owner(&self) -> DeferredDevice {
         // TODO: handle error if owner is None or if Weak has no Strong
-        self.owner.as_ref().unwrap().upgrade().unwrap()
+        self.owner.as_ref()
+            .unwrap()
+            .upgrade()
+            .unwrap().into()
     }
 
     /// Set reference to owning device.
@@ -200,30 +202,12 @@ impl Persistent for Log {
     }
 }
 
-impl Deferrable for Log {
-    type Inner = Log;
-    fn deferred(self) -> Deferred<Self::Inner> {
-        Arc::new(Mutex::new(self))
-    }
-}
-
-impl std::fmt::Debug for Log {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Log {{ name: {}, log length: {} }}",
-            self.filename(),
-            self.log.length()
-        )
-    }
-}
-
 // Testing
 #[cfg(test)]
 mod tests {
     use crate::action::IOCommand;
     use crate::builders::DeviceLogBuilder;
-    use crate::helpers::Deferred;
+    use crate::helpers::Def;
     use crate::io::{Device, DeviceType, IODirection, IOKind, RawValue, IdType};
     use crate::storage::{Log, MappedCollection, Persistent};
     use std::ops::Deref;
@@ -231,7 +215,7 @@ mod tests {
     use std::time::Duration;
     use std::{fs, thread};
 
-    fn add_to_log(device: &Deferred<DeviceType>, log: &Deferred<Log>, count: usize) {
+    fn add_to_log(device: &Def<DeviceType>, log: &Def<Log>, count: usize) {
         for _ in 0..count {
             let binding = device.lock().unwrap();
             let event = match binding.deref() {

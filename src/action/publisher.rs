@@ -10,19 +10,20 @@
 //! `Input::publisher().notify()` should also be called as well. `notify()` should thereby call
 //! `Subscriber::evaluate()` on any listeners.
 
-use crate::action::{SubscriberType, SchedRoutineHandler};
-use crate::helpers::{Deferrable, Deferred};
+use crate::action::{Subscriber, SchedRoutineHandler};
+use crate::helpers::Def;
 use crate::io::IOEvent;
-use std::sync::{Arc, Mutex};
 
 pub trait NamedRoutine {
     fn name(&self) -> String;
 }
 
 /// Trait to implement on Input objects
-pub trait Publisher: Deferrable {
-    fn subscribers(&self) -> &[Deferred<SubscriberType>];
-    fn subscribe(&mut self, subscriber: Deferred<SubscriberType>);
+pub trait Publisher {
+    type Inner;
+
+    fn subscribers(&self) -> &[Def<Self::Inner>];
+    fn subscribe(&mut self, subscriber: Def<Self::Inner>);
 
     fn notify(&mut self, data: &IOEvent);
 }
@@ -30,7 +31,7 @@ pub trait Publisher: Deferrable {
 /// Concrete instance of publisher object
 #[derive(Default)]
 pub struct PublisherInstance {
-    subscribers: Vec<Deferred<SubscriberType>>,
+    subscribers: Vec<Def<<PublisherInstance as Publisher>::Inner>>,
     scheduled: SchedRoutineHandler,
 }
 
@@ -42,28 +43,22 @@ impl PublisherInstance {
 }
 
 impl Publisher for PublisherInstance {
-    fn subscribers(&self) -> &[Deferred<SubscriberType>] {
+    type Inner = Box<dyn Subscriber>;
+
+    fn subscribers(&self) -> &[Def<Self::Inner>] {
         &self.subscribers
     }
 
-    fn subscribe(&mut self, subscriber: Deferred<SubscriberType>) {
+    fn subscribe(&mut self, subscriber: Def<Self::Inner>) {
         self.subscribers.push(subscriber)
     }
 
-    /// Call `Subscriber::evaluate()` on all associated `Subscriber` implementations.
+    /// Call [`Subscriber::evaluate()`] on all associated [`Subscriber`] implementations.
     fn notify(&mut self, data: &IOEvent) {
         for subscriber in self.subscribers.iter_mut() {
             // TODO: `IOEvent` shall be sent to `OutputDevice` and shall be logged
             // TODO: results should be aggregated
-            subscriber.lock().unwrap().evaluate(data);
+            subscriber.try_lock().unwrap().evaluate(data);
         }
-    }
-}
-
-impl Deferrable for PublisherInstance {
-    type Inner = PublisherInstance;
-
-    fn deferred(self) -> Deferred<Self::Inner> {
-        Arc::new(Mutex::new(self))
     }
 }

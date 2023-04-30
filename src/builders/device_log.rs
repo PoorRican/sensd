@@ -1,5 +1,5 @@
 use crate::action::IOCommand;
-use crate::helpers::{Deferrable, Deferred};
+use crate::helpers::Def;
 use crate::io::{
     DeferredDevice, Device, DeviceType, GenericInput, GenericOutput, IODirection, IOKind, IdType,
 };
@@ -10,7 +10,7 @@ use std::sync::{Arc, Mutex, Weak};
 
 pub struct DeviceLogBuilder {
     device: DeferredDevice,
-    log: Deferred<Log>,
+    log: Def<Log>,
     command: IOCommand,
 }
 
@@ -25,7 +25,7 @@ impl DeviceLogBuilder {
     ) -> Self {
         check_command_alignment(command, direction, name);
 
-        let log: Deferred<Log>;
+        let log: Def<Log>;
 
         let device = match direction {
             IODirection::Output => {
@@ -41,11 +41,11 @@ impl DeviceLogBuilder {
         };
 
         // wrap device
-        let wrapped = device.deferred();
+        let wrapped = Def::new(device);
 
         // set log owner
-        let downgraded: Weak<Mutex<DeviceType>> = Arc::downgrade(&wrapped.clone());
-        log.lock().unwrap().set_owner(downgraded);
+        let downgraded: Weak<Mutex<DeviceType>> = Arc::downgrade(&wrapped.clone().into());
+        log.try_lock().unwrap().set_owner(downgraded);
 
         Self {
             device: wrapped,
@@ -54,7 +54,7 @@ impl DeviceLogBuilder {
         }
     }
 
-    pub fn get(&self) -> (DeferredDevice, Deferred<Log>) {
+    pub fn get(&self) -> (DeferredDevice, Def<Log>) {
         (self.device.clone(), self.log.clone())
     }
 
@@ -65,7 +65,7 @@ impl DeviceLogBuilder {
     pub fn setup_command(&self) {
         let command = self.command.clone();
 
-        let mut binding = self.device.lock().unwrap();
+        let mut binding = self.device.try_lock().unwrap();
         let device = binding.deref_mut();
 
         match device {

@@ -16,7 +16,7 @@ impl SchedRoutineHandler {
     /// Attempt to execute scheduled routines.
     ///
     /// Even though [`Routine`] instances are usually scheduled during normal polling cycles by
-    /// [`Group`], the assumption is that their scheduled execution time does not correllate with a
+    /// [`Group`], the assumption is that their scheduled execution time does not correlate with a
     /// polling interval. Therefore, `attempt()` should be called as often as possible,
     /// outside of normal polling cycle, and as often as possible to produce real-time response.
     ///
@@ -48,13 +48,13 @@ mod tests {
         action::{SchedRoutineHandler, IOCommand, Routine},
         io::{RawValue, DeviceMetadata},
         storage::Log,
-        helpers::Deferrable
+        helpers::Def,
     };
 
     #[test]
     fn test_push() {
         let metadata = DeviceMetadata::default();
-        let log = Log::new(metadata.id, None).deferred();
+        let log = Def::new(Log::new(metadata.id, None));
 
         let command = IOCommand::Output(|_| Ok(()));
 
@@ -71,7 +71,7 @@ mod tests {
 
         // Add second routine
         let metadata = DeviceMetadata::default();
-        let log = Log::new(metadata.id, None).deferred();
+        let log = Def::new(Log::new(metadata.id, None));
 
         let command = IOCommand::Output(|_| Ok(()));
 
@@ -88,7 +88,7 @@ mod tests {
     #[test]
     fn test_attempt() {
         let metadata = DeviceMetadata::default();
-        let log = Log::new(metadata.id, None).deferred();
+        let log = Def::new(Log::new(metadata.id, None));
 
         let command = IOCommand::Output(|_| Ok(()));
 
@@ -103,7 +103,7 @@ mod tests {
 
         // Add second routine
         let metadata = DeviceMetadata::default();
-        let log = Log::new(metadata.id, None).deferred();
+        let log = Def::new(Log::new(metadata.id, None));
 
         let command = IOCommand::Output(|_| Ok(()));
 

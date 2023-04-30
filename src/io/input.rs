@@ -1,27 +1,17 @@
 use crate::action::{Command, IOCommand, Publisher, PublisherInstance};
 use crate::errors::ErrorType;
-use crate::helpers::{Deferrable, Deferred};
-use crate::io::DeviceType;
+use crate::helpers::Def;
 use crate::io::{
     no_internal_closure, Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType,
 };
 use crate::storage::{HasLog, Log};
-use std::sync::{Arc, Mutex};
 
 #[derive(Default)]
 pub struct GenericInput {
     metadata: DeviceMetadata,
-    log: Option<Deferred<Log>>,
-    publisher: Option<Deferred<PublisherInstance>>,
+    log: Option<Def<Log>>,
+    publisher: Option<Def<PublisherInstance>>,
     command: Option<IOCommand>,
-}
-
-impl Deferrable for GenericInput {
-    type Inner = DeviceType;
-    /// Return wrapped Sensor in
-    fn deferred(self) -> Deferred<Self::Inner> {
-        Arc::new(Mutex::new(DeviceType::Input(self)))
-    }
 }
 
 // Implement traits
@@ -33,7 +23,7 @@ impl Device for GenericInput {
     /// * `id`: arbitrary, numeric ID to differentiate from other sensors
     ///
     /// returns: MockPhSensor
-    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Option<Deferred<Log>>) -> Self
+    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Option<Def<Log>>) -> Self
     where
         Self: Sized,
     {
@@ -59,7 +49,7 @@ impl Device for GenericInput {
         self.command = Some(command);
     }
 
-    fn add_log(&mut self, log: Deferred<Log>) {
+    fn add_log(&mut self, log: Def<Log>) {
         self.log = Some(log)
     }
 }
@@ -82,7 +72,7 @@ impl GenericInput {
     /// No error is raised when there is no associated publisher.
     fn propagate(&mut self, event: &IOEvent) {
         if let Some(publisher) = &self.publisher {
-            publisher.lock().unwrap().notify(&event);
+            publisher.try_lock().unwrap().notify(&event);
         };
     }
 
@@ -102,7 +92,7 @@ impl GenericInput {
         Ok(event)
     }
 
-    pub fn add_publisher(&mut self, publisher: Deferred<PublisherInstance>) -> Result<(), ()> {
+    pub fn add_publisher(&mut self, publisher: Def<PublisherInstance>) -> Result<(), ()> {
         match self.publisher {
             None => {
                 self.publisher = Some(publisher);
@@ -120,7 +110,7 @@ impl GenericInput {
 }
 
 impl HasLog for GenericInput {
-    fn log(&self) -> Option<Deferred<Log>> {
+    fn log(&self) -> Option<Def<Log>> {
         self.log.clone()
     }
 }
@@ -129,7 +119,7 @@ impl HasLog for GenericInput {
 #[cfg(test)]
 mod tests {
     use crate::action::{IOCommand, PublisherInstance};
-    use crate::helpers::Deferrable;
+    use crate::helpers::Def;
     use crate::io::{Device, GenericInput, RawValue};
     use crate::storage::MappedCollection;
 
@@ -171,7 +161,7 @@ mod tests {
         assert_eq!(false, input.has_publisher());
 
         let publisher = PublisherInstance::default();
-        input.add_publisher(publisher.deferred()).unwrap();
+        input.add_publisher(Def::new(publisher)).unwrap();
 
         assert_eq!(true, input.has_publisher());
     }

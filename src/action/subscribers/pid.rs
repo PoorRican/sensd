@@ -1,15 +1,15 @@
 use crate::action::{PublisherInstance, Subscriber};
-use crate::helpers::Deferred;
+use crate::helpers::Def;
 use crate::io::{DeviceType, IOEvent, RawValue};
 
 /// Subscriber routine abstracting a PID controller
 pub struct PIDMonitor {
     name: String,
     _threshold: RawValue,
-    publisher: Option<Deferred<PublisherInstance>>,
+    publisher: Option<Def<PublisherInstance>>,
 
     // TODO: check that device is output
-    _output: Deferred<DeviceType>,
+    _output: Def<DeviceType>,
 }
 
 impl Subscriber for PIDMonitor {
@@ -21,14 +21,18 @@ impl Subscriber for PIDMonitor {
         // maintain PID
     }
 
-    fn publisher(&self) -> &Option<Deferred<PublisherInstance>> {
+    fn publisher(&self) -> &Option<Def<PublisherInstance>> {
         &self.publisher
     }
 
-    fn add_publisher(&mut self, publisher: Deferred<PublisherInstance>) {
+    fn add_publisher(&mut self, publisher: Def<PublisherInstance>) {
         match self.publisher {
             None => self.publisher = Some(publisher),
             Some(_) => (),
         }
+    }
+
+    fn as_subscriber(self) -> Box<dyn Subscriber> {
+        Box::new(self)
     }
 }

@@ -1,7 +1,7 @@
 use core::fmt::Formatter;
 use chrono::Utc;
 use crate::action::IOCommand;
-use crate::helpers::{Deferred, Deferrable};
+use crate::helpers::Def;
 use crate::io::{
     IdType, IOKind, DeviceMetadata, IODirection, RawValue, IOEvent,
 };
@@ -22,7 +22,7 @@ pub trait Device: HasLog {
     /// `id`: device ID.
     /// `kind`: kind of I/O device. Optional argument.
     /// `log`: Optional deferred owned log for the device.
-    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Option<Deferred<Log>>) -> Self
+    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Option<Def<Log>>) -> Self
     where
         Self: Sized;
 
@@ -71,11 +71,11 @@ pub trait Device: HasLog {
     fn add_command(&mut self, command: IOCommand);
 
     /// Setter for `log` field
-    fn add_log(&mut self, log: Deferred<Log>);
+    fn add_log(&mut self, log: Def<Log>);
 
     /// Initialize, set, and return log.
-    fn init_log(&mut self, settings: Option<Arc<Settings>>) -> Deferred<Log> {
-        let log = Log::new(self.id(), settings).deferred();
+    fn init_log(&mut self, settings: Option<Arc<Settings>>) -> Def<Log> {
+        let log = Def::new(Log::new(self.id(), settings));
         self.add_log(log.clone());
         log
     }

@@ -1,16 +1,16 @@
 use crate::io::{
     DeviceType, DeviceWrapper, IOKind, IdType, IODirection, DeviceTraits
 };
-use crate::helpers::Deferred;
+use crate::helpers::Def;
 
-pub type DeferredDevice = Deferred<DeviceType>;
+pub type DeferredDevice = Def<DeviceType>;
 impl DeviceWrapper for DeferredDevice {
     fn is_input(&self) -> bool {
-        let binding = self.lock().unwrap();
+        let binding = self.try_lock().unwrap();
         binding.is_input()
     }
     fn is_output(&self) -> bool {
-        let binding = self.lock().unwrap();
+        let binding = self.try_lock().unwrap();
         binding.is_output()
     }
 }

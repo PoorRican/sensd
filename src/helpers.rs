@@ -1,7 +1,7 @@
 use std::fs::{File, create_dir_all};
 use std::ops::Deref;
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard, TryLockResult, PoisonError};
 
 use crate::errors::ErrorType;
 
@@ -40,10 +40,36 @@ pub fn check_results<T>(results: &[Result<T, ErrorType>]) -> Result<(), ErrorTyp
     Ok(())
 }
 
-// Defines a type alias `Deferred` for an Arc wrapped around a Mutex with generic type T.
-pub type Deferred<T> = Arc<Mutex<T>>;
+/// Facade for an Arc wrapped around a Mutex with generic type T.
+pub struct Def<T: Sized>(Arc<Mutex<T>>);
+impl<T> Def<T> {
+    pub fn new(deferred: T) -> Self {
+        Self(Arc::new(Mutex::new(deferred)))
+    }
 
-pub trait Deferrable {
-    type Inner;
-    fn deferred(self) -> Deferred<Self::Inner>;
+    pub fn lock(&self) -> Result<MutexGuard<T>, PoisonError<MutexGuard<T>>> {
+        self.0.lock()
+    }
+
+    pub fn try_lock(&self) -> TryLockResult<MutexGuard<T>> {
+        self.0.try_lock()
+    }
+}
+
+impl<T> Clone for Def<T> {
+    fn clone(&self) -> Self {
+        Self(self.0.clone())
+    }
+}
+
+impl<T> From<Arc<Mutex<T>>> for Def<T> {
+    fn from(value: Arc<Mutex<T>>) -> Def<T> {
+        Def(value)
+    }
+}
+
+impl<T> Into<Arc<Mutex<T>>> for Def<T> {
+    fn into(self) -> Arc<Mutex<T>> {
+        self.0
+    }
 }

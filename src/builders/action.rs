@@ -1,8 +1,6 @@
-use crate::action::{
-    Comparison, Publisher, PublisherInstance, ThresholdAction,
-};
+use crate::action::{Comparison, Publisher, PublisherInstance, Subscriber, ThresholdAction};
 use crate::errors::{Error, ErrorKind, ErrorType};
-use crate::helpers::{Deferrable, Deferred};
+use crate::helpers::Def;
 use crate::io::{DeferredDevice, DeviceType, DeviceWrapper, RawValue, IdType, IODirection};
 use crate::storage::{Group, MappedCollection};
 use std::ops::DerefMut;
@@ -17,7 +15,7 @@ pub struct ActionBuilder {
     input: DeferredDevice,
     output: Option<DeferredDevice>,
 
-    publisher: Deferred<PublisherInstance>,
+    publisher: Def<PublisherInstance>,
 }
 
 impl ActionBuilder {
@@ -118,9 +116,9 @@ impl ActionBuilder {
     }
 
     /// Initialize and return a deferred `PublisherInstance`
-    fn build_publisher() -> Deferred<PublisherInstance> {
+    fn build_publisher() -> Def<PublisherInstance> {
         let binding = PublisherInstance::default();
-        binding.deferred()
+        Def::new(binding)
         // TODO: add publisher to `Group`
     }
 
@@ -129,10 +127,10 @@ impl ActionBuilder {
     /// Future updates will return a reference to the existing publisher. However, this shouldn't be
     /// necessary for instances built with `ActionBuilder`.
     fn check_publisher(&self) {
-        let mut binding = self.input.lock().unwrap();
+        let mut binding = self.input.try_lock().unwrap();
         if let DeviceType::Input(inner) = binding.deref_mut() {
             if inner.has_publisher() == false {
-                let publisher: Deferred<PublisherInstance> = self.publisher.clone();
+                let publisher: Def<PublisherInstance> = self.publisher.clone();
 
                 inner.add_publisher(publisher).unwrap()
             }
@@ -155,14 +153,14 @@ impl ActionBuilder {
 
         // construct subscriber
         let action = ThresholdAction::new(name.to_string(), threshold, trigger, output);
-        let subscriber = action.deferred();
+        let subscriber = Def::new(action.as_subscriber());
 
         // add subscriber to publisher
-        self.publisher.lock().unwrap().subscribe(subscriber.clone());
+        self.publisher.try_lock().unwrap().subscribe(subscriber.clone());
 
         // add reverse reference to publisher
         subscriber
-            .lock()
+            .try_lock()
             .unwrap()
             .add_publisher(self.publisher.clone());
 

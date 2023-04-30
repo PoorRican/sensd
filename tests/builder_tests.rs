@@ -10,7 +10,7 @@ use std::ops::Deref;
 fn test_action_builder() {
     let _input = GenericInput::default();
     assert!(!(_input.has_publisher()));
-    let input = _input.deferred();
+    let input = Def::new(DeviceType::Input(_input));
 
     let mut builder = ActionBuilder::new(input.clone()).unwrap();
 

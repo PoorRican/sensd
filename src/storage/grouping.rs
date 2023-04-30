@@ -1,7 +1,7 @@
 use crate::action::{IOCommand, PublisherInstance};
 use crate::builders::DeviceLogBuilder;
 use crate::errors::ErrorType;
-use crate::helpers::{check_results, Deferred};
+use crate::helpers::{check_results, Def};
 use crate::io::{DeviceContainer, DeviceType, IODirection, IOEvent, IOKind, IdType};
 use crate::settings::Settings;
 use crate::storage::{LogContainer, MappedCollection, Persistent};
@@ -39,7 +39,7 @@ pub struct Group {
     pub outputs: DeviceContainer<IdType>,
 
     /// Container for `PublisherInstances`
-    pub publishers: Vec<Deferred<PublisherInstance>>,
+    pub publishers: Vec<Def<PublisherInstance>>,
 }
 
 impl Group {
@@ -111,7 +111,7 @@ impl Group {
         kind: &Option<IOKind>,
         direction: &IODirection,
         command: &IOCommand,
-    ) -> Result<Deferred<DeviceType>, ErrorType> {
+    ) -> Result<Def<DeviceType>, ErrorType> {
         // variable allowed to go out-of-scope because `poller` owns reference
         let settings = Some(self.settings.clone());
 
@@ -156,7 +156,7 @@ impl Group {
     fn load_logs(&self, path: &Option<String>) -> Result<(), ErrorType> {
         let mut results = Vec::new();
         for log in self.logs.iter() {
-            let result = log.lock().unwrap().load(path);
+            let result = log.try_lock().unwrap().load(path);
             results.push(result);
         }
         check_results(&results)
@@ -178,7 +178,7 @@ impl Group {
     fn save_logs(&self, path: &Option<String>) -> Result<(), ErrorType> {
         let mut results = Vec::new();
         for log in self.logs.iter() {
-            let result = log.lock().unwrap().save(path);
+            let result = log.try_lock().unwrap().save(path);
             results.push(result);
         }
         check_results(&results)
