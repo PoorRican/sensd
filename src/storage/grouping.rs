@@ -195,10 +195,10 @@ impl Group {
         }
     }
 
-    pub fn attempt_scheduled(&self) {
+    pub fn attempt_routines(&self) {
         for _publisher in self.publishers.iter() {
             let mut publisher = _publisher.try_lock().unwrap();
-            publisher.attempt_scheduled();
+            publisher.attempt_routines();
         }
     }
 }

@@ -64,6 +64,7 @@ impl Log {
     ///
     /// # Errors
     /// Panics if owner attribute is `None`
+    //pub fn owner<D: Device>(&self) -> Def<D> {
     pub fn owner(&self) -> DeferredDevice {
         // TODO: handle error if owner is None or if Weak has no Strong
         self.owner.as_ref()

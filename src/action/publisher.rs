@@ -37,8 +37,8 @@ pub struct PublisherInstance {
 
 impl PublisherInstance {
     /// Attempt to run scheduled `Routine` structs
-    pub fn attempt_scheduled(&mut self) {
-        self.scheduled.attempt()
+    pub fn attempt_routines(&mut self) {
+        self.scheduled.attempt_routines()
     }
 }
 

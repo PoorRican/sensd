@@ -17,11 +17,11 @@ impl SchedRoutineHandler {
     ///
     /// Even though [`Routine`] instances are usually scheduled during normal polling cycles by
     /// [`Group`], the assumption is that their scheduled execution time does not correlate with a
-    /// polling interval. Therefore, `attempt()` should be called as often as possible,
+    /// polling interval. Therefore, [`attempt_routines()`] should be called as often as possible,
     /// outside of normal polling cycle, and as often as possible to produce real-time response.
     ///
-    /// Any routines executed by `Routine::attempt()` are cleared from the `scheduled` container.
-    pub fn attempt(&mut self) {
+    /// Any routines executed by [`Routine::attempt()`] are cleared from the internal container.
+    pub fn attempt_routines(&mut self) {
         let mut executed = Vec::default();
         for (index, routine) in self.0.iter().enumerate() {
             if routine.attempt() {
@@ -92,7 +92,7 @@ mod tests {
 
         let command = IOCommand::Output(|_| Ok(()));
 
-        let timestamp = Utc::now() + Duration::microseconds(5);
+        let timestamp = Utc::now() + Duration::microseconds(30);
         let value = RawValue::Binary(true);
 
         let routine = Routine::new(timestamp, metadata, value, log.clone(), command);
@@ -117,14 +117,14 @@ mod tests {
 
         while Utc::now() < timestamp {
             assert_eq!(2, scheduled.scheduled().into_iter().count());
-            scheduled.attempt();
+            scheduled.attempt_routines();
         }
-        scheduled.attempt();
+        scheduled.attempt_routines();
         while Utc::now() < ts2 {
             assert_eq!(1, scheduled.scheduled().into_iter().count());
-            scheduled.attempt();
+            scheduled.attempt_routines();
         }
-        scheduled.attempt();
+        scheduled.attempt_routines();
         assert_eq!(0, scheduled.scheduled().into_iter().count());
     }
 }
