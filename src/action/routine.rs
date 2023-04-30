@@ -2,7 +2,7 @@ use crate::action::{Command, IOCommand};
 use crate::errors::ErrorType;
 use crate::helpers::Def;
 use crate::io::{DeviceMetadata, IOEvent, RawValue};
-use crate::storage::{HasLog, Log};
+use crate::storage::{Chronicle, Log};
 use chrono::{DateTime, Utc};
 use std::sync::{Arc, Mutex, Weak};
 
@@ -110,7 +110,7 @@ impl Command<IOEvent> for Routine {
     }
 }
 
-impl HasLog for Routine {
+impl Chronicle for Routine {
     fn log(&self) -> Option<Def<Log>> {
         if let Some(weak_log) = self.log.clone() {
             if let Some(weak_ref) = weak_log.upgrade() {

@@ -26,7 +26,7 @@ pub type LogContainer = Vec<Def<Log>>;
 const FILETYPE: &str = ".json";
 
 /// Transparently enables a reference to `Log` to be shared.
-pub trait HasLog {
+pub trait Chronicle {
     /// Property to return reference to field
     ///
     /// Upgrading of `Weak` reference should occur here

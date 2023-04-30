@@ -4,7 +4,7 @@ use crate::helpers::Def;
 use crate::io::{
     no_internal_closure, Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType,
 };
-use crate::storage::{HasLog, Log};
+use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
 pub struct GenericInput {
@@ -109,7 +109,7 @@ impl GenericInput {
     }
 }
 
-impl HasLog for GenericInput {
+impl Chronicle for GenericInput {
     fn log(&self) -> Option<Def<Log>> {
         self.log.clone()
     }

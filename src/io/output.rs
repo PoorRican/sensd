@@ -5,7 +5,7 @@ use crate::io::{
     no_internal_closure, Device, DeviceMetadata, IODirection, IOEvent, IOKind, RawValue,
     IdType,
 };
-use crate::storage::{HasLog, Log};
+use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
 pub struct GenericOutput {
@@ -93,7 +93,7 @@ impl GenericOutput {
     }
 }
 
-impl HasLog for GenericOutput {
+impl Chronicle for GenericOutput {
     fn log(&self) -> Option<Def<Log>> {
         self.log.clone()
     }

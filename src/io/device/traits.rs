@@ -6,7 +6,7 @@ use crate::io::{
     IdType, IOKind, DeviceMetadata, IODirection, RawValue, IOEvent,
 };
 use crate::settings::Settings;
-use crate::storage::{HasLog, Log};
+use crate::storage::{Chronicle, Log};
 use std::sync::Arc;
 
 /// Defines a minimum interface for interacting with GPIO devices.
@@ -15,7 +15,7 @@ use std::sync::Arc;
 /// Additionally, an accessor, `metadata()` is defined to provide for the facade methods to access
 /// device name, id, direction, and kind. Therefore, implementing structs shall implement a field
 /// `metadata` that is mutably accessed through the reciprocal getter method.
-pub trait Device: HasLog {
+pub trait Device: Chronicle {
     /// Creates a new instance of the device with the given parameters.
     ///
     /// `name`: name of device.
