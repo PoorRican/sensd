@@ -109,7 +109,7 @@ mod tests {
 
         // BUG: why does this operation fail with any value less than 31 microseconds? There seems
         // to be a race condition.
-        let ts2 = Utc::now() + Duration::microseconds(60);
+        let ts2 = Utc::now() + Duration::microseconds(120);
         let value = RawValue::Binary(true);
 
         let routine = Routine::new(ts2, metadata, value, log.clone(), command);
