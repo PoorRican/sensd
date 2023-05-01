@@ -1,8 +1,8 @@
-use crate::action::{PublisherInstance, Subscriber};
+use crate::action::{PublisherInstance, Action};
 use crate::helpers::Def;
 use crate::io::{DeviceType, IOEvent, RawValue};
 
-/// Subscriber routine abstracting a PID controller
+/// Subscriber abstracting a PID controller
 pub struct PIDMonitor {
     name: String,
     _threshold: RawValue,
@@ -12,7 +12,7 @@ pub struct PIDMonitor {
     _output: Def<DeviceType>,
 }
 
-impl Subscriber for PIDMonitor {
+impl Action for PIDMonitor {
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -32,7 +32,7 @@ impl Subscriber for PIDMonitor {
         }
     }
 
-    fn into_subscriber(self) -> Box<dyn Subscriber> {
+    fn into_action(self) -> Box<dyn Action> {
         Box::new(self)
     }
 }

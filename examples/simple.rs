@@ -82,7 +82,7 @@ fn setup_poller(poller: &mut Group) {
 ///
 /// This demonstrates the initialization of `ThresholdNotifier` subscribers and shows how
 /// subscribers are added to `Group` via `::.
-fn build_subscribers(poller: &mut Group) {
+fn build_actions(poller: &mut Group) {
     println!("\n█▓▒░ Building subscribers ...");
 
     for (id, input) in poller.inputs.iter() {
@@ -120,7 +120,7 @@ fn main() {
     let mut poller = init("main");
 
     setup_poller(&mut poller);
-    build_subscribers(&mut poller);
+    build_actions(&mut poller);
 
     println!("█▓▒░ Beginning polling ░▒▓█\n");
 

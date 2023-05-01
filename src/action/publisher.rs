@@ -10,7 +10,7 @@
 //! `Input::publisher().notify()` should also be called as well. `notify()` should thereby call
 //! `Subscriber::evaluate()` on any listeners.
 
-use crate::action::{Subscriber, SchedRoutineHandler};
+use crate::action::{Action, SchedRoutineHandler};
 use crate::helpers::Def;
 use crate::io::IOEvent;
 
@@ -27,7 +27,7 @@ pub trait Publisher {
 /// Concrete instance of publisher object
 #[derive(Default)]
 pub struct PublisherInstance {
-    subscribers: Vec<Def<<PublisherInstance as Publisher>::Inner>>,
+    actions: Vec<Def<<PublisherInstance as Publisher>::Inner>>,
     scheduled: SchedRoutineHandler,
 }
 
@@ -39,19 +39,19 @@ impl PublisherInstance {
 }
 
 impl Publisher for PublisherInstance {
-    type Inner = Box<dyn Subscriber>;
+    type Inner = Box<dyn Action>;
 
     fn subscribers(&self) -> &[Def<Self::Inner>] {
-        &self.subscribers
+        &self.actions
     }
 
     fn subscribe(&mut self, subscriber: Def<Self::Inner>) {
-        self.subscribers.push(subscriber)
+        self.actions.push(subscriber)
     }
 
-    /// Call [`Subscriber::evaluate()`] on all associated [`Subscriber`] implementations.
+    /// Call [`Action::evaluate()`] on all associated [`Action`] implementations.
     fn notify(&mut self, data: &IOEvent) {
-        for subscriber in self.subscribers.iter_mut() {
+        for subscriber in self.actions.iter_mut() {
             // TODO: `IOEvent` shall be sent to `OutputDevice` and shall be logged
             // TODO: results should be aggregated
             subscriber.try_lock().unwrap().evaluate(data);

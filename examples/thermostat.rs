@@ -47,7 +47,7 @@ static mut EXTERNAL_VALUE: RawValue = RawValue::Int8(0);
 /// name - Name to be converted to string
 ///
 /// # Returns
-/// Simgle initialized Group
+/// Single initialized Group
 fn init(name: &str) -> Group {
     let settings: Arc<Settings> = Arc::new(Settings::initialize());
     println!("Initialized settings");
@@ -81,7 +81,7 @@ unsafe fn setup_poller(poller: &mut Group) {
 }
 
 /// █▓▒░ Add a single `ThresholdNotifier` to all device in `Group`.
-fn build_subscribers(poller: &mut Group) {
+fn build_actions(poller: &mut Group) {
     println!("\n█▓▒░ Building subscribers ...");
 
     let input: DeferredDevice = poller.inputs.get(&INPUT_ID).unwrap().clone();
@@ -120,7 +120,7 @@ fn main() {
     let mut poller = init("main");
     unsafe { setup_poller(&mut poller) }
 
-    build_subscribers(&mut poller);
+    build_actions(&mut poller);
 
     println!("█▓▒░ Beginning polling ░▒▓█\n");
 

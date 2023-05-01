@@ -1,4 +1,4 @@
-use crate::action::{Comparison, Publisher, PublisherInstance, Subscriber, ThresholdAction};
+use crate::action::{Comparison, Publisher, PublisherInstance, Action, ThresholdAction};
 use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::Def;
 use crate::io::{DeferredDevice, DeviceType, DeviceWrapper, RawValue, IdType, IODirection};
@@ -153,7 +153,7 @@ impl ActionBuilder {
 
         // construct subscriber
         let action = ThresholdAction::new(name.to_string(), threshold, trigger, output);
-        let subscriber = Def::new(action.into_subscriber());
+        let subscriber = Def::new(action.into_action());
 
         // add subscriber to publisher
         self.publisher.try_lock().unwrap().subscribe(subscriber.clone());

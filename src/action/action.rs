@@ -10,7 +10,7 @@ use crate::io::{IOEvent, DeferredDevice};
 ///
 ///
 /// Subscriber should have a strong reference to Output, so that `Command` may be built.
-pub trait Subscriber {
+pub trait Action {
     fn name(&self) -> String;
     /// Primary method to handle incoming data
     ///
@@ -54,6 +54,6 @@ pub trait Subscriber {
         println!("{}", msg);
     }
 
-    fn into_subscriber(self) -> Box<dyn Subscriber>;
+    fn into_action(self) -> Box<dyn Action>;
 }
 

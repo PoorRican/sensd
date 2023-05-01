@@ -1,4 +1,4 @@
-use crate::action::{PublisherInstance, Subscriber};
+use crate::action::{PublisherInstance, Action};
 use crate::errors::{ErrorType, Error, ErrorKind};
 use crate::helpers::Def;
 use crate::io::{IOEvent, RawValue, DeferredDevice, DeviceType};
@@ -108,7 +108,7 @@ impl ThresholdAction {
 
 }
 
-impl Subscriber for ThresholdAction {
+impl Action for ThresholdAction {
     fn name(&self) -> String {
         self.name.clone()
     }
@@ -152,7 +152,7 @@ impl Subscriber for ThresholdAction {
         }
     }
 
-    fn into_subscriber(self) -> Box<dyn Subscriber> {
+    fn into_action(self) -> Box<dyn Action> {
         Box::new(self)
     }
 }
