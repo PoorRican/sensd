@@ -11,15 +11,15 @@ use std::fs::create_dir_all;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-/// Wrapper to manage multiple `Device` objects, logging, and actions.
+/// High-level container to manage multiple [`Device`] objects, logging, and actions.
 ///
-/// `poll()` and `check_scheduled()` are the primary callables for function. Both functions are
-/// called on different intervals. The execution of `poll()` is dictated by the interval stored in
-/// runtime settings. Conversely, `check_scheduled()` should be executed as often as possible to
+/// [`Group::poll()`] and [`Group::attempt_routines()`] are the primary callables for function. Both functions are
+/// called on different intervals. The execution of `[poll()`] is dictated by the interval stored in
+/// runtime settings. Conversely, [`Group::attempt_routines()`] should be executed as often as possible to
 /// maintain timing accuracy.
 ///
-/// Both `poll()` and `check_scheduled()` are high-level functions whose returned values can mainly
-/// be ignored. Future revisions will add failure log functionality in the event of failure or
+/// Both [`Group::poll()`] and [`Group::attempt_routines()`] are high-level functions whose returned values
+/// can mainly be ignored. Future revisions will add failure log functionality in the event of failure or
 /// misconfiguration.
 pub struct Group {
     /// Name used to identify this specific device grouping.
@@ -45,16 +45,16 @@ pub struct Group {
 impl Group {
     /// Primary callable to iterate through input device container once.
     ///
-    /// `GenericInput::read()` is called on each input device at the frequency dictated by
-    /// `interval()`. Generated `IOEvent` instances are handled by `read()`. Failure does not halt
-    /// execution. Instead, failed calls to `read()` are returned as an array of `Result` objects.
-    /// `helpers::check_results()` should be used to catch and handle any errors 
+    /// [`GenericInput::read()`] is called on each input device at the frequency dictated by
+    /// [`Group::interval()`]. Generated [`IOEvent`] instances are handled by [`crate::io::GenericInput::read()`].
+    /// Failure does not halt execution. Instead, failed calls to [`GenericInput::read()`] are returned as an
+    /// array of [`Result`] objects. [`check_results()`] should be used to catch and handle any errors
     ///
-    /// TODO: custom `ErrorType` for failed read. Should include device metadata.
+    // TODO: custom `ErrorType` for failed read. Should include device metadata.
     ///
     /// # Returns
-    /// `Result::Ok` when poll has successfully executed. The wrapped value is a vector of `Result`
-    /// values. Otherwise, `Result::Err` is returned when function has been called out of sync with
+    /// [`Ok`] when poll has successfully executed. The wrapped value is a vector of [`Result`]
+    /// values. Otherwise, [`Err`] is returned when function has been called out of sync with
     /// interval.
     pub fn poll(&mut self) -> Result<Vec<Result<IOEvent, ErrorType>>, ()> {
         let mut results: Vec<Result<IOEvent, ErrorType>> = Vec::new();
@@ -102,8 +102,8 @@ impl Group {
     /// Build device and log and locally store both.
     ///
     /// # Errors
-    /// Panics error if `IOCommand` and `IODirection` are mismatched (from
-    /// `builder::check_alignment()`
+    /// Panics error if [`IOCommand`] and [`IODirection`] are mismatched
+    /// (according to [`builder::check_alignment()`])
     pub fn build_device(
         &mut self,
         name: &str,
@@ -162,9 +162,9 @@ impl Group {
         check_results(&results)
     }
 
-    /// Dedicated directory for `Group`
+    /// Dedicated directory for [`Group`]
     ///
-    /// The dedicated directory for a `Group` is simply a sub-directory in the global path.
+    /// The dedicated directory for a [`Group`] is simply a sub-directory in the global path.
     pub fn dir(&self) -> PathBuf {
         let path = Path::new(self.settings.data_root.as_str());
         path.join(self.name.as_str())
@@ -203,7 +203,7 @@ impl Group {
     }
 }
 
-/// Only save and load log data since `Group` is statically initialized
+/// Only save and load log data since [`Group`] is statically initialized
 /// If `&None` is given to either methods, then current directory is used.
 impl Persistent for Group {
     fn save(&self, path: &Option<String>) -> Result<(), ErrorType> {
@@ -227,7 +227,7 @@ mod tests {
 
     use std::fs::remove_dir_all;
 
-    /// Test `Group::dir()`
+    /// Test [`Group::dir()`]
     #[test]
     fn test_dir() {
         const DIR_NAME: &str = "test_root";
@@ -245,7 +245,7 @@ mod tests {
         assert_eq!(expected.to_str().unwrap(), group.dir().to_str().unwrap());
     }
 
-    /// Test `Group::setup_dir()`
+    /// Test [`Group::setup_dir()`]
     #[test]
     fn test_setup_dir() {
         const DIR_NAME: &str = "test_root";
