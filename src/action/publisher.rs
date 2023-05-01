@@ -14,10 +14,6 @@ use crate::action::{Subscriber, SchedRoutineHandler};
 use crate::helpers::Def;
 use crate::io::IOEvent;
 
-pub trait NamedRoutine {
-    fn name(&self) -> String;
-}
-
 /// Trait to implement on Input objects
 pub trait Publisher {
     type Inner;
