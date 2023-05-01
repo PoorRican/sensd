@@ -64,7 +64,7 @@ pub trait Device: Chronicle {
     /// device trait objects and any of it's owners (i.e.: `PollGroup`).
     fn generate_event(&self, value: RawValue) -> IOEvent {
         let dt = Utc::now();
-        IOEvent::generate(self.metadata(), dt, value)
+        IOEvent::new(self.metadata(), dt, value)
     }
 
     /// Setter for `command` field

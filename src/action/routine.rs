@@ -102,7 +102,7 @@ impl Command<IOEvent> for Routine {
     fn execute(&self, value: Option<RawValue>) -> Result<Option<IOEvent>, ErrorType> {
         match self.command.execute(value) {
             Ok(_) => {
-                let event = IOEvent::generate(&self.metadata, self.timestamp, value.unwrap());
+                let event = IOEvent::new(&self.metadata, self.timestamp, value.unwrap());
                 Ok(Some(event))
             }
             Err(e) => Err(e),
