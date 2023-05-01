@@ -103,7 +103,6 @@ impl Chronicle for GenericOutput {
 mod tests {
     use crate::action::IOCommand;
     use crate::io::{Device, GenericOutput, RawValue};
-    use crate::storage::MappedCollection;
 
     /// Dummy output command for testing.
     /// Accepts value and returns `Ok(())`
@@ -128,7 +127,7 @@ mod tests {
         let mut output = GenericOutput::default();
         let log = output.init_log(None);
 
-        assert_eq!(log.try_lock().unwrap().length(), 0);
+        assert_eq!(log.try_lock().unwrap().iter().count(), 0);
 
         let value = RawValue::Binary(true);
         output.command = Some(COMMAND);
@@ -149,6 +148,6 @@ mod tests {
         assert_eq!(output.direction(), event.direction);
 
         // assert that event was added to log
-        assert_eq!(log.try_lock().unwrap().length(), 1);
+        assert_eq!(log.try_lock().unwrap().iter().count(), 1);
     }
 }

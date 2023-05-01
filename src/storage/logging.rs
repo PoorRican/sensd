@@ -1,7 +1,8 @@
 //! Datalogging of `IOEvent` objects
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::collections::hash_map::Iter;
+use std::collections::hash_map::{Entry, Iter};
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::ops::Deref;
@@ -12,10 +13,10 @@ use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::{writable_or_create, Def};
 use crate::io::{DeferredDevice, DeviceTraits, DeviceType, IOEvent, IdType};
 use crate::settings::Settings;
-use crate::storage::{Container, MappedCollection, Persistent};
+use crate::storage::Persistent;
 
 /// Hashmap type alias defines a type alias `LogType` for storing `IOEvent` by `DateTime<Utc>` keys.
-pub type LogType = Container<IOEvent, DateTime<Utc>>;
+pub type LogType = HashMap<DateTime<Utc>, IOEvent>;
 
 /// Primary container for storing `Log` instances.
 pub type LogContainer = Vec<Def<Log>>;
@@ -129,27 +130,14 @@ impl Log {
             None => true,
         }
     }
-}
 
-impl MappedCollection<IOEvent, DateTime<Utc>> for Log {
-    fn push(&mut self, key: DateTime<Utc>, data: IOEvent) -> Result<&mut IOEvent, ErrorType> {
-        self.log.push(key, data)
-    }
-
-    fn get(&self, key: DateTime<Utc>) -> Option<&IOEvent> {
-        self.log.get(key)
-    }
-
-    fn remove(&mut self, key: DateTime<Utc>) -> Option<IOEvent> {
-        self.log.remove(key)
-    }
-
-    fn is_empty(&self) -> bool {
-        self.log.is_empty()
-    }
-
-    fn length(&self) -> usize {
-        self.log.length()
+    fn push(&mut self, timestamp: DateTime<Utc>, event: IOEvent) -> Result<&mut IOEvent, ErrorType> {
+        match self.log.entry(timestamp) {
+            Entry::Occupied(_) => {
+                Err(Error::new(ErrorKind::ContainerError, "Key already exists"))
+            }
+            Entry::Vacant(entry) => Ok(entry.insert(event)),
+        }
     }
 }
 
@@ -210,7 +198,7 @@ mod tests {
     use crate::builders::DeviceLogBuilder;
     use crate::helpers::Def;
     use crate::io::{Device, DeviceType, IODirection, IOKind, RawValue, IdType};
-    use crate::storage::{Log, MappedCollection, Persistent};
+    use crate::storage::{Log, Persistent};
     use std::ops::Deref;
     use std::path::Path;
     use std::time::Duration;
@@ -276,7 +264,7 @@ mod tests {
             _log.load(&None).unwrap();
 
             // check count of `IOEvent`
-            assert_eq!(COUNT, _log.length() as usize);
+            assert_eq!(COUNT, _log.iter().count() as usize);
         };
 
         fs::remove_file(filename).unwrap();

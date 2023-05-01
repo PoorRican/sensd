@@ -21,7 +21,7 @@ use sensd::builders::ActionBuilder;
 use sensd::errors::ErrorType;
 use sensd::io::{IODirection, IOKind, RawValue, DeferredDevice, IdType};
 use sensd::settings::Settings;
-use sensd::storage::{Persistent, Group, MappedCollection};
+use sensd::storage::{Persistent, Group};
 
 use std::sync::Arc;
 
@@ -84,8 +84,8 @@ unsafe fn setup_poller(poller: &mut Group) {
 fn build_subscribers(poller: &mut Group) {
     println!("\n█▓▒░ Building subscribers ...");
 
-    let input: DeferredDevice = poller.inputs.get(INPUT_ID).unwrap().clone();
-    let output: DeferredDevice = poller.outputs.get(OUTPUT_ID).unwrap().clone();
+    let input: DeferredDevice = poller.inputs.get(&INPUT_ID).unwrap().clone();
+    let output: DeferredDevice = poller.outputs.get(&OUTPUT_ID).unwrap().clone();
 
     println!("\n- Initializing builder ...");
     let mut builder = ActionBuilder::new(input.clone()).unwrap();

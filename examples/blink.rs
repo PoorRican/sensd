@@ -13,7 +13,7 @@ use std::sync::Arc;
 use sensd::action::IOCommand;
 use sensd::io::{IODirection, IOKind, RawValue, IdType, DeviceType};
 use sensd::settings::Settings;
-use sensd::storage::{Group, MappedCollection, Persistent};
+use sensd::storage::{Group, Persistent};
 use std::ops::DerefMut;
 
 /// █▓▒░ Event Loop Operating frequency
@@ -76,7 +76,7 @@ fn main() {
     let mut poller = init("main");
     setup_devices(&mut poller);
 
-    let wrapped_device = poller.outputs.get(OUTPUT_ID)
+    let wrapped_device = poller.outputs.get(&OUTPUT_ID)
         .expect("Unknown error when retrieving device").clone();
 
     println!("█▓▒░ Beginning loop ░▒▓█\n");

@@ -126,7 +126,7 @@ mod functionality_tests {
     use crate::action::{IOCommand, Routine};
     use crate::helpers::Def;
     use crate::io::{DeviceMetadata, RawValue};
-    use crate::storage::{Log, MappedCollection};
+    use crate::storage::Log;
     use chrono::{Duration, Utc};
 
     const REGISTER_DEFAULT: RawValue = RawValue::Binary(false);
@@ -171,7 +171,7 @@ mod functionality_tests {
         unsafe {
             assert_eq!(REGISTER, value);
         }
-        assert_eq!(log.try_lock().unwrap().length(), 1);
+        assert_eq!(log.try_lock().unwrap().iter().count(), 1);
     }
 }
 

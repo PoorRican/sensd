@@ -121,7 +121,6 @@ mod tests {
     use crate::action::{IOCommand, PublisherInstance};
     use crate::helpers::Def;
     use crate::io::{Device, GenericInput, RawValue};
-    use crate::storage::MappedCollection;
 
     const DUMMY_OUTPUT: RawValue = RawValue::Float(1.2);
     const COMMAND: IOCommand = IOCommand::Input(move || DUMMY_OUTPUT);
@@ -143,14 +142,14 @@ mod tests {
 
         input.command = Some(COMMAND);
 
-        assert_eq!(log.try_lock().unwrap().length(), 0);
+        assert_eq!(log.try_lock().unwrap().iter().count(), 0);
 
         let event = input.read().unwrap();
         assert_eq!(event.data.value, DUMMY_OUTPUT);
         assert_eq!(event.data.kind, input.kind());
 
         // assert that event was added to log
-        assert_eq!(log.try_lock().unwrap().length(), 1);
+        assert_eq!(log.try_lock().unwrap().iter().count(), 1);
     }
 
     /// Test `::add_publisher()` and `::has_publisher()`

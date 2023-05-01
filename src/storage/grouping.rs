@@ -4,7 +4,7 @@ use crate::errors::ErrorType;
 use crate::helpers::{check_results, Def};
 use crate::io::{DeviceContainer, DeviceType, IODirection, IOEvent, IOKind, IdType};
 use crate::settings::Settings;
-use crate::storage::{LogContainer, MappedCollection, Persistent};
+use crate::storage::{LogContainer, Persistent};
 use chrono::{DateTime, Duration, Utc};
 use std::ops::DerefMut;
 use std::fs::create_dir_all;
@@ -123,14 +123,14 @@ impl Group {
         self.logs.push(log);
 
         match direction {
-            IODirection::Input => self.inputs.push(*id, device.clone()),
-            IODirection::Output => self.outputs.push(*id, device.clone()),
-        }.unwrap();
+            IODirection::Input => self.inputs.insert(*id, device.clone()),
+            IODirection::Output => self.outputs.insert(*id, device.clone()),
+        };
 
         Ok(device)
     }
 
-    /// Wrapper for `Group::build_device()` for building multiple device/log abstractions
+    /// Wrapper for [`Group::build_device()`] for building multiple device/log abstractions
     pub fn add_devices(
         &mut self,
         arr: &[(&str, IdType, IOKind, IODirection, IOCommand)],

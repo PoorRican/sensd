@@ -2,7 +2,7 @@ use crate::action::{Comparison, Publisher, PublisherInstance, Subscriber, Thresh
 use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::Def;
 use crate::io::{DeferredDevice, DeviceType, DeviceWrapper, RawValue, IdType, IODirection};
-use crate::storage::{Group, MappedCollection};
+use crate::storage::Group;
 use std::ops::DerefMut;
 
 /// Builder class that builds and attaches subscribers for inputs.
@@ -71,10 +71,10 @@ impl ActionBuilder {
         let result;
         match direction {
             IODirection::Output => {
-                result = group.inputs.get(id);
+                result = group.inputs.get(&id);
             }
             IODirection::Input => {
-                result = group.outputs.get(id);
+                result = group.outputs.get(&id);
             }
         };
 
