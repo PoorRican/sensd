@@ -50,12 +50,11 @@ impl Group {
     /// Failure does not halt execution. Instead, failed calls to [`GenericInput::read()`] are returned as an
     /// array of [`Result`] objects. [`check_results()`] should be used to catch and handle any errors
     ///
-    // TODO: custom `ErrorType` for failed read. Should include device metadata.
-    ///
     /// # Returns
     /// [`Ok`] when poll has successfully executed. The wrapped value is a vector of [`Result`]
     /// values. Otherwise, [`Err`] is returned when function has been called out of sync with
     /// interval.
+    // TODO: custom `ErrorType` for failed read. Should include device metadata.
     pub fn poll(&mut self) -> Result<Vec<Result<IOEvent, ErrorType>>, ()> {
         let mut results: Vec<Result<IOEvent, ErrorType>> = Vec::new();
         let next_execution = self.last_execution + self.interval();

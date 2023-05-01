@@ -86,6 +86,8 @@ mod tests {
     }
 
     #[test]
+    /// Sometimes this fails due to race condition mentioned below (issue #95). In that case,
+    /// running the tests again should pass.
     fn test_attempt() {
         let metadata = DeviceMetadata::default();
         let log = Def::new(Log::new(metadata.id, None));
