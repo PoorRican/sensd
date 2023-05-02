@@ -1,7 +1,9 @@
+use std::ops::Deref;
 use crate::io::{
     DeviceType, DeviceWrapper, IOKind, IdType, IODirection, DeviceTraits
 };
 use crate::helpers::Def;
+use crate::storage::{Chronicle, Log};
 
 pub type DeferredDevice = Def<DeviceType>;
 impl DeviceWrapper for DeferredDevice {
@@ -29,6 +31,17 @@ impl DeviceTraits for DeferredDevice {
 
     fn direction(&self) -> IODirection {
         self.try_lock().unwrap().direction()
+    }
+}
+
+impl Chronicle for DeferredDevice {
+    fn log(&self) -> Option<Def<Log>> {
+        let binding = self.try_lock().unwrap();
+        let device = binding.deref();
+        match device {
+            DeviceType::Input(input) => input.log(),
+            DeviceType::Output(output) => output.log(),
+        }
     }
 }
 

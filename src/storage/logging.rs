@@ -195,14 +195,14 @@ impl Persistent for Log {
 #[cfg(test)]
 mod tests {
     use crate::action::IOCommand;
-    use crate::builders::DeviceLogBuilder;
     use crate::helpers::Def;
-    use crate::io::{Device, DeviceType, IODirection, IOKind, RawValue, IdType};
-    use crate::storage::{Log, Persistent};
+    use crate::io::{Device, DeviceType, IOKind, RawValue, IdType, GenericInput};
+    use crate::storage::{Chronicle, Log, Persistent};
     use std::ops::Deref;
     use std::path::Path;
     use std::time::Duration;
     use std::{fs, thread};
+    use std::sync::Arc;
 
     fn add_to_log(device: &Def<DeviceType>, log: &Def<Log>, count: usize) {
         for _ in 0..count {
@@ -229,15 +229,18 @@ mod tests {
         let filename;
         // test save
         {
-            let builder = DeviceLogBuilder::new(
-                SENSOR_NAME,
-                &ID,
-                &Some(IOKind::Flow),
-                &IODirection::Input,
-                &COMMAND,
-                None,
-            );
-            let (device, log) = builder.get();
+            let device = GenericInput::new(
+                String::from(SENSOR_NAME),
+                ID,
+                Some(IOKind::Flow),
+            ).add_command(COMMAND)
+                .init_log(None);
+            let log = device.log().unwrap();
+
+            let device = Def::new(device.into_variant());
+            let weak_ref = Arc::downgrade(&device.clone().into());
+            device.log().unwrap().try_lock().unwrap().set_owner(weak_ref);
+
             add_to_log(&device, &log, COUNT);
             let _log = log.lock().unwrap();
             _log.save(&None).unwrap();
@@ -251,15 +254,18 @@ mod tests {
         // test load
         // build back up then load
         {
-            let builder = DeviceLogBuilder::new(
-                SENSOR_NAME,
-                &ID,
-                &Some(IOKind::Flow),
-                &IODirection::Input,
-                &COMMAND,
-                None,
-            );
-            let (_device, log) = builder.get();
+            let device = GenericInput::new(
+                String::from(SENSOR_NAME),
+                ID,
+                Some(IOKind::Flow),
+            ).add_command(COMMAND)
+                .init_log(None);
+            let log = device.log().unwrap();
+
+            let device = Def::new(device.into_variant());
+            let weak_ref = Arc::downgrade(&device.clone().into());
+            device.log().unwrap().try_lock().unwrap().set_owner(weak_ref);
+
             let mut _log = log.lock().unwrap();
             _log.load(&None).unwrap();
 

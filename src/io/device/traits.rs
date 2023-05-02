@@ -2,9 +2,7 @@ use core::fmt::Formatter;
 use chrono::Utc;
 use crate::action::IOCommand;
 use crate::helpers::Def;
-use crate::io::{
-    IdType, IOKind, DeviceMetadata, IODirection, RawValue, IOEvent,
-};
+use crate::io::{IdType, IOKind, DeviceMetadata, IODirection, RawValue, IOEvent, DeviceType};
 use crate::settings::Settings;
 use crate::storage::{Chronicle, Log};
 use std::sync::Arc;
@@ -22,7 +20,7 @@ pub trait Device: Chronicle {
     /// `id`: device ID.
     /// `kind`: kind of I/O device. Optional argument.
     /// `log`: Optional deferred owned log for the device.
-    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Option<Def<Log>>) -> Self
+    fn new(name: String, id: IdType, kind: Option<IOKind>) -> Self
     where
         Self: Sized;
 
@@ -68,17 +66,23 @@ pub trait Device: Chronicle {
     }
 
     /// Setter for `command` field
-    fn add_command(&mut self, command: IOCommand);
+    fn add_command(self, command: IOCommand) -> Self
+        where Self: Sized;
 
     /// Setter for `log` field
     fn add_log(&mut self, log: Def<Log>);
 
     /// Initialize, set, and return log.
-    fn init_log(&mut self, settings: Option<Arc<Settings>>) -> Def<Log> {
+    fn init_log(mut self, settings: Option<Arc<Settings>>) -> Self
+    where
+        Self: Sized
+    {
         let log = Def::new(Log::new(self.id(), settings));
         self.add_log(log.clone());
-        log
+        self
     }
+
+    fn into_variant(self) -> DeviceType;
 }
 
 pub trait DeviceTraits {

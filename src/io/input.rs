@@ -1,9 +1,7 @@
 use crate::action::{Command, IOCommand, Publisher, PublisherInstance};
 use crate::errors::ErrorType;
 use crate::helpers::Def;
-use crate::io::{
-    no_internal_closure, Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType,
-};
+use crate::io::{no_internal_closure, Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, DeviceType};
 use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
@@ -23,15 +21,17 @@ impl Device for GenericInput {
     /// * `id`: arbitrary, numeric ID to differentiate from other sensors
     ///
     /// returns: MockPhSensor
-    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Option<Def<Log>>) -> Self
+    fn new(name: String, id: IdType, kind: Option<IOKind>) -> Self
     where
         Self: Sized,
     {
         let kind = kind.unwrap_or_default();
 
         let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Input);
+
         let publisher = None;
         let command = None;
+        let log = None;
 
         Self {
             metadata,
@@ -45,12 +45,20 @@ impl Device for GenericInput {
         &self.metadata
     }
 
-    fn add_command(&mut self, command: IOCommand) {
+    fn add_command(mut self, command: IOCommand) -> Self
+    where
+        Self: Sized
+    {
         self.command = Some(command);
+        self
     }
 
     fn add_log(&mut self, log: Def<Log>) {
         self.log = Some(log)
+    }
+
+    fn into_variant(self) -> DeviceType {
+        DeviceType::Input(self)
     }
 }
 
@@ -121,6 +129,7 @@ mod tests {
     use crate::action::{IOCommand, PublisherInstance};
     use crate::helpers::Def;
     use crate::io::{Device, GenericInput, RawValue};
+    use crate::storage::Chronicle;
 
     const DUMMY_OUTPUT: RawValue = RawValue::Float(1.2);
     const COMMAND: IOCommand = IOCommand::Input(move || DUMMY_OUTPUT);
@@ -137,19 +146,28 @@ mod tests {
 
     #[test]
     fn test_read() {
-        let mut input = GenericInput::default();
-        let log = input.init_log(None);
+        let mut input =
+            GenericInput::default()
+                .init_log(None);
+        let log = input.log();
 
         input.command = Some(COMMAND);
 
-        assert_eq!(log.try_lock().unwrap().iter().count(), 0);
+        assert_eq!(log.clone()
+                       .unwrap()
+                       .try_lock().unwrap()
+                       .iter().count(),
+                   0);
 
         let event = input.read().unwrap();
         assert_eq!(event.data.value, DUMMY_OUTPUT);
         assert_eq!(event.data.kind, input.kind());
 
         // assert that event was added to log
-        assert_eq!(log.try_lock().unwrap().iter().count(), 1);
+        assert_eq!(log.unwrap()
+                       .try_lock().unwrap()
+                       .iter().count(),
+                   1);
     }
 
     /// Test `::add_publisher()` and `::has_publisher()`

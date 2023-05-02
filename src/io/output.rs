@@ -1,10 +1,7 @@
 use crate::action::{Command, IOCommand};
 use crate::errors::ErrorType;
 use crate::helpers::Def;
-use crate::io::{
-    no_internal_closure, Device, DeviceMetadata, IODirection, IOEvent, IOKind, RawValue,
-    IdType,
-};
+use crate::io::{no_internal_closure, Device, DeviceMetadata, IODirection, IOEvent, IOKind, RawValue, IdType, DeviceType};
 use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
@@ -26,7 +23,7 @@ impl Device for GenericOutput {
     /// * `id`: arbitrary, numeric ID to differentiate from other devices
     ///
     /// returns: GenericOutput
-    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Option<Def<Log>>) -> Self
+    fn new(name: String, id: IdType, kind: Option<IOKind>) -> Self
     where
         Self: Sized,
     {
@@ -35,6 +32,7 @@ impl Device for GenericOutput {
         let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Output);
 
         let command = None;
+        let log = None;
 
         Self {
             metadata,
@@ -48,12 +46,20 @@ impl Device for GenericOutput {
         &self.metadata
     }
 
-    fn add_command(&mut self, command: IOCommand) {
+    fn add_command(mut self, command: IOCommand) -> Self
+    where
+        Self: Sized
+    {
         self.command = Some(command);
+        self
     }
 
     fn add_log(&mut self, log: Def<Log>) {
         self.log = Some(log)
+    }
+
+    fn into_variant(self) -> DeviceType {
+        DeviceType::Output(self)
     }
 }
 
@@ -103,6 +109,7 @@ impl Chronicle for GenericOutput {
 mod tests {
     use crate::action::IOCommand;
     use crate::io::{Device, GenericOutput, RawValue};
+    use crate::storage::Chronicle;
 
     /// Dummy output command for testing.
     /// Accepts value and returns `Ok(())`
@@ -124,8 +131,10 @@ mod tests {
     #[test]
     /// Test that `tx()` was called, cached state was updated, and IOEvent added to log.
     fn test_write() {
-        let mut output = GenericOutput::default();
-        let log = output.init_log(None);
+        let mut output =
+            GenericOutput::default()
+                .init_log(None);
+        let log = output.log().unwrap();
 
         assert_eq!(log.try_lock().unwrap().iter().count(), 0);
 

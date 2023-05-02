@@ -1,8 +1,7 @@
 use crate::action::{IOCommand, PublisherInstance};
-use crate::builders::DeviceLogBuilder;
 use crate::errors::ErrorType;
 use crate::helpers::{check_results, Def};
-use crate::io::{DeviceContainer, DeviceType, IODirection, IOEvent, IOKind, IdType};
+use crate::io::{DeviceContainer, DeviceType, IODirection, IOEvent, IOKind, IdType, GenericInput, GenericOutput, Device};
 use crate::settings::Settings;
 use crate::storage::{LogContainer, Persistent};
 use chrono::{DateTime, Duration, Utc};
@@ -46,7 +45,7 @@ impl Group {
     /// Primary callable to iterate through input device container once.
     ///
     /// [`GenericInput::read()`] is called on each input device at the frequency dictated by
-    /// [`Group::interval()`]. Generated [`IOEvent`] instances are handled by [`crate::io::GenericInput::read()`].
+    /// [`Group::interval()`]. Generated [`IOEvent`] instances are handled by [`GenericInput::read()`].
     /// Failure does not halt execution. Instead, failed calls to [`GenericInput::read()`] are returned as an
     /// array of [`Result`] objects. [`check_results()`] should be used to catch and handle any errors
     ///
@@ -114,19 +113,31 @@ impl Group {
         // variable allowed to go out-of-scope because `poller` owns reference
         let settings = Some(self.settings.clone());
 
-        let builder = DeviceLogBuilder::new(name, id, kind, direction, command, settings);
-        builder.setup_command();
-
-        let (device, log) = builder.get();
-
-        self.logs.push(log);
-
+        let device;
         match direction {
-            IODirection::Input => self.inputs.insert(*id, device.clone()),
-            IODirection::Output => self.outputs.insert(*id, device.clone()),
+            IODirection::Input => {
+                let input = GenericInput::new(String::from(name), *id, *kind)
+                    .init_log(settings)
+                    .add_command(command.clone())
+                    .into_variant();
+
+                device = Def::new(input);
+
+                self.inputs.insert(*id, device.clone())
+            },
+            IODirection::Output => {
+                let output = GenericOutput::new(String::from(name), *id, *kind)
+                    .init_log(settings)
+                    .add_command(command.clone())
+                    .into_variant();
+
+                device = Def::new(output);
+
+                self.outputs.insert(*id, device.clone())
+            },
         };
 
-        Ok(device)
+        Ok(device.clone())
     }
 
     /// Wrapper for [`Group::build_device()`] for building multiple device/log abstractions
