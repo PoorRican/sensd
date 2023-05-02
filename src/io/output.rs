@@ -54,7 +54,7 @@ impl Device for GenericOutput {
         self
     }
 
-    fn add_log(&mut self, log: Def<Log>) {
+    fn set_log(&mut self, log: Def<Log>) {
         self.log = Some(log)
     }
 

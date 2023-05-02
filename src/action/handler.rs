@@ -54,14 +54,14 @@ mod tests {
     #[test]
     fn test_push() {
         let metadata = DeviceMetadata::default();
-        let log = Def::new(Log::new(metadata.id, None));
+        let log = Def::new(Log::new(&metadata, None));
 
         let command = IOCommand::Output(|_| Ok(()));
 
         let timestamp = Utc::now() + Duration::microseconds(5);
         let value = RawValue::Binary(true);
 
-        let routine = Routine::new(timestamp, metadata, value, log, command);
+        let routine = Routine::new(timestamp, metadata.clone(), value, log, command);
 
         let mut scheduled = SchedRoutineHandler::default();
         assert_eq!(0, scheduled.scheduled().into_iter().count());
@@ -71,14 +71,14 @@ mod tests {
 
         // Add second routine
         let metadata = DeviceMetadata::default();
-        let log = Def::new(Log::new(metadata.id, None));
+        let log = Def::new(Log::new(&metadata, None));
 
         let command = IOCommand::Output(|_| Ok(()));
 
         let timestamp = Utc::now() + Duration::microseconds(5);
         let value = RawValue::Binary(true);
 
-        let routine = Routine::new(timestamp, metadata, value, log, command);
+        let routine = Routine::new(timestamp, metadata.clone(), value, log, command);
 
         scheduled.push(routine);
         assert_eq!(2, scheduled.scheduled().into_iter().count());
@@ -90,14 +90,14 @@ mod tests {
     /// running the tests again should pass.
     fn test_attempt() {
         let metadata = DeviceMetadata::default();
-        let log = Def::new(Log::new(metadata.id, None));
+        let log = Def::new(Log::new(&metadata, None));
 
         let command = IOCommand::Output(|_| Ok(()));
 
         let timestamp = Utc::now() + Duration::microseconds(30);
         let value = RawValue::Binary(true);
 
-        let routine = Routine::new(timestamp, metadata, value, log.clone(), command);
+        let routine = Routine::new(timestamp, metadata.clone(), value, log.clone(), command);
 
         let mut scheduled = SchedRoutineHandler::default();
 
@@ -105,7 +105,7 @@ mod tests {
 
         // Add second routine
         let metadata = DeviceMetadata::default();
-        let log = Def::new(Log::new(metadata.id, None));
+        let log = Def::new(Log::new(&metadata, None));
 
         let command = IOCommand::Output(|_| Ok(()));
 
@@ -114,7 +114,7 @@ mod tests {
         let ts2 = Utc::now() + Duration::microseconds(120);
         let value = RawValue::Binary(true);
 
-        let routine = Routine::new(ts2, metadata, value, log.clone(), command);
+        let routine = Routine::new(ts2, metadata.clone(), value, log.clone(), command);
         scheduled.push(routine);
 
         while Utc::now() < timestamp {

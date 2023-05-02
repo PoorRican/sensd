@@ -70,15 +70,15 @@ pub trait Device: Chronicle {
         where Self: Sized;
 
     /// Setter for `log` field
-    fn add_log(&mut self, log: Def<Log>);
+    fn set_log(&mut self, log: Def<Log>);
 
     /// Initialize, set, and return log.
     fn init_log(mut self, settings: Option<Arc<Settings>>) -> Self
     where
         Self: Sized
     {
-        let log = Def::new(Log::new(self.id(), settings));
-        self.add_log(log.clone());
+        let log = Def::new(Log::new(&self.metadata(), settings));
+        self.set_log(log);
         self
     }
 

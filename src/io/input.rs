@@ -53,8 +53,8 @@ impl Device for GenericInput {
         self
     }
 
-    fn add_log(&mut self, log: Def<Log>) {
-        self.log = Some(log)
+    fn set_log(&mut self, log: Def<Log>) {
+        self.log = Some(log);
     }
 
     fn into_variant(self) -> DeviceType {

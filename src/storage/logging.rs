@@ -7,11 +7,11 @@ use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::ops::Deref;
 use std::path::Path;
-use std::sync::{Arc, Mutex, Weak};
+use std::sync::Arc;
 
 use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::{writable_or_create, Def};
-use crate::io::{DeferredDevice, DeviceTraits, DeviceType, IOEvent, IdType};
+use crate::io::{IOEvent, IdType, DeviceMetadata};
 use crate::settings::Settings;
 use crate::storage::Persistent;
 
@@ -46,12 +46,12 @@ pub trait Chronicle {
 /// Log abstraction of `IOEvent` keyed by datetime
 ///
 /// Encapsulates a `LogType` alongside a weak reference to a `Device`
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize)]
 pub struct Log {
     // TODO: split logs using ID
     id: IdType,
     #[serde(skip)]
-    owner: Option<Weak<Mutex<DeviceType>>>,
+    name: String,
     #[serde(skip)]
     settings: Arc<Settings>,
 
@@ -59,28 +59,6 @@ pub struct Log {
 }
 
 impl Log {
-    /// Return reference to originating device.
-    ///
-    /// `sync::Weak` is upgraded to `Arc`
-    ///
-    /// # Errors
-    /// Panics if owner attribute is `None`
-    //pub fn owner<D: Device>(&self) -> Def<D> {
-    pub fn owner(&self) -> DeferredDevice {
-        // TODO: handle error if owner is None or if Weak has no Strong
-        self.owner.as_ref()
-            .unwrap()
-            .upgrade()
-            .unwrap().into()
-    }
-
-    /// Set reference to owning device.
-    ///
-    /// `Arc` should be downgraded to `sync::Weak` and passed as reference.
-    pub fn set_owner(&mut self, owner: Weak<Mutex<DeviceType>>) {
-        self.owner = Some(owner);
-    }
-
     /// Full path to log file.
     ///
     /// No directories or files are created by this function.
@@ -95,12 +73,14 @@ impl Log {
         String::from(full_path.to_str().unwrap())
     }
 
-    pub fn new(id: IdType, settings: Option<Arc<Settings>>) -> Self {
-        let owner = None;
+    pub fn new(metadata: &DeviceMetadata, settings: Option<Arc<Settings>>) -> Self {
+        let id = metadata.id;
+        let name = metadata.name.clone();
         let log = LogType::default();
+
         Self {
             id,
-            owner,
+            name,
             log,
             settings: settings.unwrap_or_else(|| Arc::new(Settings::default())),
         }
@@ -108,11 +88,10 @@ impl Log {
 
     /// Generate generic filename based on settings, owner, and id
     pub fn filename(&self) -> String {
-        let owner = self.owner();
         format!(
             "{}_{}_{}{}",
             self.settings.log_fn_prefix.clone(),
-            owner.name().as_str(),
+            self.name,
             self.id.to_string().as_str(),
             FILETYPE
         )
@@ -121,14 +100,6 @@ impl Log {
     /// Iterator for log
     pub fn iter(&self) -> Iter<DateTime<Utc>, IOEvent> {
         self.log.iter()
-    }
-
-    /// Returns true if owner
-    pub fn orphan(&self) -> bool {
-        match self.owner {
-            Some(_) => false,
-            None => true,
-        }
     }
 
     fn push(&mut self, timestamp: DateTime<Utc>, event: IOEvent) -> Result<&mut IOEvent, ErrorType> {
@@ -144,11 +115,10 @@ impl Log {
 // Implement save/load operations for `Log`
 impl Persistent for Log {
     fn save(&self, path: &Option<String>) -> Result<(), ErrorType> {
-        let owner_name = self.owner().try_lock().unwrap().name();
         if self.log.is_empty() {
             Err(Error::new(
                 ErrorKind::ContainerEmpty,
-                format!("Log for '{}'. Nothing to save.", owner_name).as_str(),
+                format!("Log for '{}'. Nothing to save.", self.name).as_str(),
             ))
         } else {
             let file = writable_or_create(self.full_path(path));
@@ -198,16 +168,13 @@ mod tests {
     use crate::helpers::Def;
     use crate::io::{Device, DeviceType, IOKind, RawValue, IdType, GenericInput};
     use crate::storage::{Chronicle, Log, Persistent};
-    use std::ops::Deref;
     use std::path::Path;
     use std::time::Duration;
     use std::{fs, thread};
-    use std::sync::Arc;
 
-    fn add_to_log(device: &Def<DeviceType>, log: &Def<Log>, count: usize) {
+    fn add_to_log(device: &DeviceType, log: &Def<Log>, count: usize) {
         for _ in 0..count {
-            let binding = device.lock().unwrap();
-            let event = match binding.deref() {
+            let event = match device {
                 DeviceType::Input(inner) => inner.generate_event(RawValue::default()),
                 DeviceType::Output(inner) => inner.generate_event(RawValue::default()),
             };
@@ -237,9 +204,7 @@ mod tests {
                 .init_log(None);
             let log = device.log().unwrap();
 
-            let device = Def::new(device.into_variant());
-            let weak_ref = Arc::downgrade(&device.clone().into());
-            device.log().unwrap().try_lock().unwrap().set_owner(weak_ref);
+            let device = device.into_variant();
 
             add_to_log(&device, &log, COUNT);
             let _log = log.lock().unwrap();
@@ -261,10 +226,6 @@ mod tests {
             ).add_command(COMMAND)
                 .init_log(None);
             let log = device.log().unwrap();
-
-            let device = Def::new(device.into_variant());
-            let weak_ref = Arc::downgrade(&device.clone().into());
-            device.log().unwrap().try_lock().unwrap().set_owner(weak_ref);
 
             let mut _log = log.lock().unwrap();
             _log.load(&None).unwrap();
