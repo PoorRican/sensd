@@ -1,4 +1,4 @@
-use crate::action::{IOCommand, PublisherInstance};
+use crate::action::IOCommand;
 use crate::errors::ErrorType;
 use crate::helpers::{check_results, Def};
 use crate::io::{DeviceContainer, DeviceType, IODirection, IOEvent, IOKind, IdType, GenericInput, GenericOutput, Device};
@@ -36,9 +36,6 @@ pub struct Group {
 
     pub inputs: DeviceContainer<IdType>,
     pub outputs: DeviceContainer<IdType>,
-
-    /// Container for `PublisherInstances`
-    pub publishers: Vec<Def<PublisherInstance>>,
 }
 
 impl Group {
@@ -84,7 +81,6 @@ impl Group {
         let inputs = <DeviceContainer<IdType>>::default();
         let outputs = <DeviceContainer<IdType>>::default();
         let logs = Vec::default();
-        let publishers = Vec::default();
 
         Self {
             name: String::from(name),
@@ -93,7 +89,6 @@ impl Group {
             logs,
             inputs,
             outputs,
-            publishers,
         }
     }
 
@@ -206,9 +201,13 @@ impl Group {
     }
 
     pub fn attempt_routines(&self) {
-        for _publisher in self.publishers.iter() {
-            let mut publisher = _publisher.try_lock().unwrap();
-            publisher.attempt_routines();
+        for device in self.inputs.values() {
+            let mut binding = device.try_lock().unwrap();
+            if let DeviceType::Input(input) = binding.deref_mut() {
+                if let Some(publisher) = input.publisher_mut() {
+                    publisher.attempt_routines()
+                }
+            }
         }
     }
 }

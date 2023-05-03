@@ -16,10 +16,10 @@ extern crate chrono;
 extern crate sensd;
 extern crate serde;
 
+use std::ops::DerefMut;
 use sensd::action::{Comparison, IOCommand};
-use sensd::builders::ActionBuilder;
 use sensd::errors::ErrorType;
-use sensd::io::{IODirection, IOKind, RawValue, DeferredDevice, IdType};
+use sensd::io::{IODirection, IOKind, RawValue, DeferredDevice, IdType, DeviceType};
 use sensd::settings::Settings;
 use sensd::storage::{Persistent, Group};
 
@@ -87,16 +87,17 @@ fn build_actions(poller: &mut Group) {
     let input: DeferredDevice = poller.inputs.get(&INPUT_ID).unwrap().clone();
     let output: DeferredDevice = poller.outputs.get(&OUTPUT_ID).unwrap().clone();
 
-    println!("\n- Initializing builder ...");
-    let mut builder = ActionBuilder::new(input.clone()).unwrap();
+    if let DeviceType::Input(device) = input.try_lock().unwrap().deref_mut() {
+        device.init_publisher();
+        println!("- Initializing subscriber ...");
 
-    println!("- Initializing subscriber for input ...");
-
-    let name = format!("Subscriber for Input:{}", INPUT_ID);
-    let threshold = RawValue::Int8(THRESHOLD);
-    let trigger = Comparison::LT;
-
-    builder.add_threshold(&name, threshold, trigger, Some(output));
+        let name = format!("Subscriber for Input:{}", INPUT_ID);
+        let threshold = RawValue::Int8(THRESHOLD);
+        let trigger = Comparison::LT;
+        if let Some(publisher) = device.publisher_mut() {
+            publisher.attach_threshold(&name, threshold, trigger, Some(output.clone()));
+        }
+    }
 
     println!("\n... Finished Initializing subscribers\n");
 }

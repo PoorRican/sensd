@@ -10,16 +10,15 @@
 //! `Input::publisher().notify()` should also be called as well. `notify()` should thereby call
 //! `Subscriber::evaluate()` on any listeners.
 
-use crate::action::{Action, SchedRoutineHandler};
-use crate::helpers::Def;
-use crate::io::IOEvent;
+use crate::action::{Action, Comparison, SchedRoutineHandler, ThresholdAction};
+use crate::io::{DeferredDevice, IOEvent, RawValue};
+
+pub type BoxedAction = Box<dyn Action>;
 
 /// Trait to implement on Input objects
 pub trait Publisher {
-    type Inner;
-
-    fn subscribers(&self) -> &[Def<Self::Inner>];
-    fn subscribe(&mut self, subscriber: Def<Self::Inner>);
+    fn subscribers(&self) -> &[BoxedAction];
+    fn subscribe(&mut self, subscriber: BoxedAction);
 
     fn notify(&mut self, data: &IOEvent);
 }
@@ -27,7 +26,7 @@ pub trait Publisher {
 /// Concrete instance of publisher object
 #[derive(Default)]
 pub struct PublisherInstance {
-    actions: Vec<Def<<PublisherInstance as Publisher>::Inner>>,
+    actions: Vec<BoxedAction>,
     scheduled: SchedRoutineHandler,
 }
 
@@ -36,25 +35,36 @@ impl PublisherInstance {
     pub fn attempt_routines(&mut self) {
         self.scheduled.attempt_routines()
     }
+
+    pub fn attach_threshold(&mut self,
+                            name: &str,
+                            threshold: RawValue,
+                            trigger: Comparison,
+                            output: Option<DeferredDevice>,
+    ) -> &mut Self {
+        let action = ThresholdAction::new(name.to_string(), threshold, trigger, output)
+            .into_boxed();
+        self.subscribe(action);
+        self
+    }
 }
 
 impl Publisher for PublisherInstance {
-    type Inner = Box<dyn Action>;
-
-    fn subscribers(&self) -> &[Def<Self::Inner>] {
+    fn subscribers(&self) -> &[BoxedAction] {
         &self.actions
     }
 
-    fn subscribe(&mut self, subscriber: Def<Self::Inner>) {
+    fn subscribe(&mut self, subscriber: BoxedAction) {
         self.actions.push(subscriber)
     }
 
     /// Call [`Action::evaluate()`] on all associated [`Action`] implementations.
+    /// TODO: scheduled routines should be returned, then added to `scheduled`
     fn notify(&mut self, data: &IOEvent) {
         for subscriber in self.actions.iter_mut() {
             // TODO: `IOEvent` shall be sent to `OutputDevice` and shall be logged
             // TODO: results should be aggregated
-            subscriber.try_lock().unwrap().evaluate(data);
+            subscriber.evaluate(data);
         }
     }
 }

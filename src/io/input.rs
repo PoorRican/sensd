@@ -8,7 +8,7 @@ use crate::storage::{Chronicle, Log};
 pub struct GenericInput {
     metadata: DeviceMetadata,
     log: Option<Def<Log>>,
-    publisher: Option<Def<PublisherInstance>>,
+    publisher: Option<PublisherInstance>,
     command: Option<IOCommand>,
 }
 
@@ -79,8 +79,8 @@ impl GenericInput {
     ///
     /// No error is raised when there is no associated publisher.
     fn propagate(&mut self, event: &IOEvent) {
-        if let Some(publisher) = &self.publisher {
-            publisher.try_lock().unwrap().notify(&event);
+        if let Some(publisher) = &mut self.publisher {
+            publisher.notify(&event);
         };
     }
 
@@ -100,7 +100,20 @@ impl GenericInput {
         Ok(event)
     }
 
-    pub fn add_publisher(&mut self, publisher: Def<PublisherInstance>) -> Result<(), ()> {
+    /// Create and set publisher or silently fail
+    pub fn init_publisher(&mut self) -> &mut Self {
+        match self.publisher {
+            None => {
+                self.publisher = Some(PublisherInstance::default());
+            }
+            _ => {
+                eprintln!("Publisher already exists!");
+            }
+        }
+        self
+    }
+
+    pub fn set_publisher(&mut self, publisher: PublisherInstance) -> Result<(), ()> {
         match self.publisher {
             None => {
                 self.publisher = Some(publisher);
@@ -109,6 +122,16 @@ impl GenericInput {
             _ => Err(()),
         }
     }
+
+    pub fn publisher_mut(&mut self) -> &mut Option<PublisherInstance> {
+        &mut self.publisher
+    }
+
+    pub fn publisher(&self) -> &Option<PublisherInstance> {
+        &self.publisher
+
+    }
+
     pub fn has_publisher(&self) -> bool {
         match self.publisher {
             Some(_) => true,
@@ -127,7 +150,6 @@ impl Chronicle for GenericInput {
 #[cfg(test)]
 mod tests {
     use crate::action::{IOCommand, PublisherInstance};
-    use crate::helpers::Def;
     use crate::io::{Device, GenericInput, RawValue};
     use crate::storage::Chronicle;
 
@@ -178,7 +200,7 @@ mod tests {
         assert_eq!(false, input.has_publisher());
 
         let publisher = PublisherInstance::default();
-        input.add_publisher(Def::new(publisher)).unwrap();
+        input.set_publisher(publisher).unwrap();
 
         assert_eq!(true, input.has_publisher());
     }

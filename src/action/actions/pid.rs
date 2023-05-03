@@ -1,4 +1,4 @@
-use crate::action::{PublisherInstance, Action};
+use crate::action::{Action, BoxedAction};
 use crate::helpers::Def;
 use crate::io::{DeviceType, IOEvent, RawValue};
 
@@ -6,7 +6,6 @@ use crate::io::{DeviceType, IOEvent, RawValue};
 pub struct PIDMonitor {
     name: String,
     _threshold: RawValue,
-    publisher: Option<Def<PublisherInstance>>,
 
     // TODO: check that device is output
     _output: Def<DeviceType>,
@@ -21,18 +20,7 @@ impl Action for PIDMonitor {
         // maintain PID
     }
 
-    fn publisher(&self) -> &Option<Def<PublisherInstance>> {
-        &self.publisher
-    }
-
-    fn add_publisher(&mut self, publisher: Def<PublisherInstance>) {
-        match self.publisher {
-            None => self.publisher = Some(publisher),
-            Some(_) => (),
-        }
-    }
-
-    fn into_action(self) -> Box<dyn Action> {
+    fn into_boxed(self) -> BoxedAction {
         Box::new(self)
     }
 }

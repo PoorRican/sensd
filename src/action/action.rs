@@ -1,5 +1,4 @@
-use crate::action::PublisherInstance;
-use crate::helpers::Def;
+use crate::action::BoxedAction;
 use crate::io::{IOEvent, DeferredDevice};
 
 /// Subscriber design pattern for performing actions based on inputs
@@ -16,25 +15,6 @@ pub trait Action {
     ///
     /// `data` argument should be raw input data.
     fn evaluate(&mut self, data: &IOEvent);
-
-    /// Reference to `PublisherInstance`
-    fn publisher(&self) -> &Option<Def<PublisherInstance>>;
-    /// Set publisher field
-    ///
-    /// This interface function is used by `ActionBuilder`
-    fn add_publisher(&mut self, publisher: Def<PublisherInstance>);
-    /// Get boolean if a publisher is assigned or not.
-    ///
-    /// During the build process (handled by `ActionBuilder`), a publisher is not
-    /// associated with the initialized subscriber. In this state, it is considered an
-    /// "orphan" and can be checked via `orphan()`. During the build state, `Self::add_publisher()`
-    /// creates the reverse association.
-    fn orphan(&self) -> bool {
-        match self.publisher() {
-            Some(_) => true,
-            None => false,
-        }
-    }
 
     /// Getter function for `output` field.
     fn output(&self) -> Option<DeferredDevice> {
@@ -54,6 +34,6 @@ pub trait Action {
         println!("{}", msg);
     }
 
-    fn into_action(self) -> Box<dyn Action>;
+    fn into_boxed(self) -> BoxedAction;
 }
 

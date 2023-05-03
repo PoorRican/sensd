@@ -1,6 +1,5 @@
-use crate::action::{PublisherInstance, Action};
+use crate::action::{Action, BoxedAction};
 use crate::errors::{ErrorType, Error, ErrorKind};
-use crate::helpers::Def;
 use crate::io::{IOEvent, RawValue, DeferredDevice, DeviceType};
 use std::fmt::{Display, Formatter};
 use std::ops::DerefMut;
@@ -47,11 +46,9 @@ impl Display for Comparison {
 /// but dumping might stop at 80%.
 ///
 // TODO: add upper/lower threshold
-#[derive(Clone)]
 pub struct ThresholdAction {
     name: String,
     threshold: RawValue,
-    publisher: Option<Def<PublisherInstance>>,
 
     trigger: Comparison,
     output: Option<DeferredDevice>,
@@ -71,7 +68,6 @@ impl ThresholdAction {
         Self {
             name,
             threshold,
-            publisher: None,
             trigger,
             output,
         }
@@ -138,21 +134,7 @@ impl Action for ThresholdAction {
         }
     }
 
-    fn publisher(&self) -> &Option<Def<PublisherInstance>> {
-        &self.publisher
-    }
-
-    /// Assign publisher if field is `None`.
-    ///
-    /// Silently fails if publisher is already populated.
-    fn add_publisher(&mut self, publisher: Def<PublisherInstance>) {
-        match self.publisher {
-            None => self.publisher = Some(publisher),
-            Some(_) => (),
-        }
-    }
-
-    fn into_action(self) -> Box<dyn Action> {
+    fn into_boxed(self) -> BoxedAction {
         Box::new(self)
     }
 }
