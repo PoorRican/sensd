@@ -36,6 +36,19 @@ impl Publisher {
         self.scheduled.attempt_routines()
     }
 
+    /// Builder function for building then internally storing a [`ThresholdAction`].
+    ///
+    /// # Parameters
+    /// - `name`: Label for action
+    /// - `threshold`: threshold used to actuate output. Should be a numeric value and not a binary value.
+    /// - `trigger`: [`Comparison`] variant to use to compare incoming data and `threshold`
+    /// - `output`: output device to attach to [`ThresholdAction`].
+    ///
+    /// # Panics
+    /// If `output` is `Some`, but not [`crate::io::device::DeviceType::Output`]
+    ///
+    /// # Returns
+    /// `&mut Self` is returned to allow for chaining.
     pub fn attach_threshold(&mut self,
                             name: &str,
                             threshold: RawValue,

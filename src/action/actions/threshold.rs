@@ -1,13 +1,15 @@
 use crate::action::{Action, BoxedAction};
-use crate::errors::{ErrorType, Error, ErrorKind};
-use crate::io::{IOEvent, RawValue, DeferredDevice, DeviceType, DeviceWrapper};
+use crate::errors::ErrorType;
+use crate::io::{IOEvent, RawValue, DeferredDevice, DeviceWrapper};
 use std::fmt::{Display, Formatter};
-use std::ops::DerefMut;
 
 #[derive(Debug, Clone)]
-/// Controls when comparison of external value and threshold returns `true`.
+/// Discrete variants that abstract comparison of external and threshold values.
 ///
-/// Used by `ThresholdAction::evaluate()`
+/// External value should be always be on the left-side; internal threshold should be on the right side.
+/// Internal command should be executed when this inequality returns true.
+///
+/// Used by [`ThresholdAction::evaluate()`]
 pub enum Comparison {
     GT,
     LT,
@@ -29,13 +31,14 @@ impl Display for Comparison {
 
 /// Subscriber that reacts in a binary fashion if threshold is exceeded.
 ///
-/// If the threshold is exceeded, then the subscriber can be setup to notify, and/or actuate an
-/// output in a binary fashion. The intention for this subscriber is not to be accurate, but
-/// rather, provide loose control. Output device is actuated as long as threshold is exceeded. In
-/// the future, upper and lower thresholds will be added for fine tuning of action execution.
+/// If the threshold is exceeded, a notification is printed, and optionally output is actuated.
+/// Accuracy, is not the primary goal of this action type, but rather strict control of an external
+/// variable is chosen so as to not use as many CPI cycles. Output device stays actuated as long as
+/// threshold is exceeded. In the future, upper and lower thresholds will be added for fine tuning
+/// of action execution.
 ///
-/// Unlike the `PIDController` subscriber, `ThresholdAction` does not create a `Routine`. Instead,
-/// it is intended to implement on/off behavior.
+/// Unlike the [`crate::action::PIDMonitor`] subscriber, [`ThresholdAction`] is unable create a [`Routine`].
+/// Instead, functionality implements simple on/off behavior.
 ///
 /// # Scenarios
 ///
@@ -55,9 +58,16 @@ pub struct ThresholdAction {
 }
 
 impl ThresholdAction {
-    /// Initialize a blank `ThresholdAction`
+    /// Constructor for [`ThresholdAction`]
     ///
-    /// No `PublisherInstance` is associated
+    /// # Notes
+    /// [`Action::set_output()`] is used as a builder function to add an output device after initialization.
+    ///
+    /// # Parameters
+    /// - `name`: name of action
+    /// - `threshold`: Threshold that controls what external value actuates/de-actuates device
+    /// - `trigger`: Defines the relationship between threshold and external value.
+    // TODO: there should be an option to inverse polarity
     pub fn new(
         name: String,
         threshold: RawValue,
@@ -75,47 +85,49 @@ impl ThresholdAction {
         }
     }
 
+    #[inline]
     /// Getter for internal `threshold` value
     pub fn threshold(&self) -> RawValue {
         self.threshold
     }
 
+    #[inline]
+    /// Actuate output device
+    ///
+    /// Sends a `true` value to output device
+    ///
+    /// # Returns
+    /// - `Ok(IOEvent)`: when I/O operation completes successfully.
+    /// - `Err(ErrorType)`: when an error occurs during I/O operation
     fn on(&self) -> Result<IOEvent, ErrorType> {
         self.write(RawValue::Binary(true))
     }
 
+    #[inline]
+    /// De-actuate output device.
+    ///
+    /// Sends a `false` value to output device
+    ///
+    /// # Returns
+    /// - `Ok(IOEvent)`: when I/O operation completes successfully.
+    /// - `Err(ErrorType)`: when an error occurs during I/O operation
     fn off(&self) -> Result<IOEvent, ErrorType> {
         self.write(RawValue::Binary(false))
     }
-
-    /// Pass value to output device
-    fn write(&self, value: RawValue) -> Result<IOEvent, ErrorType> {
-        if let Some(inner) = self.output.clone() {
-            let mut binding = inner.try_lock().unwrap();
-            let device = binding.deref_mut();
-            match device {
-                DeviceType::Output(output) => output.write(value),
-                _ => Err(Error::new(ErrorKind::DeviceError,
-                                    "Associated output device is misconfigured."))
-            }
-        } else {
-            Err(Error::new(ErrorKind::DeviceError,
-                           "ThresholdAction has no device associated as output."))
-        }
-    }
-
 }
 
 impl Action for ThresholdAction {
-    fn name(&self) -> String {
-        self.name.clone()
+    #[inline]
+    /// Name of action
+    fn name(&self) -> &String {
+        &self.name
     }
 
-    /// Turn on output device if threshold is exceeded.
+    /// Evaluate external data
     ///
-    // TODO: there should be an option to inverse polarity
-    // TODO: there should be a check to ensure that output device is binary
-    // TODO: should there be a state check of output device?
+    /// Incoming data is compared against [`ThresholdAction::threshold()`] using internal `trigger`.
+    /// If incoming data exceeds threshold, output device is actuated. Otherwise, output device is deactivated.
+    // TODO: check state cache of output device to avoid redundant calls to output device.
     fn evaluate(&mut self, data: &IOEvent) {
         let input = data.data.value;
         let exceeded = match &self.trigger {

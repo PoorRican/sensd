@@ -1,19 +1,16 @@
+use std::ops::DerefMut;
 use crate::action::BoxedAction;
-use crate::io::{IOEvent, DeferredDevice};
+use crate::errors::{Error, ErrorKind, ErrorType};
+use crate::io::{IOEvent, DeferredDevice, RawValue, DeviceType};
 
-/// Subscriber design pattern for performing actions based on inputs
-///
-/// The relationship between `Publisher` and `Subscriber` is dually-linked as
-/// `Publisher` has a reference to subscriber via the `subscribers` field and subscriber
-/// has a reference via `publisher()`.
-///
-///
-/// Subscriber should have a strong reference to Output, so that `Command` may be built.
+/// Trait that enables enables actions to be performed based on incoming data.
 pub trait Action {
-    fn name(&self) -> String;
-    /// Primary method to handle incoming data
+    fn name(&self) -> &String;
+
+    /// Evaluate incoming data and perform action if necessary.
     ///
-    /// `data` argument should be raw input data.
+    /// # Parameters
+    /// - `data`: Raw incoming data from input device.
     fn evaluate(&mut self, data: &IOEvent);
 
     /// Builder function for setting `output` field.
@@ -29,7 +26,31 @@ pub trait Action {
     fn set_output(self, device: DeferredDevice) -> Self
     where Self: Sized;
 
+    /// Getter function for `output` field.
     fn output(&self) -> Option<DeferredDevice>;
+
+    /// Setter function for output device field
+    ///
+    /// # Parameters
+    /// - `value`: Binary value to send to device
+    ///
+    /// # Returns
+    /// - `Ok(IOEvent)`: when I/O operation completes successfully.
+    /// - `Err(ErrorType)`: when an error occurs during I/O operation
+    fn write(&self, value: RawValue) -> Result<IOEvent, ErrorType> {
+        if let Some(inner) = self.output() {
+            let mut binding = inner.try_lock().unwrap();
+            let device = binding.deref_mut();
+            match device {
+                DeviceType::Output(output) => output.write(value),
+                _ => Err(Error::new(ErrorKind::DeviceError,
+                                    "Associated output device is misconfigured."))
+            }
+        } else {
+            Err(Error::new(ErrorKind::DeviceError,
+                           "ThresholdAction has no device associated as output."))
+        }
+    }
 
     /// Print notification to stdout.
     ///
@@ -38,6 +59,7 @@ pub trait Action {
         println!("{}", msg);
     }
 
+    /// Consume [`Self`] and wrap in a [`Box`] so it can be coerced into an [`Action`] trait object.
     fn into_boxed(self) -> BoxedAction;
 }
 

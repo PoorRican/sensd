@@ -1,19 +1,18 @@
 use crate::action::{Action, BoxedAction};
-use crate::helpers::Def;
-use crate::io::{DeferredDevice, DeviceType, DeviceWrapper, IOEvent, RawValue};
+use crate::io::{DeferredDevice, DeviceWrapper, IOEvent, RawValue};
 
 /// Subscriber abstracting a PID controller
 pub struct PIDMonitor {
     name: String,
-    _threshold: RawValue,
+    _setpoint: RawValue,
 
     // TODO: check that device is output
-    output: Def<DeviceType>,
+    output: DeferredDevice,
 }
 
 impl Action for PIDMonitor {
-    fn name(&self) -> String {
-        self.name.clone()
+    fn name(&self) -> &String {
+        &self.name
     }
     fn evaluate(&mut self, _data: &IOEvent) {
         todo!()

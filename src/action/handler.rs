@@ -3,8 +3,11 @@ use crate::action::Routine;
 #[allow(unused_imports)]
 use crate::storage::Group;
 
-/// Wrapper for a collection of scheduled [`Routine`] instances that handles real-time execution
 #[derive(Default)]
+/// Wrapper for a collection of scheduled [`Routine`] instances that handles real-time execution
+/// Self-contained collection of scheduled [`Routine`]s for a single [`crate::action::Publisher`].
+///
+/// This struct acts as a facade for an arbitrary collection (in this case, [`Vec`]).
 pub struct SchedRoutineHandler(Vec<Routine>);
 
 impl SchedRoutineHandler {
@@ -17,8 +20,9 @@ impl SchedRoutineHandler {
     ///
     /// Even though [`Routine`] instances are usually scheduled during normal polling cycles by
     /// [`Group`], the assumption is that their scheduled execution time does not correlate with a
-    /// polling interval. Therefore, [`attempt_routines()`] should be called as often as possible,
-    /// outside of normal polling cycle, and as often as possible to produce real-time response.
+    /// polling interval. Therefore, [`SchedRoutineHandler::attempt_routines()`] should be called
+    /// as often as possible, outside of normal polling cycle, and as often as possible to produce
+    /// real-time response.
     ///
     /// Any routines executed by [`Routine::attempt()`] are cleared from the internal container.
     pub fn attempt_routines(&mut self) {
@@ -28,13 +32,16 @@ impl SchedRoutineHandler {
                 executed.push(index);
             }
         }
-        // remove completed
+        // remove completed routines
         for index in executed {
             self.0.remove(index);
         }
     }
 
     /// Getter function for internal collection
+    ///
+    /// # Returns
+    /// Slice of [`Routine`]
     pub fn scheduled(&self) -> &[Routine] {
         &self.0
     }
