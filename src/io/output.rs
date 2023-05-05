@@ -49,7 +49,7 @@ impl Device for GenericOutput {
         &self.metadata
     }
 
-    fn add_command(mut self, command: IOCommand) -> Self
+    fn set_command(mut self, command: IOCommand) -> Self
     where
         Self: Sized,
     {

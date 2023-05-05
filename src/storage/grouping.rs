@@ -116,7 +116,7 @@ impl Group {
             IODirection::Input => {
                 let input = GenericInput::new(String::from(name), *id, *kind)
                     .init_log(settings)
-                    .add_command(command.clone())
+                    .set_command(command.clone())
                     .into_variant();
 
                 device = Def::new(input);
@@ -126,7 +126,7 @@ impl Group {
             IODirection::Output => {
                 let output = GenericOutput::new(String::from(name), *id, *kind)
                     .init_log(settings)
-                    .add_command(command.clone())
+                    .set_command(command.clone())
                     .into_variant();
 
                 device = Def::new(output);

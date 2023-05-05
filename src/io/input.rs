@@ -47,7 +47,7 @@ impl Device for GenericInput {
         &self.metadata
     }
 
-    fn add_command(mut self, command: IOCommand) -> Self
+    fn set_command(mut self, command: IOCommand) -> Self
     where
         Self: Sized,
     {

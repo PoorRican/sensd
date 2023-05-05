@@ -206,7 +206,7 @@ mod tests {
         // test save
         {
             let device = GenericInput::new(String::from(SENSOR_NAME), ID, Some(IOKind::Flow))
-                .add_command(COMMAND)
+                .set_command(COMMAND)
                 .init_log(None);
             let log = device.log().unwrap();
 
@@ -226,7 +226,7 @@ mod tests {
         // build back up then load
         {
             let device = GenericInput::new(String::from(SENSOR_NAME), ID, Some(IOKind::Flow))
-                .add_command(COMMAND)
+                .set_command(COMMAND)
                 .init_log(None);
             let log = device.log().unwrap();
 

@@ -16,6 +16,7 @@ use std::sync::Arc;
 pub trait Device: Chronicle {
     /// Creates a new instance of the device with the given parameters.
     ///
+    /// # Parameters
     /// `name`: name of device.
     /// `id`: device ID.
     /// `kind`: kind of I/O device. Optional argument.
@@ -66,7 +67,7 @@ pub trait Device: Chronicle {
     }
 
     /// Setter for `command` field
-    fn add_command(self, command: IOCommand) -> Self
+    fn set_command(self, command: IOCommand) -> Self
     where
         Self: Sized;
 
