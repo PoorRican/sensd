@@ -115,16 +115,6 @@ impl GenericInput {
         self
     }
 
-    pub fn set_publisher(&mut self, publisher: Publisher) -> Result<(), ()> {
-        match self.publisher {
-            None => {
-                self.publisher = Some(publisher);
-                Ok(())
-            }
-            _ => Err(()),
-        }
-    }
-
     pub fn publisher_mut(&mut self) -> &mut Option<Publisher> {
         &mut self.publisher
     }
@@ -150,7 +140,7 @@ impl Chronicle for GenericInput {
 // Testing
 #[cfg(test)]
 mod tests {
-    use crate::action::{IOCommand, Publisher};
+    use crate::action::{IOCommand};
     use crate::io::{Device, GenericInput, RawValue};
     use crate::storage::Chronicle;
 
@@ -186,14 +176,24 @@ mod tests {
 
     /// Test `::add_publisher()` and `::has_publisher()`
     #[test]
-    fn test_add_publisher() {
+    fn test_init_publisher() {
         let mut input = GenericInput::default();
 
         assert_eq!(false, input.has_publisher());
 
-        let publisher = Publisher::default();
-        input.set_publisher(publisher).unwrap();
+        input.init_publisher();
 
         assert_eq!(true, input.has_publisher());
+    }
+
+    #[test]
+    fn test_init_log() {
+        let mut input = GenericInput::default();
+
+        assert_eq!(false, input.has_log());
+
+        input = input.init_log(None);
+
+        assert_eq!(true, input.has_log());
     }
 }
