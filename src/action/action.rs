@@ -16,16 +16,20 @@ pub trait Action {
     /// `data` argument should be raw input data.
     fn evaluate(&mut self, data: &IOEvent);
 
-    /// Getter function for `output` field.
-    fn output(&self) -> Option<DeferredDevice> {
-        unimplemented!()
-    }
-    /// Setter function for output device field
+    /// Builder function for setting `output` field.
     ///
-    /// Should print warning to `stderr` if field is not `None`. Method should not panic.
-    fn set_output(&mut self, _device: DeferredDevice) {
-        unimplemented!()
-    }
+    /// # Parameters
+    /// - `device`: `DeferredDevice` to set as output
+    ///
+    /// # Panics
+    /// Panic is raised if device is not [`crate::io::DeviceType::Output`]
+    ///
+    /// # Returns
+    /// - `&mut self`: enables builder pattern
+    fn set_output(self, device: DeferredDevice) -> Self
+    where Self: Sized;
+
+    fn output(&self) -> Option<DeferredDevice>;
 
     /// Print notification to stdout.
     ///

@@ -62,14 +62,16 @@ impl ThresholdAction {
         name: String,
         threshold: RawValue,
         trigger: Comparison,
-        output: Option<DeferredDevice>,
     ) -> Self {
+
+        // TODO: add a type check to `RawValue` to ensure a numeric value
+        // TODO: add a type check to ensure that `output` accepts a binary value
 
         Self {
             name,
             threshold,
             trigger,
-            output,
+            output: None,
         }
     }
 
@@ -134,6 +136,23 @@ impl Action for ThresholdAction {
         }
     }
 
+    fn set_output(mut self, device: DeferredDevice) -> Self
+    where Self: Sized
+    {
+        if device.is_output() {
+            self.output = Some(device);
+            self
+        } else {
+            panic!("device is not output!")
+        }
+    }
+
+    #[inline]
+    fn output(&self) -> Option<DeferredDevice> {
+        self.output.clone()
+    }
+
+    #[inline]
     fn into_boxed(self) -> BoxedAction {
         Box::new(self)
     }

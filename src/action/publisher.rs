@@ -42,9 +42,13 @@ impl PublisherInstance {
                             trigger: Comparison,
                             output: Option<DeferredDevice>,
     ) -> &mut Self {
-        let action = ThresholdAction::new(name.to_string(), threshold, trigger, output)
-            .into_boxed();
-        self.subscribe(action);
+        let mut action = ThresholdAction::new(name.to_string(), threshold, trigger);
+
+        if let Some(output) = output {
+            action = action.set_output(output);
+        }
+
+        self.subscribe(action.into_boxed());
         self
     }
 }
