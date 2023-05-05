@@ -1,7 +1,8 @@
 use std::ops::DerefMut;
-use crate::action::BoxedAction;
 use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::io::{IOEvent, DeferredDevice, RawValue, DeviceType};
+
+pub type BoxedAction = Box<dyn Action>;
 
 /// Trait that enables enables actions to be performed based on incoming data.
 pub trait Action {

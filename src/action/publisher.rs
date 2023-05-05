@@ -1,9 +1,7 @@
 //! Implements a control system based off of evaluating incoming data.
 
-use crate::action::{Action, Comparison, SchedRoutineHandler, ThresholdAction};
+use crate::action::{Action, BoxedAction, Comparison, SchedRoutineHandler, ThresholdAction};
 use crate::io::{DeferredDevice, IOEvent, RawValue};
-
-pub type BoxedAction = Box<dyn Action>;
 
 
 /// Collection of actions for propagating single device input.

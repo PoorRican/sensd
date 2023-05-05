@@ -5,10 +5,12 @@ mod publisher;
 mod routine;
 mod action;
 mod actions;
+mod io;
 
 pub use command::*;
-pub use handler::*;
-pub use publisher::*;
-pub use routine::*;
-pub use action::*;
+pub use handler::SchedRoutineHandler;
+pub use publisher::Publisher;
+pub use routine::Routine;
+pub use action::{Action, BoxedAction};
 pub use actions::*;
+pub use io::IOCommand;
