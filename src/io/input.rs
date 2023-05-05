@@ -1,9 +1,7 @@
 use crate::action::{Command, IOCommand, Publisher};
 use crate::errors::ErrorType;
 use crate::helpers::Def;
-use crate::io::{
-    no_internal_closure, Device, DeviceMetadata, DeviceType, IODirection, IOEvent, IOKind, IdType,
-};
+use crate::io::{no_internal_closure, Device, DeviceMetadata, DeviceType, IODirection, IOEvent, IOKind, IdType, RawValue};
 use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
@@ -12,6 +10,7 @@ pub struct GenericInput {
     log: Option<Def<Log>>,
     publisher: Option<Publisher>,
     command: Option<IOCommand>,
+    state: Option<RawValue>,
 }
 
 // Implement traits
@@ -34,12 +33,14 @@ impl Device for GenericInput {
         let publisher = None;
         let command = None;
         let log = None;
+        let state = None;
 
         Self {
             metadata,
             log,
             publisher,
             command,
+            state,
         }
     }
 
@@ -57,6 +58,13 @@ impl Device for GenericInput {
 
     fn set_log(&mut self, log: Def<Log>) {
         self.log = Some(log);
+    }
+
+    /// Immutable reference to cached state
+    ///
+    /// `state` field should be updated by `write()`
+    fn state(&self) -> &Option<RawValue> {
+        &self.state
     }
 
     fn into_variant(self) -> DeviceType {

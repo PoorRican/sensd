@@ -11,7 +11,7 @@ use crate::storage::{Chronicle, Log};
 pub struct GenericOutput {
     metadata: DeviceMetadata,
     // cached state
-    state: RawValue,
+    state: Option<RawValue>,
     log: Option<Def<Log>>,
     command: Option<IOCommand>,
 }
@@ -31,7 +31,7 @@ impl Device for GenericOutput {
         Self: Sized,
     {
         let kind = kind.unwrap_or_default();
-        let state = RawValue::default();
+        let state = None;
         let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Output);
 
         let command = None;
@@ -61,6 +61,13 @@ impl Device for GenericOutput {
         self.log = Some(log)
     }
 
+    /// Immutable reference to cached state
+    ///
+    /// `state` field should be updated by `write()`
+    fn state(&self) -> &Option<RawValue> {
+        &self.state
+    }
+
     fn into_variant(self) -> DeviceType {
         DeviceType::Output(self)
     }
@@ -88,17 +95,11 @@ impl GenericOutput {
         let event = self.tx(value).expect("Error returned by `tx()`");
 
         // update cached state
-        self.state = event.data.value;
+        self.state = Some(event.data.value);
 
         self.add_to_log(event);
 
         Ok(event)
-    }
-
-    /// Immutable reference to cached state
-    /// `state` field should be updated by `write()`
-    pub fn state(&self) -> &RawValue {
-        &self.state
     }
 }
 
@@ -143,14 +144,14 @@ mod tests {
         output.command = Some(COMMAND);
 
         // check `state` before `::write()`
-        assert_ne!(value, *output.state());
+        assert_eq!(None, *output.state());
 
         let event = output
             .write(value)
             .expect("Unknown error returned by `::write()`");
 
         // check state after `::write()`
-        assert_eq!(value, *output.state());
+        assert_eq!(value, output.state().unwrap());
 
         // check returned `IOEvent`
         assert_eq!(value, event.data.value);

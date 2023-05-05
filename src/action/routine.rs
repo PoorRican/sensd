@@ -157,7 +157,7 @@ mod functionality_tests {
             Ok(())
         });
 
-        let timestamp = Utc::now() + Duration::microseconds(5);
+        let timestamp = Utc::now() + Duration::microseconds(10);
         let value = RawValue::Binary(true);
         let routine = Routine::new(timestamp, metadata, value, log.clone(), command);
 

@@ -84,6 +84,9 @@ pub trait Device: Chronicle {
         self
     }
 
+    /// Immutable reference to cached state
+    fn state(&self) -> &Option<RawValue>;
+
     fn into_variant(self) -> DeviceType;
 }
 
