@@ -41,6 +41,13 @@ pub trait Chronicle {
                 .expect("Unknown error when adding event to log");
         }
     }
+
+    fn has_log(&self) -> bool {
+        match self.log() {
+            Some(_) => true,
+            None => false,
+        }
+    }
 }
 
 /// Log abstraction of `IOEvent` keyed by datetime
