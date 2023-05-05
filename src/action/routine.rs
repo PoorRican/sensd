@@ -47,7 +47,8 @@ impl Routine {
         value: RawValue,
         log: L,
         command: IOCommand,
-    ) -> Self where 
+    ) -> Self
+    where
         M: Into<Option<DeviceMetadata>>,
         L: Into<Option<Def<Log>>>,
     {
@@ -70,7 +71,7 @@ impl Routine {
         }
     }
 
-    /// Main polling function 
+    /// Main polling function
     ///
     /// Acts as wrapper for [`Command::execute()`]. Checks scheduled time, then executes command.
     /// `IOEvent` is automatically added to device log.
@@ -116,9 +117,9 @@ impl Chronicle for Routine {
     fn log(&self) -> Option<Def<Log>> {
         if let Some(weak_log) = self.log.clone() {
             if let Some(weak_ref) = weak_log.upgrade() {
-                return Some(Def::from(weak_ref))
+                return Some(Def::from(weak_ref));
             }
-        } 
+        }
         None
     }
 }
@@ -151,8 +152,7 @@ mod functionality_tests {
 
         let log = Def::new(Log::new(&metadata, None));
 
-        let command = IOCommand::Output(
-            move |val| unsafe {
+        let command = IOCommand::Output(move |val| unsafe {
             set_register(val);
             Ok(())
         });
@@ -181,12 +181,17 @@ mod functionality_tests {
 mod meta_tests {
     use chrono::Utc;
 
-    use crate::{io::{DeviceMetadata, RawValue}, action::{IOCommand, Routine}, storage::Log, helpers::Def};
+    use crate::{
+        action::{IOCommand, Routine},
+        helpers::Def,
+        io::{DeviceMetadata, RawValue},
+        storage::Log,
+    };
     #[test]
     fn test_constructor_w_none() {
         let timestamp = Utc::now();
         let value = RawValue::Binary(true);
-        let command = IOCommand::Output(|_| { Ok(()) });
+        let command = IOCommand::Output(|_| Ok(()));
 
         let routine = Routine::new(timestamp, None, value, None, command);
 
@@ -199,7 +204,7 @@ mod meta_tests {
 
         let timestamp = Utc::now();
         let value = RawValue::Binary(true);
-        let command = IOCommand::Output(|_| { Ok(()) });
+        let command = IOCommand::Output(|_| Ok(()));
 
         let routine = Routine::new(timestamp, metadata, value, None, command);
 
@@ -214,8 +219,7 @@ mod meta_tests {
 
         let timestamp = Utc::now();
         let value = RawValue::Binary(true);
-        let command = IOCommand::Output(|_| { Ok(()) });
-
+        let command = IOCommand::Output(|_| Ok(()));
 
         let routine = Routine::new(timestamp, None, value, log.clone(), command);
         assert!(routine.attempt());
@@ -229,8 +233,7 @@ mod meta_tests {
 
         let timestamp = Utc::now();
         let value = RawValue::Binary(true);
-        let command = IOCommand::Output(|_| { Ok(()) });
-
+        let command = IOCommand::Output(|_| Ok(()));
 
         let routine = Routine::new(timestamp, metadata, value, log.clone(), command);
         assert!(routine.attempt());

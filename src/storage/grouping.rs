@@ -1,12 +1,15 @@
 use crate::action::IOCommand;
 use crate::errors::ErrorType;
 use crate::helpers::{check_results, Def};
-use crate::io::{DeviceContainer, DeviceType, IODirection, IOEvent, IOKind, IdType, GenericInput, GenericOutput, Device};
+use crate::io::{
+    Device, DeviceContainer, DeviceType, GenericInput, GenericOutput, IODirection, IOEvent, IOKind,
+    IdType,
+};
 use crate::settings::Settings;
 use crate::storage::{LogContainer, Persistent};
 use chrono::{DateTime, Duration, Utc};
-use std::ops::DerefMut;
 use std::fs::create_dir_all;
+use std::ops::DerefMut;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -119,7 +122,7 @@ impl Group {
                 device = Def::new(input);
 
                 self.inputs.insert(*id, device.clone())
-            },
+            }
             IODirection::Output => {
                 let output = GenericOutput::new(String::from(name), *id, *kind)
                     .init_log(settings)
@@ -129,7 +132,7 @@ impl Group {
                 device = Def::new(output);
 
                 self.outputs.insert(*id, device.clone())
-            },
+            }
         };
 
         Ok(device.clone())
@@ -196,7 +199,7 @@ impl Group {
             true => (),
             false => {
                 create_dir_all(path).expect("Could not create root data directory");
-            },
+            }
         }
     }
 
@@ -271,7 +274,6 @@ mod tests {
         group.setup_dir();
         assert!(group.dir().exists());
 
-        remove_dir_all(group.dir().parent().unwrap())
-            .unwrap();
+        remove_dir_all(group.dir().parent().unwrap()).unwrap();
     }
 }

@@ -1,7 +1,9 @@
 use crate::action::{Command, IOCommand, Publisher};
 use crate::errors::ErrorType;
 use crate::helpers::Def;
-use crate::io::{no_internal_closure, Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, DeviceType};
+use crate::io::{
+    no_internal_closure, Device, DeviceMetadata, DeviceType, IODirection, IOEvent, IOKind, IdType,
+};
 use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
@@ -47,7 +49,7 @@ impl Device for GenericInput {
 
     fn add_command(mut self, command: IOCommand) -> Self
     where
-        Self: Sized
+        Self: Sized,
     {
         self.command = Some(command);
         self
@@ -129,7 +131,6 @@ impl GenericInput {
 
     pub fn publisher(&self) -> &Option<Publisher> {
         &self.publisher
-
     }
 
     pub fn has_publisher(&self) -> bool {
@@ -168,28 +169,19 @@ mod tests {
 
     #[test]
     fn test_read() {
-        let mut input =
-            GenericInput::default()
-                .init_log(None);
+        let mut input = GenericInput::default().init_log(None);
         let log = input.log();
 
         input.command = Some(COMMAND);
 
-        assert_eq!(log.clone()
-                       .unwrap()
-                       .try_lock().unwrap()
-                       .iter().count(),
-                   0);
+        assert_eq!(log.clone().unwrap().try_lock().unwrap().iter().count(), 0);
 
         let event = input.read().unwrap();
         assert_eq!(event.data.value, DUMMY_OUTPUT);
         assert_eq!(event.data.kind, input.kind());
 
         // assert that event was added to log
-        assert_eq!(log.unwrap()
-                       .try_lock().unwrap()
-                       .iter().count(),
-                   1);
+        assert_eq!(log.unwrap().try_lock().unwrap().iter().count(), 1);
     }
 
     /// Test `::add_publisher()` and `::has_publisher()`

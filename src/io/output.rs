@@ -1,7 +1,10 @@
 use crate::action::{Command, IOCommand};
 use crate::errors::ErrorType;
 use crate::helpers::Def;
-use crate::io::{no_internal_closure, Device, DeviceMetadata, IODirection, IOEvent, IOKind, RawValue, IdType, DeviceType};
+use crate::io::{
+    no_internal_closure, Device, DeviceMetadata, DeviceType, IODirection, IOEvent, IOKind, IdType,
+    RawValue,
+};
 use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
@@ -48,7 +51,7 @@ impl Device for GenericOutput {
 
     fn add_command(mut self, command: IOCommand) -> Self
     where
-        Self: Sized
+        Self: Sized,
     {
         self.command = Some(command);
         self
@@ -131,9 +134,7 @@ mod tests {
     #[test]
     /// Test that `tx()` was called, cached state was updated, and IOEvent added to log.
     fn test_write() {
-        let mut output =
-            GenericOutput::default()
-                .init_log(None);
+        let mut output = GenericOutput::default().init_log(None);
         let log = output.log().unwrap();
 
         assert_eq!(log.try_lock().unwrap().iter().count(), 0);

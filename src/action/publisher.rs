@@ -3,7 +3,6 @@
 use crate::action::{Action, BoxedAction, Comparison, SchedRoutineHandler, ThresholdAction};
 use crate::io::{DeferredDevice, IOEvent, RawValue};
 
-
 /// Collection of actions for propagating single device input.
 ///
 /// A [`Publisher`] has a 1-to-1 relationship with a input device and stores all [`Action`] instances
@@ -47,11 +46,12 @@ impl Publisher {
     ///
     /// # Returns
     /// `&mut Self` is returned to allow for chaining.
-    pub fn attach_threshold(&mut self,
-                            name: &str,
-                            threshold: RawValue,
-                            trigger: Comparison,
-                            output: Option<DeferredDevice>,
+    pub fn attach_threshold(
+        &mut self,
+        name: &str,
+        threshold: RawValue,
+        trigger: Comparison,
+        output: Option<DeferredDevice>,
     ) -> &mut Self {
         let mut action = ThresholdAction::new(name.to_string(), threshold, trigger);
 

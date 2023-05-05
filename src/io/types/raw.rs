@@ -1,8 +1,8 @@
 use crate::errors::Error;
 use float_cmp::approx_eq;
 use serde::{Deserialize, Serialize};
-use std::ops::{Add, Sub, Mul, Div, Neg, Rem};
 use std::fmt::{Display, Formatter};
+use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
 
 /// Type used for passing between IO abstractions.
 ///
@@ -54,13 +54,13 @@ impl TryFrom<u8> for RawValue {
     }
 }
 impl TryFrom<i8> for RawValue {
-    type Error =  Error;
+    type Error = Error;
     fn try_from(value: i8) -> Result<Self, Self::Error> {
         Ok(RawValue::Int8(value))
     }
 }
 impl TryFrom<u32> for RawValue {
-    type Error =  Error;
+    type Error = Error;
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         Ok(RawValue::PosInt(value))
     }
@@ -188,7 +188,6 @@ impl PartialEq for RawValue {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::io::RawValue;
@@ -199,12 +198,12 @@ mod tests {
         let b = RawValue::Int(7);
         let c = a + b;
         assert_eq!(c, RawValue::Int(12));
-    
+
         let a = RawValue::Float(3.14);
         let b = RawValue::Float(2.71);
         let c = a + b;
         assert_eq!(c, RawValue::Float(5.85));
-    
+
         let a = RawValue::Binary(true);
         let b = RawValue::Binary(false);
         let c = a + b;
@@ -225,7 +224,7 @@ mod tests {
         let b = RawValue::Int(7);
         let c = a - b;
         assert_eq!(c, RawValue::Int(-2));
-    
+
         let a = RawValue::Float(3.14);
         let b = RawValue::Float(2.71);
         let c = a - b;
@@ -248,7 +247,7 @@ mod tests {
         let b = RawValue::Int(7);
         let c = a * b;
         assert_eq!(c, RawValue::Int(35));
-    
+
         let a = RawValue::Float(3.14);
         let b = RawValue::Float(2.71);
         let c = a * b;
@@ -262,7 +261,7 @@ mod tests {
         let b = RawValue::Float(7.0);
         let _ = a * b;
     }
-    
+
     #[test]
     fn test_rawvalue_div() {
         let a = RawValue::Int(5);
@@ -274,7 +273,7 @@ mod tests {
         let b = RawValue::Int(5);
         let c = a / b;
         assert_eq!(c, RawValue::Int(1));
-    
+
         let a = RawValue::Float(3.14);
         let b = RawValue::Float(2.71);
         let c = a / b;

@@ -19,7 +19,10 @@ impl Action for PIDMonitor {
         // maintain PID
     }
 
-    fn set_output(mut self, device: DeferredDevice) -> Self where Self: Sized {
+    fn set_output(mut self, device: DeferredDevice) -> Self
+    where
+        Self: Sized,
+    {
         if device.is_output() {
             self.output = device;
             self

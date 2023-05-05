@@ -1,8 +1,6 @@
 pub use crate::helpers::Def;
 pub use crate::io::{
-    DeviceWrapper, DeviceTraits, Device,
-    GenericInput, GenericOutput,
-    IdType, IOKind, IODirection,
+    Device, DeviceTraits, DeviceWrapper, GenericInput, GenericOutput, IODirection, IOKind, IdType,
 };
 pub use std::sync::{Arc, Mutex};
 

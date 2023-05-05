@@ -1,6 +1,6 @@
 //! A basic example of sensd implementation.
 //!
-//! # Description 
+//! # Description
 //!
 //! This example displays the use of the "ThresholdAction" subscriber. Two input devices are
 //! initialized using the `DeviceLog` builder - both devices return a static float value.
@@ -28,10 +28,10 @@ use sensd::action::{Comparison, IOCommand};
 use sensd::errors::ErrorType;
 use sensd::io::{DeviceType, IODirection, IOKind, RawValue};
 use sensd::settings::Settings;
-use sensd::storage::{Persistent, Group};
+use sensd::storage::{Group, Persistent};
 
 /// █▓▒░ Event Loop Operating frequency
-/// 
+///
 /// Frequency can be set to any arbitrary value and directly controls speed of event loop.
 /// Frequency shouldn't be too high since polling operations are currently blocking. No error
 /// occurs if polling time exceeds frequency.
@@ -86,7 +86,6 @@ fn build_actions(poller: &mut Group) {
     println!("\n█▓▒░ Building subscribers ...");
 
     for (id, input) in poller.inputs.iter() {
-
         if let DeviceType::Input(device) = input.try_lock().unwrap().deref_mut() {
             device.init_publisher();
             println!("- Initializing subscriber ...");
@@ -98,7 +97,6 @@ fn build_actions(poller: &mut Group) {
                 publisher.attach_threshold(&name, threshold, trigger, None);
             }
         }
-
     }
 
     println!("\n... Finished Initializing subscribers\n");
@@ -111,13 +109,12 @@ fn poll(poller: &mut Group) -> Result<(), ErrorType> {
             Ok(_) => println!("\n"),
             Err(t) => {
                 return Err(t);
-            },
+            }
         },
         _ => (),
     };
     Ok(())
 }
-
 
 fn main() {
     let mut poller = init("main");
@@ -128,11 +125,8 @@ fn main() {
     println!("█▓▒░ Beginning polling ░▒▓█\n");
 
     loop {
-
-        poll(&mut poller)
-            .expect("Error occurred during polling");
+        poll(&mut poller).expect("Error occurred during polling");
 
         std::thread::sleep(FREQUENCY);
-
     }
 }

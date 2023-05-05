@@ -1,6 +1,6 @@
 use crate::action::{Action, BoxedAction};
 use crate::errors::ErrorType;
-use crate::io::{IOEvent, RawValue, DeferredDevice, DeviceWrapper};
+use crate::io::{DeferredDevice, DeviceWrapper, IOEvent, RawValue};
 use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Clone)]
@@ -68,12 +68,7 @@ impl ThresholdAction {
     /// - `threshold`: Threshold that controls what external value actuates/de-actuates device
     /// - `trigger`: Defines the relationship between threshold and external value.
     // TODO: there should be an option to inverse polarity
-    pub fn new(
-        name: String,
-        threshold: RawValue,
-        trigger: Comparison,
-    ) -> Self {
-
+    pub fn new(name: String, threshold: RawValue, trigger: Comparison) -> Self {
         // TODO: add a type check to `RawValue` to ensure a numeric value
         // TODO: add a type check to ensure that `output` accepts a binary value
 
@@ -131,9 +126,9 @@ impl Action for ThresholdAction {
     fn evaluate(&mut self, data: &IOEvent) {
         let input = data.data.value;
         let exceeded = match &self.trigger {
-            &Comparison::GT =>  input > self.threshold,
+            &Comparison::GT => input > self.threshold,
             &Comparison::GTE => input >= self.threshold,
-            &Comparison::LT =>  input < self.threshold,
+            &Comparison::LT => input < self.threshold,
             &Comparison::LTE => input <= self.threshold,
         };
         if exceeded {
@@ -144,12 +139,13 @@ impl Action for ThresholdAction {
                 self.on().unwrap();
             }
         } else if let Some(_) = self.output {
-                self.off().unwrap();
+            self.off().unwrap();
         }
     }
 
     fn set_output(mut self, device: DeferredDevice) -> Self
-    where Self: Sized
+    where
+        Self: Sized,
     {
         if device.is_output() {
             self.output = Some(device);

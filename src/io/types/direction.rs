@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use core::fmt::{Display, Formatter};
+use serde::{Deserialize, Serialize};
 
 /// Enum used to classify direction of data flow in relation to system.
 ///

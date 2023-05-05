@@ -1,6 +1,6 @@
-use std::ops::DerefMut;
 use crate::errors::{Error, ErrorKind, ErrorType};
-use crate::io::{IOEvent, DeferredDevice, RawValue, DeviceType};
+use crate::io::{DeferredDevice, DeviceType, IOEvent, RawValue};
+use std::ops::DerefMut;
 
 pub type BoxedAction = Box<dyn Action>;
 
@@ -20,12 +20,13 @@ pub trait Action {
     /// - `device`: `DeferredDevice` to set as output
     ///
     /// # Panics
-    /// Panic is raised if device is not [`crate::io::DeviceType::Output`]
+    /// Panic is raised if device is not [`DeviceType::Output`]
     ///
     /// # Returns
     /// - `&mut self`: enables builder pattern
     fn set_output(self, device: DeferredDevice) -> Self
-    where Self: Sized;
+    where
+        Self: Sized;
 
     /// Getter function for `output` field.
     fn output(&self) -> Option<DeferredDevice>;
@@ -44,12 +45,16 @@ pub trait Action {
             let device = binding.deref_mut();
             match device {
                 DeviceType::Output(output) => output.write(value),
-                _ => Err(Error::new(ErrorKind::DeviceError,
-                                    "Associated output device is misconfigured."))
+                _ => Err(Error::new(
+                    ErrorKind::DeviceError,
+                    "Associated output device is misconfigured.",
+                )),
             }
         } else {
-            Err(Error::new(ErrorKind::DeviceError,
-                           "ThresholdAction has no device associated as output."))
+            Err(Error::new(
+                ErrorKind::DeviceError,
+                "ThresholdAction has no device associated as output.",
+            ))
         }
     }
 
@@ -63,4 +68,3 @@ pub trait Action {
     /// Consume [`Self`] and wrap in a [`Box`] so it can be coerced into an [`Action`] trait object.
     fn into_boxed(self) -> BoxedAction;
 }
-

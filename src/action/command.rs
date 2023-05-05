@@ -17,11 +17,3 @@ pub trait Command<T> {
     /// - `Err(ErrorType)`: [`ErrorType`] is returned when an error occurs during operation.
     fn execute(&self, value: Option<RawValue>) -> Result<Option<T>, ErrorType>;
 }
-
-
-
-
-
-
-
-

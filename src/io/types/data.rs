@@ -1,6 +1,4 @@
-use crate::io::{
-    IOKind, RawValue,
-};
+use crate::io::{IOKind, RawValue};
 use serde::{Deserialize, Serialize};
 
 /// Encapsulates I/O data. Provides a unified data type for returning data.

@@ -11,7 +11,7 @@ use std::sync::Arc;
 
 use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::{writable_or_create, Def};
-use crate::io::{IOEvent, IdType, DeviceMetadata};
+use crate::io::{DeviceMetadata, IOEvent, IdType};
 use crate::settings::Settings;
 use crate::storage::Persistent;
 
@@ -102,11 +102,13 @@ impl Log {
         self.log.iter()
     }
 
-    fn push(&mut self, timestamp: DateTime<Utc>, event: IOEvent) -> Result<&mut IOEvent, ErrorType> {
+    fn push(
+        &mut self,
+        timestamp: DateTime<Utc>,
+        event: IOEvent,
+    ) -> Result<&mut IOEvent, ErrorType> {
         match self.log.entry(timestamp) {
-            Entry::Occupied(_) => {
-                Err(Error::new(ErrorKind::ContainerError, "Key already exists"))
-            }
+            Entry::Occupied(_) => Err(Error::new(ErrorKind::ContainerError, "Key already exists")),
             Entry::Vacant(entry) => Ok(entry.insert(event)),
         }
     }
@@ -166,7 +168,7 @@ impl Persistent for Log {
 mod tests {
     use crate::action::IOCommand;
     use crate::helpers::Def;
-    use crate::io::{Device, DeviceType, IOKind, RawValue, IdType, GenericInput};
+    use crate::io::{Device, DeviceType, GenericInput, IOKind, IdType, RawValue};
     use crate::storage::{Chronicle, Log, Persistent};
     use std::path::Path;
     use std::time::Duration;
@@ -191,16 +193,13 @@ mod tests {
         const COMMAND: IOCommand = IOCommand::Input(move || RawValue::default());
 
         /* NOTE: More complex `IOEvent` objects *could* be checked, but we are trusting `serde`.
-           These tests only count the number of `IOEvent`'s added. */
+        These tests only count the number of `IOEvent`'s added. */
 
         let filename;
         // test save
         {
-            let device = GenericInput::new(
-                String::from(SENSOR_NAME),
-                ID,
-                Some(IOKind::Flow),
-            ).add_command(COMMAND)
+            let device = GenericInput::new(String::from(SENSOR_NAME), ID, Some(IOKind::Flow))
+                .add_command(COMMAND)
                 .init_log(None);
             let log = device.log().unwrap();
 
@@ -219,11 +218,8 @@ mod tests {
         // test load
         // build back up then load
         {
-            let device = GenericInput::new(
-                String::from(SENSOR_NAME),
-                ID,
-                Some(IOKind::Flow),
-            ).add_command(COMMAND)
+            let device = GenericInput::new(String::from(SENSOR_NAME), ID, Some(IOKind::Flow))
+                .add_command(COMMAND)
                 .init_log(None);
             let log = device.log().unwrap();
 

@@ -49,13 +49,13 @@ impl SchedRoutineHandler {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{Utc, Duration};
+    use chrono::{Duration, Utc};
 
     use crate::{
-        action::{SchedRoutineHandler, IOCommand, Routine},
-        io::{RawValue, DeviceMetadata},
-        storage::Log,
+        action::{IOCommand, Routine, SchedRoutineHandler},
         helpers::Def,
+        io::{DeviceMetadata, RawValue},
+        storage::Log,
     };
 
     #[test]
@@ -89,7 +89,6 @@ mod tests {
 
         scheduled.push(routine);
         assert_eq!(2, scheduled.scheduled().into_iter().count());
-
     }
 
     #[test]

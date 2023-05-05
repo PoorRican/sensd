@@ -1,16 +1,16 @@
 //! Cybernetic abstractions
-mod command;
-mod handler;
-mod publisher;
-mod routine;
 mod action;
 mod actions;
+mod command;
+mod handler;
 mod io;
+mod publisher;
+mod routine;
 
-pub use command::*;
-pub use handler::SchedRoutineHandler;
-pub use publisher::Publisher;
-pub use routine::Routine;
 pub use action::{Action, BoxedAction};
 pub use actions::*;
+pub use command::*;
+pub use handler::SchedRoutineHandler;
 pub use io::IOCommand;
+pub use publisher::Publisher;
+pub use routine::Routine;
