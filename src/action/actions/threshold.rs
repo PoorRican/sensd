@@ -1,6 +1,6 @@
 use crate::action::{Action, BoxedAction};
 use crate::errors::{ErrorType, Error, ErrorKind};
-use crate::io::{IOEvent, RawValue, DeferredDevice, DeviceType};
+use crate::io::{IOEvent, RawValue, DeferredDevice, DeviceType, DeviceWrapper};
 use std::fmt::{Display, Formatter};
 use std::ops::DerefMut;
 

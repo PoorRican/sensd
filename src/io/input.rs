@@ -1,4 +1,4 @@
-use crate::action::{Command, IOCommand, Publisher, PublisherInstance};
+use crate::action::{Command, IOCommand, Publisher};
 use crate::errors::ErrorType;
 use crate::helpers::Def;
 use crate::io::{no_internal_closure, Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, DeviceType};
@@ -8,7 +8,7 @@ use crate::storage::{Chronicle, Log};
 pub struct GenericInput {
     metadata: DeviceMetadata,
     log: Option<Def<Log>>,
-    publisher: Option<PublisherInstance>,
+    publisher: Option<Publisher>,
     command: Option<IOCommand>,
 }
 
@@ -80,7 +80,7 @@ impl GenericInput {
     /// No error is raised when there is no associated publisher.
     fn propagate(&mut self, event: &IOEvent) {
         if let Some(publisher) = &mut self.publisher {
-            publisher.notify(&event);
+            publisher.propagate(&event);
         };
     }
 
@@ -104,7 +104,7 @@ impl GenericInput {
     pub fn init_publisher(&mut self) -> &mut Self {
         match self.publisher {
             None => {
-                self.publisher = Some(PublisherInstance::default());
+                self.publisher = Some(Publisher::default());
             }
             _ => {
                 eprintln!("Publisher already exists!");
@@ -113,7 +113,7 @@ impl GenericInput {
         self
     }
 
-    pub fn set_publisher(&mut self, publisher: PublisherInstance) -> Result<(), ()> {
+    pub fn set_publisher(&mut self, publisher: Publisher) -> Result<(), ()> {
         match self.publisher {
             None => {
                 self.publisher = Some(publisher);
@@ -123,11 +123,11 @@ impl GenericInput {
         }
     }
 
-    pub fn publisher_mut(&mut self) -> &mut Option<PublisherInstance> {
+    pub fn publisher_mut(&mut self) -> &mut Option<Publisher> {
         &mut self.publisher
     }
 
-    pub fn publisher(&self) -> &Option<PublisherInstance> {
+    pub fn publisher(&self) -> &Option<Publisher> {
         &self.publisher
 
     }
@@ -149,7 +149,7 @@ impl Chronicle for GenericInput {
 // Testing
 #[cfg(test)]
 mod tests {
-    use crate::action::{IOCommand, PublisherInstance};
+    use crate::action::{IOCommand, Publisher};
     use crate::io::{Device, GenericInput, RawValue};
     use crate::storage::Chronicle;
 
@@ -199,7 +199,7 @@ mod tests {
 
         assert_eq!(false, input.has_publisher());
 
-        let publisher = PublisherInstance::default();
+        let publisher = Publisher::default();
         input.set_publisher(publisher).unwrap();
 
         assert_eq!(true, input.has_publisher());
