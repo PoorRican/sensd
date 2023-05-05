@@ -6,8 +6,8 @@ use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
 
 /// Type used for passing between IO abstractions.
 ///
-/// An enum is used to avoid defining a generic `IOEvent` which cannot be
-/// stored heterogeneously alongside differing types.
+/// An enum is used to avoid a generic implementation of [`crate::storage::Log`] caused by
+/// a generic implementation of [`crate::io::IOEvent`].
 ///
 /// # Notes
 /// The implemented types have been chosen as a good fit for GPIO. However,
@@ -21,6 +21,16 @@ pub enum RawValue {
     Int(i32),
     Float(f32),
 }
+
+impl RawValue {
+    pub fn is_numeric(&self) -> bool {
+        match self {
+            Self::Binary(_) => false,
+            _ => true,
+        }
+    }
+}
+
 impl Default for RawValue {
     fn default() -> Self {
         RawValue::PosInt8(u8::default())
@@ -100,6 +110,7 @@ impl Add for RawValue {
         }
     }
 }
+
 impl Sub for RawValue {
     type Output = RawValue;
 
@@ -115,6 +126,7 @@ impl Sub for RawValue {
         }
     }
 }
+
 impl Mul for RawValue {
     type Output = RawValue;
 
@@ -130,6 +142,7 @@ impl Mul for RawValue {
         }
     }
 }
+
 impl Div for RawValue {
     type Output = RawValue;
 
@@ -150,7 +163,6 @@ impl Neg for RawValue {
     type Output = RawValue;
 
     fn neg(self) -> RawValue {
-        // TODO: Catch binary as type
         match self {
             RawValue::Int(x) => RawValue::Int(-x),
             RawValue::Float(x) => RawValue::Float(-x),
