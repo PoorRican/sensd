@@ -16,12 +16,12 @@ extern crate chrono;
 extern crate sensd;
 extern crate serde;
 
-use sensd::action::{EvaluationFunction, Comparison, IOCommand};
-use sensd::builders::ActionBuilder;
+use std::ops::DerefMut;
+use sensd::action::{Comparison, IOCommand};
 use sensd::errors::ErrorType;
-use sensd::io::{IODirection, IOKind, RawValue, DeferredDevice, IdType};
+use sensd::io::{IODirection, IOKind, RawValue, DeferredDevice, IdType, DeviceType};
 use sensd::settings::Settings;
-use sensd::storage::{Persistent, Group, MappedCollection};
+use sensd::storage::{Persistent, Group};
 
 use std::sync::Arc;
 
@@ -47,7 +47,7 @@ static mut EXTERNAL_VALUE: RawValue = RawValue::Int8(0);
 /// name - Name to be converted to string
 ///
 /// # Returns
-/// Simgle initialized Group
+/// Single initialized Group
 fn init(name: &str) -> Group {
     let settings: Arc<Settings> = Arc::new(Settings::initialize());
     println!("Initialized settings");
@@ -81,27 +81,23 @@ unsafe fn setup_poller(poller: &mut Group) {
 }
 
 /// █▓▒░ Add a single `ThresholdNotifier` to all device in `Group`.
-fn build_subscribers(poller: &mut Group) {
+fn build_actions(poller: &mut Group) {
     println!("\n█▓▒░ Building subscribers ...");
 
-    let input: DeferredDevice = poller.inputs.get(INPUT_ID).unwrap().clone();
-    let output: DeferredDevice = poller.outputs.get(OUTPUT_ID).unwrap().clone();
+    let input: DeferredDevice = poller.inputs.get(&INPUT_ID).unwrap().clone();
+    let output: DeferredDevice = poller.outputs.get(&OUTPUT_ID).unwrap().clone();
 
-    println!("\n- Initializing builder ...");
-    let mut builder = ActionBuilder::new(input.clone()).unwrap();
+    if let DeviceType::Input(device) = input.try_lock().unwrap().deref_mut() {
+        device.init_publisher();
+        println!("- Initializing subscriber ...");
 
-    println!("- Initializing subscriber for input ...");
-
-    let name = format!("Subscriber for Input:{}", INPUT_ID);
-    let threshold = RawValue::Int8(THRESHOLD);
-    let trigger = Comparison::LT;
-
-    let evaluator = EvaluationFunction::Threshold(
-        |value, threshold| 
-        threshold - value
-    );
-    // TODO: output device should be passed to `::add_threshold()`
-    builder.add_threshold(&name, threshold, trigger, evaluator, Some(output));
+        let name = format!("Subscriber for Input:{}", INPUT_ID);
+        let threshold = RawValue::Int8(THRESHOLD);
+        let trigger = Comparison::LT;
+        if let Some(publisher) = device.publisher_mut() {
+            publisher.attach_threshold(&name, threshold, trigger, Some(output.clone()));
+        }
+    }
 
     println!("\n... Finished Initializing subscribers\n");
 }
@@ -125,7 +121,7 @@ fn main() {
     let mut poller = init("main");
     unsafe { setup_poller(&mut poller) }
 
-    build_subscribers(&mut poller);
+    build_actions(&mut poller);
 
     println!("█▓▒░ Beginning polling ░▒▓█\n");
 

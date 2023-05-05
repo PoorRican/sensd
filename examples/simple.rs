@@ -3,7 +3,7 @@
 //! # Description 
 //!
 //! This example displays the use of the "ThresholdAction" subscriber. Two input devices are
-//! initalized using the `DeviceLog` builder - both devices return a static float value.
+//! initialized using the `DeviceLog` builder - both devices return a static float value.
 //!
 //! # Note
 //!
@@ -14,19 +14,19 @@
 //!
 //! ## █▓▒░ Operating Frequency
 //! Device polling is not multi-threaded and the frequency of the event loop is determined by a
-//! static frequency `FREQUENCY`. There might be a usecase where frequency needs to be modulated,
+//! static frequency `FREQUENCY`. There might be a use case where frequency needs to be modulated,
 //! such as during a control cycle for more accurate control. Reduced polling time might be useful
 //! in embedded scenarios requiring both power conservation and accurate control.
 extern crate chrono;
 extern crate sensd;
 extern crate serde;
 
+use std::ops::DerefMut;
 use std::sync::Arc;
 
-use sensd::action::{Comparison, IOCommand, EvaluationFunction};
-use sensd::builders::ActionBuilder;
+use sensd::action::{Comparison, IOCommand};
 use sensd::errors::ErrorType;
-use sensd::io::{IODirection, IOKind, RawValue};
+use sensd::io::{DeviceType, IODirection, IOKind, RawValue};
 use sensd::settings::Settings;
 use sensd::storage::{Persistent, Group};
 
@@ -45,7 +45,7 @@ const FREQUENCY: std::time::Duration = std::time::Duration::from_secs(1);
 /// name - Name to be converted to string
 ///
 /// # Returns
-/// Simgle initialized Group
+/// Single initialized Group
 fn init(name: &str) -> Group {
     let settings: Arc<Settings> = Arc::new(Settings::initialize());
     println!("Initialized settings");
@@ -82,25 +82,23 @@ fn setup_poller(poller: &mut Group) {
 ///
 /// This demonstrates the initialization of `ThresholdNotifier` subscribers and shows how
 /// subscribers are added to `Group` via `::.
-fn build_subscribers(poller: &mut Group) {
+fn build_actions(poller: &mut Group) {
     println!("\n█▓▒░ Building subscribers ...");
 
-    let evaluator = EvaluationFunction::Threshold(
-        |value, threshold| 
-        threshold - value
-    );
-
     for (id, input) in poller.inputs.iter() {
-        println!("\n- Initializing builder ...");
 
-        let mut builder = ActionBuilder::new(input.clone()).unwrap();
+        if let DeviceType::Input(device) = input.try_lock().unwrap().deref_mut() {
+            device.init_publisher();
+            println!("- Initializing subscriber ...");
 
-        println!("- Initializing subscriber ...");
+            let name = format!("Subscriber for Input:{}", id);
+            let threshold = RawValue::Float(1.0);
+            let trigger = Comparison::GT;
+            if let Some(publisher) = device.publisher_mut() {
+                publisher.attach_threshold(&name, threshold, trigger, None);
+            }
+        }
 
-        let name = format!("Subscriber for Input:{}", id);
-        let threshold = RawValue::Float(1.0);
-        let trigger = Comparison::GT;
-        builder.add_threshold(&name, threshold, trigger, evaluator.clone(), None);
     }
 
     println!("\n... Finished Initializing subscribers\n");
@@ -125,7 +123,7 @@ fn main() {
     let mut poller = init("main");
 
     setup_poller(&mut poller);
-    build_subscribers(&mut poller);
+    build_actions(&mut poller);
 
     println!("█▓▒░ Beginning polling ░▒▓█\n");
 

@@ -236,7 +236,7 @@ mod tests {
 
     #[should_panic]
     #[test]
-    fn test_rawvalue_sub_miscmatched() {
+    fn test_rawvalue_sub_mismatched() {
         let a = RawValue::Int(5);
         let b = RawValue::Float(7.0);
         let _ = a - b;
@@ -256,7 +256,6 @@ mod tests {
     }
 
     #[should_panic]
-
     #[test]
     fn test_rawvalue_mul_mismatched() {
         let a = RawValue::PosInt8(5);

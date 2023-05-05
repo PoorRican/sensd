@@ -10,52 +10,61 @@
 //! `Input::publisher().notify()` should also be called as well. `notify()` should thereby call
 //! `Subscriber::evaluate()` on any listeners.
 
-use crate::action::SubscriberType;
-use crate::helpers::{Deferrable, Deferred};
-use crate::io::IOEvent;
-use std::sync::{Arc, Mutex};
+use crate::action::{Action, Comparison, SchedRoutineHandler, ThresholdAction};
+use crate::io::{DeferredDevice, IOEvent, RawValue};
 
-pub trait NamedRoutine {
-    fn name(&self) -> String;
-}
+pub type BoxedAction = Box<dyn Action>;
 
 /// Trait to implement on Input objects
-pub trait Publisher: Deferrable {
-    fn subscribers(&self) -> &[Deferred<SubscriberType>];
-    fn subscribe(&mut self, subscriber: Deferred<SubscriberType>);
+pub trait Publisher {
+    fn subscribers(&self) -> &[BoxedAction];
+    fn subscribe(&mut self, subscriber: BoxedAction);
 
     fn notify(&mut self, data: &IOEvent);
 }
 
 /// Concrete instance of publisher object
-#[derive(Default, Clone)]
+#[derive(Default)]
 pub struct PublisherInstance {
-    subscribers: Vec<Deferred<SubscriberType>>,
+    actions: Vec<BoxedAction>,
+    scheduled: SchedRoutineHandler,
+}
+
+impl PublisherInstance {
+    /// Attempt to run scheduled `Routine` structs
+    pub fn attempt_routines(&mut self) {
+        self.scheduled.attempt_routines()
+    }
+
+    pub fn attach_threshold(&mut self,
+                            name: &str,
+                            threshold: RawValue,
+                            trigger: Comparison,
+                            output: Option<DeferredDevice>,
+    ) -> &mut Self {
+        let action = ThresholdAction::new(name.to_string(), threshold, trigger, output)
+            .into_boxed();
+        self.subscribe(action);
+        self
+    }
 }
 
 impl Publisher for PublisherInstance {
-    fn subscribers(&self) -> &[Deferred<SubscriberType>] {
-        &self.subscribers
+    fn subscribers(&self) -> &[BoxedAction] {
+        &self.actions
     }
 
-    fn subscribe(&mut self, subscriber: Deferred<SubscriberType>) {
-        self.subscribers.push(subscriber)
+    fn subscribe(&mut self, subscriber: BoxedAction) {
+        self.actions.push(subscriber)
     }
 
-    /// Call `Subscriber::evaluate()` on all associated `Subscriber` implementations.
+    /// Call [`Action::evaluate()`] on all associated [`Action`] implementations.
+    /// TODO: scheduled routines should be returned, then added to `scheduled`
     fn notify(&mut self, data: &IOEvent) {
-        for subscriber in self.subscribers.iter_mut() {
+        for subscriber in self.actions.iter_mut() {
             // TODO: `IOEvent` shall be sent to `OutputDevice` and shall be logged
             // TODO: results should be aggregated
-            subscriber.lock().unwrap().evaluate(data);
+            subscriber.evaluate(data);
         }
-    }
-}
-
-impl Deferrable for PublisherInstance {
-    type Inner = PublisherInstance;
-
-    fn deferred(self) -> Deferred<Self::Inner> {
-        Arc::new(Mutex::new(self))
     }
 }

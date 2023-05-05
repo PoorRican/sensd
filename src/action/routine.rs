@@ -1,8 +1,8 @@
 use crate::action::{Command, IOCommand};
 use crate::errors::ErrorType;
-use crate::helpers::Deferred;
+use crate::helpers::Def;
 use crate::io::{DeviceMetadata, IOEvent, RawValue};
-use crate::storage::{HasLog, Log};
+use crate::storage::{Chronicle, Log};
 use chrono::{DateTime, Utc};
 use std::sync::{Arc, Mutex, Weak};
 
@@ -23,43 +23,60 @@ pub struct Routine {
 
     /// Copy of owning device metadata
     ///
-    /// A copy is used to avoid locking issues since scheduled commands might be time critical.
+    /// A copy of metadata avoids possible locking issues from deferred [`DeviceMetadata`] types.
+    /// Avoidance of locking issues is crucial to since execution of [`Routine`] is assumed to be
+    /// critical and should be executed in real-time.
+    // TODO: create as optional once issue #96 has been implemented
     metadata: DeviceMetadata,
 
     /// Value to pass to `IOCommand`
     value: RawValue,
 
     /// Weak reference to log for originating device
-    log: Weak<Mutex<Log>>,
+    log: Option<Weak<Mutex<Log>>>,
 
     command: IOCommand,
 }
 
 impl Routine {
-    pub fn new(
+    pub fn new<M, L>(
         timestamp: DateTime<Utc>,
-        metadata: DeviceMetadata,
+        metadata: M,
         value: RawValue,
-        log: Deferred<Log>,
+        log: L,
         command: IOCommand,
-    ) -> Self {
-        let log = Arc::downgrade(&log);
+    ) -> Self where 
+        M: Into<Option<DeviceMetadata>>,
+        L: Into<Option<Def<Log>>>,
+    {
+        // downgrade `Def` reference to `sync::Weak` reference
+        let weak_log: Option<Weak<Mutex<Log>>>;
+        if let Some(log) = log.into() {
+            weak_log = Some(Arc::downgrade(&log.into()));
+        } else {
+            weak_log = None;
+        }
+
+        let metadata: DeviceMetadata = metadata.into().unwrap_or_default();
+
         Self {
             timestamp,
             metadata,
             value,
-            log,
+            log: weak_log,
             command,
         }
     }
+
     /// Main polling function 
     ///
-    /// Acts as wrapper for `Command::execute()`. Checks scheduled time, then executes command.
+    /// Acts as wrapper for [`Command::execute()`]. Checks scheduled time, then executes command.
     /// `IOEvent` is automatically added to device log.
     ///
     /// # Returns
-    /// bool based on if execution was successful or not. This value should be used to drop
-    /// `Routine` from external store.
+    /// The returned value should be used for dropping [`Routine`] from external collection
+    /// `true`: if execution of [`IOCommand`] was successful
+    /// `false`: if [`IOCommand`] has not been executed
     pub fn attempt(&self) -> bool {
         let now = Utc::now();
         if now >= self.timestamp {
@@ -85,7 +102,7 @@ impl Command<IOEvent> for Routine {
     fn execute(&self, value: Option<RawValue>) -> Result<Option<IOEvent>, ErrorType> {
         match self.command.execute(value) {
             Ok(_) => {
-                let event = IOEvent::generate(&self.metadata, self.timestamp, value.unwrap());
+                let event = IOEvent::new(&self.metadata, self.timestamp, value.unwrap());
                 Ok(Some(event))
             }
             Err(e) => Err(e),
@@ -93,18 +110,23 @@ impl Command<IOEvent> for Routine {
     }
 }
 
-impl HasLog for Routine {
-    fn log(&self) -> Option<Deferred<Log>> {
-        Some(self.log.upgrade().unwrap())
+impl Chronicle for Routine {
+    fn log(&self) -> Option<Def<Log>> {
+        if let Some(weak_log) = self.log.clone() {
+            if let Some(weak_ref) = weak_log.upgrade() {
+                return Some(Def::from(weak_ref))
+            }
+        } 
+        None
     }
 }
 
 #[cfg(test)]
-mod tests {
+mod functionality_tests {
     use crate::action::{IOCommand, Routine};
-    use crate::helpers::Deferrable;
+    use crate::helpers::Def;
     use crate::io::{DeviceMetadata, RawValue};
-    use crate::storage::{Log, MappedCollection};
+    use crate::storage::Log;
     use chrono::{Duration, Utc};
 
     const REGISTER_DEFAULT: RawValue = RawValue::Binary(false);
@@ -125,7 +147,7 @@ mod tests {
         }
         let metadata = DeviceMetadata::default();
 
-        let log = Log::new(metadata.id, None).deferred();
+        let log = Def::new(Log::new(&metadata, None));
 
         let command = IOCommand::Output(
             move |val| unsafe {
@@ -149,6 +171,66 @@ mod tests {
         unsafe {
             assert_eq!(REGISTER, value);
         }
-        assert_eq!(log.try_lock().unwrap().length(), 1);
+        assert_eq!(log.try_lock().unwrap().iter().count(), 1);
+    }
+}
+
+#[cfg(test)]
+mod meta_tests {
+    use chrono::Utc;
+
+    use crate::{io::{DeviceMetadata, RawValue}, action::{IOCommand, Routine}, storage::Log, helpers::Def};
+    #[test]
+    fn test_constructor_w_none() {
+        let timestamp = Utc::now();
+        let value = RawValue::Binary(true);
+        let command = IOCommand::Output(|_| { Ok(()) });
+
+        let routine = Routine::new(timestamp, None, value, None, command);
+
+        assert!(routine.attempt());
+    }
+
+    #[test]
+    fn test_constructor_w_device() {
+        let metadata = DeviceMetadata::default();
+
+        let timestamp = Utc::now();
+        let value = RawValue::Binary(true);
+        let command = IOCommand::Output(|_| { Ok(()) });
+
+        let routine = Routine::new(timestamp, metadata, value, None, command);
+
+        assert!(routine.attempt());
+    }
+
+    #[test]
+    fn test_constructor_w_log() {
+        let metadata = DeviceMetadata::default();
+
+        let log = Def::new(Log::new(&metadata, None));
+
+        let timestamp = Utc::now();
+        let value = RawValue::Binary(true);
+        let command = IOCommand::Output(|_| { Ok(()) });
+
+
+        let routine = Routine::new(timestamp, None, value, log.clone(), command);
+        assert!(routine.attempt());
+    }
+
+    #[test]
+    fn test_constructor_w_both() {
+        let metadata = DeviceMetadata::default();
+
+        let log = Def::new(Log::new(&metadata, None));
+
+        let timestamp = Utc::now();
+        let value = RawValue::Binary(true);
+        let command = IOCommand::Output(|_| { Ok(()) });
+
+
+        let routine = Routine::new(timestamp, metadata, value, log.clone(), command);
+        assert!(routine.attempt());
     }
 }

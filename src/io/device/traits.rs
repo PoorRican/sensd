@@ -1,12 +1,10 @@
 use core::fmt::Formatter;
 use chrono::Utc;
 use crate::action::IOCommand;
-use crate::helpers::{Deferred, Deferrable};
-use crate::io::{
-    IdType, IOKind, DeviceMetadata, IODirection, RawValue, IOEvent,
-};
+use crate::helpers::Def;
+use crate::io::{IdType, IOKind, DeviceMetadata, IODirection, RawValue, IOEvent, DeviceType};
 use crate::settings::Settings;
-use crate::storage::{HasLog, Log};
+use crate::storage::{Chronicle, Log};
 use std::sync::Arc;
 
 /// Defines a minimum interface for interacting with GPIO devices.
@@ -15,14 +13,14 @@ use std::sync::Arc;
 /// Additionally, an accessor, `metadata()` is defined to provide for the facade methods to access
 /// device name, id, direction, and kind. Therefore, implementing structs shall implement a field
 /// `metadata` that is mutably accessed through the reciprocal getter method.
-pub trait Device: HasLog {
+pub trait Device: Chronicle {
     /// Creates a new instance of the device with the given parameters.
     ///
     /// `name`: name of device.
     /// `id`: device ID.
     /// `kind`: kind of I/O device. Optional argument.
     /// `log`: Optional deferred owned log for the device.
-    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Option<Deferred<Log>>) -> Self
+    fn new(name: String, id: IdType, kind: Option<IOKind>) -> Self
     where
         Self: Sized;
 
@@ -64,21 +62,27 @@ pub trait Device: HasLog {
     /// device trait objects and any of it's owners (i.e.: `PollGroup`).
     fn generate_event(&self, value: RawValue) -> IOEvent {
         let dt = Utc::now();
-        IOEvent::generate(self.metadata(), dt, value)
+        IOEvent::new(self.metadata(), dt, value)
     }
 
     /// Setter for `command` field
-    fn add_command(&mut self, command: IOCommand);
+    fn add_command(self, command: IOCommand) -> Self
+        where Self: Sized;
 
     /// Setter for `log` field
-    fn add_log(&mut self, log: Deferred<Log>);
+    fn set_log(&mut self, log: Def<Log>);
 
     /// Initialize, set, and return log.
-    fn init_log(&mut self, settings: Option<Arc<Settings>>) -> Deferred<Log> {
-        let log = Log::new(self.id(), settings).deferred();
-        self.add_log(log.clone());
-        log
+    fn init_log(mut self, settings: Option<Arc<Settings>>) -> Self
+    where
+        Self: Sized
+    {
+        let log = Def::new(Log::new(&self.metadata(), settings));
+        self.set_log(log);
+        self
     }
+
+    fn into_variant(self) -> DeviceType;
 }
 
 pub trait DeviceTraits {

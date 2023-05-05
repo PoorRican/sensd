@@ -1,4 +1,4 @@
-pub use crate::helpers::{Deferrable, Deferred};
+pub use crate::helpers::Def;
 pub use crate::io::{
     DeviceWrapper, DeviceTraits, Device,
     GenericInput, GenericOutput,
@@ -9,13 +9,6 @@ pub use std::sync::{Arc, Mutex};
 pub enum DeviceType {
     Input(GenericInput),
     Output(GenericOutput),
-}
-impl Deferrable for DeviceType {
-    type Inner = DeviceType;
-
-    fn deferred(self) -> Deferred<Self::Inner> {
-        Arc::new(Mutex::new(self))
-    }
 }
 impl DeviceWrapper for DeviceType {
     fn is_input(&self) -> bool {

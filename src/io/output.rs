@@ -1,28 +1,16 @@
 use crate::action::{Command, IOCommand};
 use crate::errors::ErrorType;
-use crate::helpers::{Deferrable, Deferred};
-use crate::io::{
-    no_internal_closure, Device, DeviceMetadata, DeviceType, IODirection, IOEvent, IOKind, RawValue,
-    IdType,
-};
-use crate::storage::{HasLog, Log};
-use std::sync::{Arc, Mutex};
+use crate::helpers::Def;
+use crate::io::{no_internal_closure, Device, DeviceMetadata, IODirection, IOEvent, IOKind, RawValue, IdType, DeviceType};
+use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
 pub struct GenericOutput {
     metadata: DeviceMetadata,
     // cached state
     state: RawValue,
-    log: Option<Deferred<Log>>,
+    log: Option<Def<Log>>,
     command: Option<IOCommand>,
-}
-
-impl Deferrable for GenericOutput {
-    type Inner = DeviceType;
-    /// Return wrapped `OutputType` in `Deferred`
-    fn deferred(self) -> Deferred<Self::Inner> {
-        Arc::new(Mutex::new(DeviceType::Output(self)))
-    }
 }
 
 // Implement traits
@@ -35,7 +23,7 @@ impl Device for GenericOutput {
     /// * `id`: arbitrary, numeric ID to differentiate from other devices
     ///
     /// returns: GenericOutput
-    fn new(name: String, id: IdType, kind: Option<IOKind>, log: Option<Deferred<Log>>) -> Self
+    fn new(name: String, id: IdType, kind: Option<IOKind>) -> Self
     where
         Self: Sized,
     {
@@ -44,6 +32,7 @@ impl Device for GenericOutput {
         let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Output);
 
         let command = None;
+        let log = None;
 
         Self {
             metadata,
@@ -57,12 +46,20 @@ impl Device for GenericOutput {
         &self.metadata
     }
 
-    fn add_command(&mut self, command: IOCommand) {
+    fn add_command(mut self, command: IOCommand) -> Self
+    where
+        Self: Sized
+    {
         self.command = Some(command);
+        self
     }
 
-    fn add_log(&mut self, log: Deferred<Log>) {
+    fn set_log(&mut self, log: Def<Log>) {
         self.log = Some(log)
+    }
+
+    fn into_variant(self) -> DeviceType {
+        DeviceType::Output(self)
     }
 }
 
@@ -102,8 +99,8 @@ impl GenericOutput {
     }
 }
 
-impl HasLog for GenericOutput {
-    fn log(&self) -> Option<Deferred<Log>> {
+impl Chronicle for GenericOutput {
+    fn log(&self) -> Option<Def<Log>> {
         self.log.clone()
     }
 }
@@ -112,7 +109,7 @@ impl HasLog for GenericOutput {
 mod tests {
     use crate::action::IOCommand;
     use crate::io::{Device, GenericOutput, RawValue};
-    use crate::storage::MappedCollection;
+    use crate::storage::Chronicle;
 
     /// Dummy output command for testing.
     /// Accepts value and returns `Ok(())`
@@ -134,10 +131,12 @@ mod tests {
     #[test]
     /// Test that `tx()` was called, cached state was updated, and IOEvent added to log.
     fn test_write() {
-        let mut output = GenericOutput::default();
-        let log = output.init_log(None);
+        let mut output =
+            GenericOutput::default()
+                .init_log(None);
+        let log = output.log().unwrap();
 
-        assert_eq!(log.try_lock().unwrap().length(), 0);
+        assert_eq!(log.try_lock().unwrap().iter().count(), 0);
 
         let value = RawValue::Binary(true);
         output.command = Some(COMMAND);
@@ -158,6 +157,6 @@ mod tests {
         assert_eq!(output.direction(), event.direction);
 
         // assert that event was added to log
-        assert_eq!(log.try_lock().unwrap().length(), 1);
+        assert_eq!(log.try_lock().unwrap().iter().count(), 1);
     }
 }

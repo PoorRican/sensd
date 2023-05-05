@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::io::{DeviceMetadata, IOData, IODirection, RawValue, IdTraits, IdType};
 
-/// Encapsulates `IOData` alongside of timestamp and device data
+/// Encapsulates [`IOData`] alongside of timestamp and device data
 #[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub struct IOEvent {
     pub id: IdType,
@@ -14,30 +14,27 @@ pub struct IOEvent {
     pub data: IOData,
 }
 
-// TODO: add kind to `IOEvent`
 impl IOEvent {
-    /// Generate I/O event.
+    /// Constructor for [`IOEvent`]
     ///
     /// # Arguments
     ///
-    /// * `device`: struct that has implemented the `Device` trait
+    /// * `metadata`: device metadata
     /// * `timestamp`: timestamp of event
     /// * `value`: value to include in
     ///
-    /// returns: SensorEvent
+    /// # Returns
+    /// `IOEvent` based on device metadata, timestamp, and value
     ///
     /// # Examples
     ///
     /// ```
     ///
     /// ```
-    pub fn generate(metadata: &DeviceMetadata, timestamp: DateTime<Utc>, value: RawValue) -> Self {
+    pub fn new(metadata: &DeviceMetadata, timestamp: DateTime<Utc>, value: RawValue) -> Self {
         let direction = metadata.direction;
         let id = metadata.id;
-        let data = IOData {
-            kind: metadata.kind,
-            value,
-        };
+        let data = IOData::new(metadata.kind, value);
         IOEvent {
             id,
             timestamp,

@@ -10,3 +10,10 @@ pub struct IOData {
     pub kind: IOKind,
     pub value: RawValue,
 }
+
+impl IOData {
+    pub fn new(kind: IOKind, value: RawValue) -> Self {
+        let kind = kind;
+        Self { kind, value }
+    }
+}

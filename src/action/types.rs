@@ -33,6 +33,12 @@ impl IOCommand {
     }
 }
 
+impl Default for IOCommand {
+    fn default() -> Self {
+        IOCommand::Output(|_| Ok(()))
+    }
+}
+
 impl Command<RawValue> for IOCommand {
     /// Execute internally stored function.
     ///
@@ -66,22 +72,35 @@ impl Command<RawValue> for IOCommand {
     }
 }
 
-/// Container for data processing functions.
-///
-/// Variants are function types that at minimum accept input data, and return a `RawValue` to be
-/// passed to `IOCommand`.
-///
-// TODO: rename to "Evaluator"
-// TODO: Return type for threshold should be `Option`
-#[derive(Clone)]
-pub enum EvaluationFunction {
-    /// Calculate value to write based on threshold parameter and input value
-    Threshold(fn(value: RawValue, threshold: RawValue) -> RawValue)
-}
-
-
 /// Print a warning on console stderr
 fn unused_value() {
     const MSG: &str = "Unused value passed when reading input...";
     eprintln!("{}", MSG);
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::action::{Command, IOCommand};
+    use crate::io::{IODirection, RawValue};
+
+    #[test]
+    #[should_panic]
+    fn test_output_fails_wo_value() {
+        let command = IOCommand::Output(|_| Ok(()));
+        command.execute(None).unwrap();
+    }
+
+    #[test]
+    fn test_default() {
+        let command = IOCommand::default();
+        assert_eq!(command.direction(), IODirection::Output);
+        assert_eq!(None, command.execute(Some(RawValue::Binary(true))).unwrap());
+    }
+}
+
+
+
+
+
+
+
