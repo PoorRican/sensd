@@ -167,7 +167,13 @@ impl Neg for RawValue {
             RawValue::Int(x) => RawValue::Int(-x),
             RawValue::Float(x) => RawValue::Float(-x),
             RawValue::Int8(x) => RawValue::Int8(-x),
-            _ => panic!("Cannot negate non-numeric types"),
+            RawValue::Binary(x) => RawValue::Binary(
+                match x {
+                    true => false,
+                    false => true
+                }
+            ),
+            _ => panic!("Cannot negate unsigned types"),
         }
     }
 }
