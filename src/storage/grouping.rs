@@ -95,6 +95,50 @@ impl Group {
         }
     }
 
+    pub fn build_input(
+        &mut self,
+        name: &str,
+        id: &IdType,
+        kind: &Option<IOKind>,
+        command: &IOCommand,
+    ) -> Result<Def<DeviceType>, ErrorType> {
+        let settings = Some(self.settings.clone());
+
+        let input = GenericInput::new(String::from(name), *id, *kind)
+            .init_log(settings)
+            .init_publisher()
+            .set_command(command.clone())
+            .into_variant();
+
+        let device = Def::new(input);
+
+        self.inputs.insert(*id, device.clone());
+
+        Ok(device)
+    }
+
+    pub fn build_output(
+        &mut self,
+        name: &str,
+        id: &IdType,
+        kind: &Option<IOKind>,
+        command: &IOCommand,
+    ) -> Result<Def<DeviceType>, ErrorType> {
+        let settings = Some(self.settings.clone());
+
+        let output = GenericOutput::new(String::from(name), *id, *kind)
+            .init_log(settings)
+            .set_command(command.clone())
+            .into_variant();
+
+        let device = Def::new(output);
+
+        self.outputs.insert(*id, device.clone());
+
+        Ok(device)
+    }
+
+    #[deprecated]
     /// Build device and log and locally store both.
     ///
     /// # Errors
@@ -108,7 +152,6 @@ impl Group {
         direction: &IODirection,
         command: &IOCommand,
     ) -> Result<Def<DeviceType>, ErrorType> {
-        // variable allowed to go out-of-scope because `poller` owns reference
         let settings = Some(self.settings.clone());
 
         let device;
@@ -116,6 +159,7 @@ impl Group {
             IODirection::Input => {
                 let input = GenericInput::new(String::from(name), *id, *kind)
                     .init_log(settings)
+                    .init_publisher()
                     .set_command(command.clone())
                     .into_variant();
 

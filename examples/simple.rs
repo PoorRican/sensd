@@ -87,7 +87,6 @@ fn build_actions(poller: &mut Group) {
 
     for (id, input) in poller.inputs.iter() {
         if let DeviceType::Input(device) = input.try_lock().unwrap().deref_mut() {
-            device.init_publisher();
             println!("- Initializing subscriber ...");
 
             let name = format!("Subscriber for Input:{}", id);

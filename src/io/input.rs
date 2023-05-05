@@ -103,7 +103,9 @@ impl GenericInput {
     }
 
     /// Create and set publisher or silently fail
-    pub fn init_publisher(&mut self) -> &mut Self {
+    pub fn init_publisher(mut self) -> Self
+    where
+        Self: Sized {
         match self.publisher {
             None => {
                 self.publisher = Some(Publisher::default());
@@ -181,7 +183,7 @@ mod tests {
 
         assert_eq!(false, input.has_publisher());
 
-        input.init_publisher();
+        input = input.init_publisher();
 
         assert_eq!(true, input.has_publisher());
     }

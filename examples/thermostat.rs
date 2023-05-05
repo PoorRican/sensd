@@ -87,7 +87,6 @@ fn build_actions(poller: &mut Group) {
     let output: DeferredDevice = poller.outputs.get(&OUTPUT_ID).unwrap().clone();
 
     if let DeviceType::Input(device) = input.try_lock().unwrap().deref_mut() {
-        device.init_publisher();
         println!("- Initializing subscriber ...");
 
         let name = format!("Subscriber for Input:{}", INPUT_ID);
