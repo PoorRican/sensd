@@ -105,7 +105,7 @@ impl GenericInput {
 
         self.propagate(&event);
 
-        self.add_to_log(event);
+        self.push_to_log(event);
 
         Ok(event)
     }

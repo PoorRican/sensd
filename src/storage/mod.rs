@@ -6,4 +6,4 @@ mod persistent;
 
 pub use grouping::Group;
 pub use logging::*;
-pub use persistent::Persistent;
+pub use persistent::{Persistent, FILETYPE};
