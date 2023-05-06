@@ -10,7 +10,7 @@ use crate::helpers::Def;
 /// External value should be always be on the left-side; internal threshold should be on the right side.
 /// Internal command should be executed when this inequality returns true.
 ///
-/// Used by [`ThresholdAction::evaluate()`]
+/// Used by [`Threshold::evaluate()`]
 pub enum Comparison {
     GT,
     LT,
@@ -30,27 +30,25 @@ impl Display for Comparison {
     }
 }
 
-/// Subscriber that reacts in a binary fashion if threshold is exceeded.
+/// Bang-bang (on-off) controller
 ///
-/// If the threshold is exceeded, a notification is printed, and optionally output is actuated.
-/// Accuracy, is not the primary goal of this action type, but rather strict control of an external
-/// variable is chosen so as to not use as many CPI cycles. Output device stays actuated as long as
-/// threshold is exceeded. In the future, upper and lower thresholds will be added for fine tuning
-/// of action execution.
+/// If threshold is exceeded, a notification is printed and output is actuated until next polling cycle
+/// where input value is below threshold. In the future, upper and lower thresholds will be added for
+/// finer control.
 ///
-/// Unlike the [`crate::action::PIDMonitor`] subscriber, [`ThresholdAction`] is unable create a [`Routine`].
+/// Unlike the [`crate::action::PIDMonitor`] subscriber, [`Threshold`] is unable create a [`Routine`].
 /// Instead, functionality implements simple on/off behavior.
 ///
-/// # Scenarios
+/// # Usage
 ///
 /// ## Reservoir Fill Level
-/// Given a reservoir, with a sensor for reading fill level, a pump for increasing fill level and a
-/// valve for decreasing fill level. The refill pump could be set to turn on at 25% but might stop
-/// when fill level reaches 30%. Likewise, the dump valve might be set to decrease fill level at 90%,
-/// but dumping might stop at 80%.
 ///
+/// Given a reservoir, with a sensor for reading fill level, a pump for increasing fill level, and a
+/// valve that decreases fill level. Two separate [`Threshold`] could be used for controlling
+/// this system based off of input from the level sensor. Depending on polling frequency there might be
+/// some variance between threshold value and the input value when actuation stops.
 // TODO: add upper/lower threshold
-pub struct ThresholdAction {
+pub struct Threshold {
     name: String,
     threshold: RawValue,
 
@@ -58,16 +56,23 @@ pub struct ThresholdAction {
     output: Option<Def<Output>>,
 }
 
-impl ThresholdAction {
-    /// Constructor for [`ThresholdAction`]
-    ///
-    /// # Notes
-    /// [`Action::set_output()`] is used as a builder function to add an output device after initialization.
+impl Threshold {
+    /// Constructor for [`Threshold`]
     ///
     /// # Parameters
+    ///
     /// - `name`: name of action
     /// - `threshold`: Threshold that controls what external value actuates/de-actuates device
     /// - `trigger`: Defines the relationship between threshold and external value.
+    ///
+    /// # Returns
+    /// Initialized [`Threshold`] action without `output` set.
+    ///
+    /// **Note**: [`Action::set_output()`] builder function should be chained after initialization.
+    ///
+    /// # See Also
+    ///
+    /// - [`Action::with_output()`] for constructor that accepts an `output` parameter.
     // TODO: there should be an option to inverse polarity
     pub fn new(name: String, threshold: RawValue, trigger: Comparison) -> Self {
         // TODO: add a type check to `RawValue` to ensure a numeric value
@@ -112,7 +117,7 @@ impl ThresholdAction {
     }
 }
 
-impl Action for ThresholdAction {
+impl Action for Threshold {
     #[inline]
     /// Name of action
     fn name(&self) -> &String {
@@ -121,7 +126,7 @@ impl Action for ThresholdAction {
 
     /// Evaluate external data
     ///
-    /// Incoming data is compared against [`ThresholdAction::threshold()`] using internal `trigger`.
+    /// Incoming data is compared against [`Threshold::threshold()`] using internal `trigger`.
     /// If incoming data exceeds threshold, output device is actuated. Otherwise, output device is deactivated.
     // TODO: check state cache of output device to avoid redundant calls to output device.
     fn evaluate(&mut self, data: &IOEvent) {

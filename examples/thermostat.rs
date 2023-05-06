@@ -16,7 +16,7 @@ extern crate chrono;
 extern crate sensd;
 extern crate serde;
 
-use sensd::action::{Comparison, IOCommand};
+use sensd::action::{actions::Comparison, IOCommand};
 use sensd::errors::ErrorType;
 use sensd::io::{IOKind, IdType, RawValue};
 use sensd::settings::Settings;

@@ -24,7 +24,7 @@ extern crate serde;
 use std::ops::DerefMut;
 use std::sync::Arc;
 
-use sensd::action::{Comparison, IOCommand};
+use sensd::action::{actions::Comparison, IOCommand};
 use sensd::errors::ErrorType;
 use sensd::io::{IOKind, RawValue};
 use sensd::settings::Settings;

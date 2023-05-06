@@ -1,6 +1,6 @@
 //! Implements a control system based off of evaluating incoming data.
 
-use crate::action::{Action, BoxedAction, Comparison, SchedRoutineHandler, ThresholdAction};
+use crate::action::{Action, BoxedAction, SchedRoutineHandler, actions::Comparison, actions};
 use crate::helpers::Def;
 use crate::io::{Output, IOEvent, RawValue};
 
@@ -54,7 +54,7 @@ impl Publisher {
         trigger: Comparison,
         output: Option<Def<Output>>,
     ) -> &mut Self {
-        let mut action = ThresholdAction::new(name.to_string(), threshold, trigger);
+        let mut action = actions::Threshold::new(name.to_string(), threshold, trigger);
 
         if let Some(output) = output {
             action = action.set_output(output);
