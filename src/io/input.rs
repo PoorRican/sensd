@@ -29,7 +29,7 @@ impl Device for Input {
     {
         let kind = kind.unwrap_or_default();
 
-        let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Input);
+        let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::In);
 
         let publisher = None;
         let command = None;

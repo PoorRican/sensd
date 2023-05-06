@@ -30,7 +30,7 @@ impl Device for Output {
     {
         let kind = kind.unwrap_or_default();
         let state = None;
-        let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Output);
+        let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Out);
 
         let command = None;
         let log = None;

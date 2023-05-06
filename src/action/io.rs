@@ -23,8 +23,8 @@ impl IOCommand {
     /// Used to verify device type aligns with function intention: input with input, vice versa.
     pub fn direction(&self) -> IODirection {
         match self {
-            IOCommand::Input(_) => IODirection::Input,
-            IOCommand::Output(_) => IODirection::Output,
+            IOCommand::Input(_) => IODirection::In,
+            IOCommand::Output(_) => IODirection::Out,
         }
     }
 }
@@ -89,7 +89,7 @@ mod tests {
     #[test]
     fn test_default() {
         let command = IOCommand::default();
-        assert_eq!(command.direction(), IODirection::Output);
+        assert_eq!(command.direction(), IODirection::Out);
         assert_eq!(None, command.execute(Some(RawValue::Binary(true))).unwrap());
     }
 }
