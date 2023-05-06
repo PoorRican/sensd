@@ -6,7 +6,7 @@ use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, Ra
 use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
-pub struct GenericOutput {
+pub struct Output {
     metadata: DeviceMetadata,
     // cached state
     state: Option<RawValue>,
@@ -15,7 +15,7 @@ pub struct GenericOutput {
 }
 
 // Implement traits
-impl Device for GenericOutput {
+impl Device for Output {
     /// Creates a generic output device
     ///
     /// # Arguments
@@ -67,7 +67,7 @@ impl Device for GenericOutput {
     }
 }
 
-impl GenericOutput {
+impl Output {
     /// Execute low-level GPIO command
     fn tx(&self, value: RawValue) -> Result<IOEvent, ErrorType> {
         if let Some(command) = &self.command {
@@ -97,7 +97,7 @@ impl GenericOutput {
     }
 }
 
-impl Chronicle for GenericOutput {
+impl Chronicle for Output {
     fn log(&self) -> Option<Def<Log>> {
         self.log.clone()
     }
@@ -106,7 +106,7 @@ impl Chronicle for GenericOutput {
 #[cfg(test)]
 mod tests {
     use crate::action::IOCommand;
-    use crate::io::{Device, GenericOutput, RawValue};
+    use crate::io::{Device, Output, RawValue};
     use crate::storage::Chronicle;
 
     /// Dummy output command for testing.
@@ -115,7 +115,7 @@ mod tests {
 
     #[test]
     fn test_tx() {
-        let mut output = GenericOutput::default();
+        let mut output = Output::default();
         output.command = Some(COMMAND);
 
         let value = RawValue::Binary(true);
@@ -129,7 +129,7 @@ mod tests {
     #[test]
     /// Test that `tx()` was called, cached state was updated, and IOEvent added to log.
     fn test_write() {
-        let mut output = GenericOutput::default().init_log(None);
+        let mut output = Output::default().init_log(None);
         let log = output.log().unwrap();
 
         assert_eq!(log.try_lock().unwrap().iter().count(), 0);
@@ -157,7 +157,7 @@ mod tests {
     }
 }
 
-impl std::fmt::Debug for GenericOutput {
+impl std::fmt::Debug for Output {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,

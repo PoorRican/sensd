@@ -1,6 +1,6 @@
 use crate::action::{Action, BoxedAction};
 use crate::helpers::Def;
-use crate::io::{GenericOutput, IOEvent, RawValue};
+use crate::io::{Output, IOEvent, RawValue};
 
 /// Subscriber abstracting a PID controller
 pub struct PIDMonitor {
@@ -8,7 +8,7 @@ pub struct PIDMonitor {
     _setpoint: RawValue,
 
     // TODO: check that device is output
-    output: Def<GenericOutput>,
+    output: Def<Output>,
 }
 
 impl Action for PIDMonitor {
@@ -20,7 +20,7 @@ impl Action for PIDMonitor {
         // maintain PID
     }
 
-    fn set_output(mut self, device: Def<GenericOutput>) -> Self
+    fn set_output(mut self, device: Def<Output>) -> Self
     where
         Self: Sized,
     {
@@ -28,7 +28,7 @@ impl Action for PIDMonitor {
         self
     }
 
-    fn output(&self) -> Option<Def<GenericOutput>> {
+    fn output(&self) -> Option<Def<Output>> {
         Some(self.output.clone())
     }
 

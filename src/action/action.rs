@@ -1,5 +1,5 @@
 use crate::errors::{Error, ErrorKind, ErrorType};
-use crate::io::{GenericOutput, IOEvent, RawValue};
+use crate::io::{Output, IOEvent, RawValue};
 use std::ops::DerefMut;
 use crate::helpers::Def;
 
@@ -25,12 +25,12 @@ pub trait Action {
     ///
     /// # Returns
     /// - `&mut self`: enables builder pattern
-    fn set_output(self, device: Def<GenericOutput>) -> Self
+    fn set_output(self, device: Def<Output>) -> Self
     where
         Self: Sized;
 
     /// Getter function for `output` field.
-    fn output(&self) -> Option<Def<GenericOutput>>;
+    fn output(&self) -> Option<Def<Output>>;
 
     /// Setter function for output device field
     ///

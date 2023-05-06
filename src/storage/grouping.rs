@@ -2,7 +2,7 @@ use crate::action::IOCommand;
 use crate::errors::ErrorType;
 use crate::helpers::{check_results, Def};
 use crate::io::{
-    Device, DeviceContainer, Input, GenericOutput, IOEvent, IOKind,
+    Device, DeviceContainer, Input, Output, IOEvent, IOKind,
     IdType,
 };
 use crate::settings::Settings;
@@ -37,7 +37,7 @@ pub struct Group {
     pub logs: LogContainer,
 
     pub inputs: DeviceContainer<IdType, Input>,
-    pub outputs: DeviceContainer<IdType, GenericOutput>,
+    pub outputs: DeviceContainer<IdType, Output>,
 }
 
 impl Group {
@@ -77,7 +77,7 @@ impl Group {
         let last_execution = Utc::now() - settings.interval;
 
         let inputs = <DeviceContainer<IdType, Input>>::default();
-        let outputs = <DeviceContainer<IdType, GenericOutput>>::default();
+        let outputs = <DeviceContainer<IdType, Output>>::default();
         let logs = Vec::default();
 
         Self {
@@ -116,10 +116,10 @@ impl Group {
         id: &IdType,
         kind: &Option<IOKind>,
         command: &IOCommand,
-    ) -> Result<Def<GenericOutput>, ErrorType> {
+    ) -> Result<Def<Output>, ErrorType> {
         let settings = Some(self.settings.clone());
 
-        let output = GenericOutput::new(String::from(name), *id, *kind)
+        let output = Output::new(String::from(name), *id, *kind)
             .init_log(settings)
             .set_command(command.clone())
             .into_deferred();

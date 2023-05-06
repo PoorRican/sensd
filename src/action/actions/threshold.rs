@@ -1,6 +1,6 @@
 use crate::action::{Action, BoxedAction};
 use crate::errors::ErrorType;
-use crate::io::{GenericOutput, IOEvent, RawValue};
+use crate::io::{Output, IOEvent, RawValue};
 use std::fmt::{Display, Formatter};
 use crate::helpers::Def;
 
@@ -55,7 +55,7 @@ pub struct ThresholdAction {
     threshold: RawValue,
 
     trigger: Comparison,
-    output: Option<Def<GenericOutput>>,
+    output: Option<Def<Output>>,
 }
 
 impl ThresholdAction {
@@ -144,7 +144,7 @@ impl Action for ThresholdAction {
         }
     }
 
-    fn set_output(mut self, device: Def<GenericOutput>) -> Self
+    fn set_output(mut self, device: Def<Output>) -> Self
     where
         Self: Sized,
     {
@@ -154,7 +154,7 @@ impl Action for ThresholdAction {
     }
 
     #[inline]
-    fn output(&self) -> Option<Def<GenericOutput>> {
+    fn output(&self) -> Option<Def<Output>> {
         self.output.clone()
     }
 
