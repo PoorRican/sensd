@@ -1,12 +1,13 @@
 //! Cybernetic abstractions
 mod action;
-pub mod actions;
 mod command;
 mod comparison;
 mod handler;
 mod io;
 mod publisher;
 mod routine;
+
+pub mod actions;
 
 pub use action::{Action, BoxedAction};
 pub use command::*;
