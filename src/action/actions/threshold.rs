@@ -1,5 +1,4 @@
 use crate::action::{Action, BoxedAction};
-use crate::errors::{ErrorType};
 use crate::io::{IOEvent, Output, RawValue};
 use crate::action::trigger::Trigger;
 use crate::helpers::Def;
@@ -49,7 +48,6 @@ impl Threshold {
     /// - [`Action::with_output()`] for constructor that accepts an `output` parameter.
     // TODO: there should be an option to inverse polarity
     pub fn new(name: String, threshold: RawValue, trigger: Trigger) -> Self {
-        // TODO: add a type check to `RawValue` to ensure a numeric value
         // TODO: add a type check to ensure that `output` accepts a binary value
 
         Self {
@@ -83,27 +81,19 @@ impl Threshold {
     }
 
     #[inline]
-    /// Actuate output device
+    /// Actuate output device without runtime validation
     ///
-    /// Sends a `true` value to output device
-    ///
-    /// # Returns
-    /// - `Ok(IOEvent)`: when I/O operation completes successfully.
-    /// - `Err(ErrorType)`: when an error occurs during I/O operation
-    fn on(&self) -> Result<IOEvent, ErrorType> {
-        self.write(RawValue::Binary(true))
+    /// Sends a `true` value to output device. Does not check value [`Result`] from [`Action::write()`].
+    fn on_unchecked(&self) {
+        let _ = self.write(RawValue::Binary(true));
     }
 
     #[inline]
-    /// De-actuate output device.
+    /// De-actuate output device without runtime validation
     ///
-    /// Sends a `false` value to output device
-    ///
-    /// # Returns
-    /// - `Ok(IOEvent)`: when I/O operation completes successfully.
-    /// - `Err(ErrorType)`: when an error occurs during I/O operation
-    fn off(&self) -> Result<IOEvent, ErrorType> {
-        self.write(RawValue::Binary(false))
+    /// Sends a `false` value to output device. Does not check value [`Result`] from [`Action::write()`].
+    fn off_unchecked(&self) {
+        let _ = self.write(RawValue::Binary(false));
     }
 }
 
@@ -114,11 +104,18 @@ impl Action for Threshold {
         &self.name
     }
 
+    #[inline]
     /// Evaluate external data
     ///
-    /// Incoming data is compared against [`Threshold::threshold()`] using internal `trigger`.
-    /// If incoming data exceeds threshold, output device is actuated. Otherwise, output device is deactivated.
-    // TODO: check state cache of output device to avoid redundant calls to output device.
+    /// Incoming data is compared against internal threshold using [`Trigger::exceeded()`]. If
+    /// incoming data exceeds threshold, output device is actuated. Otherwise, output device is
+    /// deactivated.
+    ///
+    /// # Notes
+    ///
+    /// - This function is inline because it is used in iterator loops
+    /// - Any error returned by [`Self::write()`] is dropped by [`Self::on_unchecked()`] and
+    ///   [`Self::off_unchecked()`]
     fn evaluate(&mut self, data: &IOEvent) {
         let input = data.data.value;
         let exceeded = self.trigger.exceeded(input, self.threshold);
@@ -129,16 +126,10 @@ impl Action for Threshold {
                 let msg = format!("{} {} {}", input, &self.trigger, self.threshold);
                 self.notify(msg.as_str());
 
-                if let Some(_) = self.output {
-                    self.on().unwrap();
-                }
+                self.on_unchecked();
             },
-            false => {
-                if let Some(_) = self.output {
-                    self.off().unwrap();
-                }
-            }
-        }
+            false => { self.off_unchecked() },
+        };
     }
 
     fn set_output(mut self, device: Def<Output>) -> Self
