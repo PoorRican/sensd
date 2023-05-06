@@ -1,7 +1,7 @@
 //! Implements a control system based off of evaluating incoming data.
 
 use crate::action::{Action, actions, BoxedAction, SchedRoutineHandler};
-use crate::action::comparison::Comparison;
+use crate::action::trigger::Trigger;
 use crate::helpers::Def;
 use crate::io::{IOEvent, Output, RawValue};
 
@@ -40,7 +40,7 @@ impl Publisher {
     /// # Parameters
     /// - `name`: Label for action
     /// - `threshold`: threshold used to actuate output. Should be a numeric value and not a binary value.
-    /// - `trigger`: [`Comparison`] variant to use to compare incoming data and `threshold`
+    /// - `trigger`: [`Trigger`] variant to use to compare incoming data and `threshold`
     /// - `output`: output device to attach to [`ThresholdAction`].
     ///
     /// # Panics
@@ -52,7 +52,7 @@ impl Publisher {
         &mut self,
         name: &str,
         threshold: RawValue,
-        trigger: Comparison,
+        trigger: Trigger,
         output: Option<Def<Output>>,
     ) -> &mut Self {
         let mut action = actions::Threshold::new(name.to_string(), threshold, trigger);

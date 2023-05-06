@@ -16,7 +16,7 @@ extern crate chrono;
 extern crate sensd;
 extern crate serde;
 
-use sensd::action::{IOCommand, Comparison};
+use sensd::action::{IOCommand, Trigger};
 use sensd::errors::ErrorType;
 use sensd::io::{IdType, IOKind, RawValue};
 use sensd::settings::Settings;
@@ -90,7 +90,7 @@ fn build_actions(poller: &mut Group) {
 
     let name = format!("Subscriber for Input:{}", INPUT_ID);
     let threshold = RawValue::Int8(THRESHOLD);
-    let trigger = Comparison::LT;
+    let trigger = Trigger::LT;
     if let Some(publisher) = binding.publisher_mut() {
         publisher.attach_threshold(&name, threshold, trigger, Some(output.clone()));
     }

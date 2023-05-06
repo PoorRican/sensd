@@ -1,7 +1,7 @@
 use crate::action::{Action, BoxedAction};
-use crate::errors::ErrorType;
+use crate::errors::{ErrorType};
 use crate::io::{IOEvent, Output, RawValue};
-use crate::action::comparison::Comparison;
+use crate::action::trigger::Trigger;
 use crate::helpers::Def;
 
 /// Bang-bang (on-off) controller
@@ -26,7 +26,7 @@ pub struct Threshold {
     name: String,
     threshold: RawValue,
 
-    trigger: Comparison,
+    trigger: Trigger,
     output: Option<Def<Output>>,
 }
 
@@ -48,7 +48,7 @@ impl Threshold {
     ///
     /// - [`Action::with_output()`] for constructor that accepts an `output` parameter.
     // TODO: there should be an option to inverse polarity
-    pub fn new(name: String, threshold: RawValue, trigger: Comparison) -> Self {
+    pub fn new(name: String, threshold: RawValue, trigger: Trigger) -> Self {
         // TODO: add a type check to `RawValue` to ensure a numeric value
         // TODO: add a type check to ensure that `output` accepts a binary value
 
@@ -72,7 +72,7 @@ impl Threshold {
     /// # Returns
     ///
     /// Initialized [`Threshold`] action with `output` set.
-    pub fn with_output(name: String, threshold: RawValue, trigger: Comparison, output: Def<Output>) -> Self {
+    pub fn with_output(name: String, threshold: RawValue, trigger: Trigger, output: Def<Output>) -> Self {
         Self::new(name, threshold, trigger).set_output(output)
     }
 
@@ -121,21 +121,23 @@ impl Action for Threshold {
     // TODO: check state cache of output device to avoid redundant calls to output device.
     fn evaluate(&mut self, data: &IOEvent) {
         let input = data.data.value;
-        let exceeded = match &self.trigger {
-            &Comparison::GT => input > self.threshold,
-            &Comparison::GTE => input >= self.threshold,
-            &Comparison::LT => input < self.threshold,
-            &Comparison::LTE => input <= self.threshold,
-        };
-        if exceeded {
-            let msg = format!("{} {} {}", input, &self.trigger, self.threshold);
-            self.notify(msg.as_str());
+        let exceeded = self.trigger.exceeded(input, self.threshold);
 
-            if let Some(_) = self.output {
-                self.on().unwrap();
+        match exceeded {
+            true => {
+                // Notify if exceeded
+                let msg = format!("{} {} {}", input, &self.trigger, self.threshold);
+                self.notify(msg.as_str());
+
+                if let Some(_) = self.output {
+                    self.on().unwrap();
+                }
+            },
+            false => {
+                if let Some(_) = self.output {
+                    self.off().unwrap();
+                }
             }
-        } else if let Some(_) = self.output {
-            self.off().unwrap();
         }
     }
 

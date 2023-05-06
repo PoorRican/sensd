@@ -1,7 +1,7 @@
 //! Cybernetic abstractions
 mod action;
 mod command;
-mod comparison;
+mod trigger;
 mod handler;
 mod io;
 mod publisher;
@@ -11,7 +11,7 @@ pub mod actions;
 
 pub use action::{Action, BoxedAction};
 pub use command::*;
-pub use comparison::Comparison;
+pub use trigger::Trigger;
 pub use handler::SchedRoutineHandler;
 pub use io::IOCommand;
 pub use publisher::Publisher;
