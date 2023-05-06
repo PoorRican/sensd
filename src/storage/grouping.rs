@@ -2,14 +2,13 @@ use crate::action::IOCommand;
 use crate::errors::ErrorType;
 use crate::helpers::{check_results, Def};
 use crate::io::{
-    Device, DeviceContainer, DeviceType, GenericInput, GenericOutput, IODirection, IOEvent, IOKind,
+    Device, DeviceContainer, Input, Output, IOEvent, IOKind,
     IdType,
 };
 use crate::settings::Settings;
 use crate::storage::{LogContainer, Persistent};
 use chrono::{DateTime, Duration, Utc};
 use std::fs::create_dir_all;
-use std::ops::DerefMut;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -37,16 +36,16 @@ pub struct Group {
     // internal containers
     pub logs: LogContainer,
 
-    pub inputs: DeviceContainer<IdType>,
-    pub outputs: DeviceContainer<IdType>,
+    pub inputs: DeviceContainer<IdType, Input>,
+    pub outputs: DeviceContainer<IdType, Output>,
 }
 
 impl Group {
     /// Primary callable to iterate through input device container once.
     ///
-    /// [`GenericInput::read()`] is called on each input device at the frequency dictated by
-    /// [`Group::interval()`]. Generated [`IOEvent`] instances are handled by [`GenericInput::read()`].
-    /// Failure does not halt execution. Instead, failed calls to [`GenericInput::read()`] are returned as an
+    /// [`Input::read()`] is called on each input device at the frequency dictated by
+    /// [`Group::interval()`]. Generated [`IOEvent`] instances are handled by [`Input::read()`].
+    /// Failure does not halt execution. Instead, failed calls to [`Input::read()`] are returned as an
     /// array of [`Result`] objects. [`check_results()`] should be used to catch and handle any errors
     ///
     /// # Returns
@@ -59,13 +58,9 @@ impl Group {
         let next_execution = self.last_execution + self.interval();
 
         if next_execution <= Utc::now() {
-            for (_, input) in self.inputs.iter_mut() {
-                let mut device = input.try_lock().unwrap();
-                if let DeviceType::Input(inner) = device.deref_mut() {
-                    let result = inner.read();
-                    results.push(result);
-                }
-                // TODO: throw failure if device is not input
+            for input in self.inputs.values_mut() {
+                let mut binding = input.try_lock().unwrap();
+                results.push(binding.read());
             }
             self.last_execution = next_execution;
             Ok(results)
@@ -81,8 +76,8 @@ impl Group {
         let settings = settings.unwrap_or_else(|| Arc::new(Settings::default()));
         let last_execution = Utc::now() - settings.interval;
 
-        let inputs = <DeviceContainer<IdType>>::default();
-        let outputs = <DeviceContainer<IdType>>::default();
+        let inputs = <DeviceContainer<IdType, Input>>::default();
+        let outputs = <DeviceContainer<IdType, Output>>::default();
         let logs = Vec::default();
 
         Self {
@@ -101,20 +96,18 @@ impl Group {
         id: &IdType,
         kind: &Option<IOKind>,
         command: &IOCommand,
-    ) -> Result<Def<DeviceType>, ErrorType> {
+    ) -> Result<Def<Input>, ErrorType> {
         let settings = Some(self.settings.clone());
 
-        let input = GenericInput::new(String::from(name), *id, *kind)
+        let input = Input::new(String::from(name), *id, *kind)
             .init_log(settings)
             .init_publisher()
             .set_command(command.clone())
-            .into_variant();
+            .into_deferred();
 
-        let device = Def::new(input);
+        self.inputs.insert(*id, input.clone());
 
-        self.inputs.insert(*id, device.clone());
-
-        Ok(device)
+        Ok(input)
     }
 
     pub fn build_output(
@@ -123,73 +116,40 @@ impl Group {
         id: &IdType,
         kind: &Option<IOKind>,
         command: &IOCommand,
-    ) -> Result<Def<DeviceType>, ErrorType> {
+    ) -> Result<Def<Output>, ErrorType> {
         let settings = Some(self.settings.clone());
 
-        let output = GenericOutput::new(String::from(name), *id, *kind)
+        let output = Output::new(String::from(name), *id, *kind)
             .init_log(settings)
             .set_command(command.clone())
-            .into_variant();
+            .into_deferred();
 
-        let device = Def::new(output);
+        self.outputs.insert(*id, output.clone());
 
-        self.outputs.insert(*id, device.clone());
-
-        Ok(device)
+        Ok(output)
     }
 
-    #[deprecated]
-    /// Build device and log and locally store both.
-    ///
-    /// # Errors
-    /// Panics error if [`IOCommand`] and [`IODirection`] are mismatched
-    /// (according to [`builder::check_alignment()`])
-    pub fn build_device(
+    /// Wrapper for [`Group::build_input()`] for building multiple input device/log abstractions
+    pub fn build_inputs(
         &mut self,
-        name: &str,
-        id: &IdType,
-        kind: &Option<IOKind>,
-        direction: &IODirection,
-        command: &IOCommand,
-    ) -> Result<Def<DeviceType>, ErrorType> {
-        let settings = Some(self.settings.clone());
-
-        let device;
-        match direction {
-            IODirection::Input => {
-                let input = GenericInput::new(String::from(name), *id, *kind)
-                    .init_log(settings)
-                    .init_publisher()
-                    .set_command(command.clone())
-                    .into_variant();
-
-                device = Def::new(input);
-
-                self.inputs.insert(*id, device.clone())
-            }
-            IODirection::Output => {
-                let output = GenericOutput::new(String::from(name), *id, *kind)
-                    .init_log(settings)
-                    .set_command(command.clone())
-                    .into_variant();
-
-                device = Def::new(output);
-
-                self.outputs.insert(*id, device.clone())
-            }
-        };
-
-        Ok(device.clone())
-    }
-
-    /// Wrapper for [`Group::build_device()`] for building multiple device/log abstractions
-    pub fn add_devices(
-        &mut self,
-        arr: &[(&str, IdType, IOKind, IODirection, IOCommand)],
+        arr: &[(&str, IdType, IOKind, IOCommand)],
     ) -> Result<(), ErrorType> {
         let mut results = Vec::default();
-        for (name, id, kind, direction, command) in arr.iter().to_owned() {
-            let result = self.build_device(name, id, &Some(*kind), direction, command);
+        for (name, id, kind, command) in arr.iter().to_owned() {
+            let result = self.build_input(name, id, &Some(*kind), command);
+            results.push(result);
+        }
+        check_results(&results)
+    }
+
+    /// Wrapper for [`Group::build_output()`] for building multiple output device/log abstractions
+    pub fn build_outputs(
+        &mut self,
+        arr: &[(&str, IdType, IOKind, IOCommand)],
+    ) -> Result<(), ErrorType> {
+        let mut results = Vec::default();
+        for (name, id, kind, command) in arr.iter().to_owned() {
+            let result = self.build_output(name, id, &Some(*kind), command);
             results.push(result);
         }
         check_results(&results)
@@ -250,10 +210,8 @@ impl Group {
     pub fn attempt_routines(&self) {
         for device in self.inputs.values() {
             let mut binding = device.try_lock().unwrap();
-            if let DeviceType::Input(input) = binding.deref_mut() {
-                if let Some(publisher) = input.publisher_mut() {
-                    publisher.attempt_routines()
-                }
+            if let Some(publisher) = binding.publisher_mut() {
+                publisher.attempt_routines()
             }
         }
     }

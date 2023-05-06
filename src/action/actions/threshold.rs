@@ -1,7 +1,8 @@
 use crate::action::{Action, BoxedAction};
 use crate::errors::ErrorType;
-use crate::io::{DeferredDevice, DeviceWrapper, IOEvent, RawValue};
+use crate::io::{Output, IOEvent, RawValue};
 use std::fmt::{Display, Formatter};
+use crate::helpers::Def;
 
 #[derive(Debug, Clone)]
 /// Discrete variants that abstract comparison of external and threshold values.
@@ -54,7 +55,7 @@ pub struct ThresholdAction {
     threshold: RawValue,
 
     trigger: Comparison,
-    output: Option<DeferredDevice>,
+    output: Option<Def<Output>>,
 }
 
 impl ThresholdAction {
@@ -143,20 +144,17 @@ impl Action for ThresholdAction {
         }
     }
 
-    fn set_output(mut self, device: DeferredDevice) -> Self
+    fn set_output(mut self, device: Def<Output>) -> Self
     where
         Self: Sized,
     {
-        if device.is_output() {
-            self.output = Some(device);
-            self
-        } else {
-            panic!("device is not output!")
-        }
+        self.output = Some(device);
+
+        self
     }
 
     #[inline]
-    fn output(&self) -> Option<DeferredDevice> {
+    fn output(&self) -> Option<Def<Output>> {
         self.output.clone()
     }
 

@@ -229,18 +229,18 @@ impl Persistent for Log {
 mod tests {
     use crate::action::IOCommand;
     use crate::helpers::Def;
-    use crate::io::{Device, DeviceType, GenericInput, IOKind, IdType, RawValue};
+    use crate::io::{Device, Input, IOKind, IdType, RawValue};
     use crate::storage::{Chronicle, Log, Persistent};
     use std::path::Path;
     use std::time::Duration;
     use std::{fs, thread};
 
-    fn add_to_log(device: &DeviceType, log: &Def<Log>, count: usize) {
+    fn add_to_log<D>(device: &D, log: &Def<Log>, count: usize)
+    where
+        D: Device
+    {
         for _ in 0..count {
-            let event = match device {
-                DeviceType::Input(inner) => inner.generate_event(RawValue::default()),
-                DeviceType::Output(inner) => inner.generate_event(RawValue::default()),
-            };
+            let event = device.generate_event(RawValue::default());
             log.lock().unwrap().push(event).unwrap();
             thread::sleep(Duration::from_nanos(1)); // add delay so that we don't finish too quickly
         }
@@ -259,12 +259,10 @@ mod tests {
         let filename;
         // test save
         {
-            let device = GenericInput::new(String::from(SENSOR_NAME), ID, Some(IOKind::Flow))
+            let device = Input::new(String::from(SENSOR_NAME), ID, Some(IOKind::Flow))
                 .set_command(COMMAND)
                 .init_log(None);
             let log = device.log().unwrap();
-
-            let device = device.into_variant();
 
             add_to_log(&device, &log, COUNT);
             let _log = log.lock().unwrap();
@@ -279,7 +277,7 @@ mod tests {
         // test load
         // build back up then load
         {
-            let device = GenericInput::new(String::from(SENSOR_NAME), ID, Some(IOKind::Flow))
+            let device = Input::new(String::from(SENSOR_NAME), ID, Some(IOKind::Flow))
                 .set_command(COMMAND)
                 .init_log(None);
             let log = device.log().unwrap();

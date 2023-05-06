@@ -18,7 +18,7 @@ extern crate serde;
 
 use sensd::action::{Comparison, IOCommand};
 use sensd::errors::ErrorType;
-use sensd::io::{DeferredDevice, DeviceType, IODirection, IOKind, IdType, RawValue};
+use sensd::io::{IOKind, IdType, RawValue};
 use sensd::settings::Settings;
 use sensd::storage::{Group, Persistent};
 use std::ops::DerefMut;
@@ -60,41 +60,39 @@ fn init(name: &str) -> Group {
 ///
 /// Initial formatting for when using the `Group::add_device()`  is demonstrated.
 unsafe fn setup_poller(poller: &mut Group) {
-    let config = vec![
-        (
-            "mock temp sensor",
-            INPUT_ID,
-            IOKind::Temperature,
-            IODirection::Input,
-            IOCommand::Input(|| EXTERNAL_VALUE),
-        ),
-        (
+    // build input
+    poller.build_input(
+        "mock temp sensor",
+        &INPUT_ID,
+        &Some(IOKind::Temperature),
+        &IOCommand::Input(|| EXTERNAL_VALUE),
+    ).unwrap();
+
+    // build output
+    poller.build_output(
             "test mock cooling device",
-            OUTPUT_ID,
-            IOKind::Temperature,
-            IODirection::Output,
-            IOCommand::Output(|val| Ok(println!("\nSimulated HW Output: {}\n", val))),
-        ),
-    ];
-    poller.add_devices(&config).unwrap();
+            &OUTPUT_ID,
+            &Some(IOKind::Temperature),
+            &IOCommand::Output(|val| Ok(println!("\nSimulated HW Output: {}\n", val))),
+    ).unwrap();
 }
 
 /// █▓▒░ Add a single `ThresholdNotifier` to all device in `Group`.
 fn build_actions(poller: &mut Group) {
     println!("\n█▓▒░ Building subscribers ...");
 
-    let input: DeferredDevice = poller.inputs.get(&INPUT_ID).unwrap().clone();
-    let output: DeferredDevice = poller.outputs.get(&OUTPUT_ID).unwrap().clone();
+    let input = poller.inputs.get(&INPUT_ID).unwrap().clone();
+    let output = poller.outputs.get(&OUTPUT_ID).unwrap().clone();
 
-    if let DeviceType::Input(device) = input.try_lock().unwrap().deref_mut() {
-        println!("- Initializing subscriber ...");
+    let mut binding = input.try_lock().unwrap();
+    let binding = binding.deref_mut();
+    println!("- Initializing subscriber ...");
 
-        let name = format!("Subscriber for Input:{}", INPUT_ID);
-        let threshold = RawValue::Int8(THRESHOLD);
-        let trigger = Comparison::LT;
-        if let Some(publisher) = device.publisher_mut() {
-            publisher.attach_threshold(&name, threshold, trigger, Some(output.clone()));
-        }
+    let name = format!("Subscriber for Input:{}", INPUT_ID);
+    let threshold = RawValue::Int8(THRESHOLD);
+    let trigger = Comparison::LT;
+    if let Some(publisher) = binding.publisher_mut() {
+        publisher.attach_threshold(&name, threshold, trigger, Some(output.clone()));
     }
 
     println!("\n... Finished Initializing subscribers\n");

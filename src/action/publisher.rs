@@ -1,14 +1,15 @@
 //! Implements a control system based off of evaluating incoming data.
 
 use crate::action::{Action, BoxedAction, Comparison, SchedRoutineHandler, ThresholdAction};
-use crate::io::{DeferredDevice, IOEvent, RawValue};
+use crate::helpers::Def;
+use crate::io::{Output, IOEvent, RawValue};
 
 /// Collection of actions for propagating single device input.
 ///
 /// A [`Publisher`] has a 1-to-1 relationship with a input device and stores all [`Action`] instances
 /// ("subscribers" as per observer design pattern) associated with that input device. When data is read from
-/// input device ([`crate::io::GenericInput::rx()`], the generated [`IOEvent`] should be passed to to all
-/// [`Action`] instances. This propagation of [`IOEvent`] is handled in [`crate::io::GenericInput::read()`],
+/// input device ([`crate::io::Input::rx()`], the generated [`IOEvent`] should be passed to to all
+/// [`Action`] instances. This propagation of [`IOEvent`] is handled in [`crate::io::Input::read()`],
 /// which calls [`Publisher::propagate()`].
 ///
 /// Additionally, [`Publisher`] maintains an internal collection of scheduled [`crate::action::Routine`]s
@@ -51,7 +52,7 @@ impl Publisher {
         name: &str,
         threshold: RawValue,
         trigger: Comparison,
-        output: Option<DeferredDevice>,
+        output: Option<Def<Output>>,
     ) -> &mut Self {
         let mut action = ThresholdAction::new(name.to_string(), threshold, trigger);
 

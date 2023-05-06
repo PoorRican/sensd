@@ -1,11 +1,12 @@
+use std::fmt::Formatter;
 use crate::action::{Command, IOCommand, Publisher};
-use crate::errors::ErrorType;
+use crate::errors::{ErrorType, no_internal_closure};
 use crate::helpers::Def;
-use crate::io::{no_internal_closure, Device, DeviceMetadata, DeviceType, IODirection, IOEvent, IOKind, IdType, RawValue};
+use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue};
 use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
-pub struct GenericInput {
+pub struct Input {
     metadata: DeviceMetadata,
     log: Option<Def<Log>>,
     publisher: Option<Publisher>,
@@ -14,7 +15,7 @@ pub struct GenericInput {
 }
 
 // Implement traits
-impl Device for GenericInput {
+impl Device for Input {
     /// Creates a mock sensor which returns a value
     ///
     /// # Arguments
@@ -66,13 +67,9 @@ impl Device for GenericInput {
     fn state(&self) -> &Option<RawValue> {
         &self.state
     }
-
-    fn into_variant(self) -> DeviceType {
-        DeviceType::Input(self)
-    }
 }
 
-impl GenericInput {
+impl Input {
     /// Execute low-level GPIO command
     fn rx(&self) -> Result<IOEvent, ErrorType> {
         let read_value = if let Some(command) = &self.command {
@@ -141,7 +138,7 @@ impl GenericInput {
     }
 }
 
-impl Chronicle for GenericInput {
+impl Chronicle for Input {
     fn log(&self) -> Option<Def<Log>> {
         self.log.clone()
     }
@@ -151,7 +148,7 @@ impl Chronicle for GenericInput {
 #[cfg(test)]
 mod tests {
     use crate::action::{IOCommand};
-    use crate::io::{Device, GenericInput, RawValue};
+    use crate::io::{Device, Input, RawValue};
     use crate::storage::Chronicle;
 
     const DUMMY_OUTPUT: RawValue = RawValue::Float(1.2);
@@ -159,7 +156,7 @@ mod tests {
 
     #[test]
     fn test_rx() {
-        let mut input = GenericInput::default();
+        let mut input = Input::default();
 
         input.command = Some(COMMAND);
 
@@ -169,7 +166,7 @@ mod tests {
 
     #[test]
     fn test_read() {
-        let mut input = GenericInput::default().init_log(None);
+        let mut input = Input::default().init_log(None);
         let log = input.log();
 
         input.command = Some(COMMAND);
@@ -187,7 +184,7 @@ mod tests {
     /// Test `::add_publisher()` and `::has_publisher()`
     #[test]
     fn test_init_publisher() {
-        let mut input = GenericInput::default();
+        let mut input = Input::default();
 
         assert_eq!(false, input.has_publisher());
 
@@ -198,12 +195,24 @@ mod tests {
 
     #[test]
     fn test_init_log() {
-        let mut input = GenericInput::default();
+        let mut input = Input::default();
 
         assert_eq!(false, input.has_log());
 
         input = input.init_log(None);
 
         assert_eq!(true, input.has_log());
+    }
+}
+
+impl std::fmt::Debug for Input {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Input Device - {{ name: {}, id: {}, kind: {}}}",
+            self.name(),
+            self.id(),
+            self.metadata().kind
+        )
     }
 }
