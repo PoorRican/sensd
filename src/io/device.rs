@@ -1,11 +1,15 @@
 use crate::action::IOCommand;
 use crate::helpers::Def;
-use crate::io::{DeviceMetadata, DeviceType, IODirection, IOEvent, IOKind, IdType, RawValue};
+use crate::io::{DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue};
 use crate::settings::Settings;
 use crate::storage::{Chronicle, Log};
 use chrono::Utc;
-use core::fmt::Formatter;
+use std::collections::HashMap;
 use std::sync::Arc;
+
+
+/// Alias for using a deferred devices in `Container`, indexed by `K`
+pub type DeviceContainer<K, D> = HashMap<K, Def<D>>;
 
 /// Defines a minimum interface for interacting with GPIO devices.
 ///
@@ -87,25 +91,11 @@ pub trait Device: Chronicle {
     /// Immutable reference to cached state
     fn state(&self) -> &Option<RawValue>;
 
-    fn into_variant(self) -> DeviceType;
-}
-
-pub trait DeviceTraits {
-    fn name(&self) -> String;
-    fn id(&self) -> IdType;
-    fn kind(&self) -> IOKind;
-    fn direction(&self) -> IODirection;
-}
-
-impl std::fmt::Debug for dyn Device {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Device: {} - {{ name: {}, id: {}, kind: {}}}",
-            self.direction(),
-            self.name(),
-            self.id(),
-            self.metadata().kind
-        )
+    fn into_deferred(self) -> Def<Self>
+    where
+        Self: Sized
+    {
+        Def::new(self)
     }
 }
+

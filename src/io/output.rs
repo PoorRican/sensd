@@ -1,10 +1,8 @@
+use std::fmt::Formatter;
 use crate::action::{Command, IOCommand};
-use crate::errors::ErrorType;
+use crate::errors::{ErrorType, no_internal_closure};
 use crate::helpers::Def;
-use crate::io::{
-    no_internal_closure, Device, DeviceMetadata, DeviceType, IODirection, IOEvent, IOKind, IdType,
-    RawValue,
-};
+use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue};
 use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
@@ -67,17 +65,13 @@ impl Device for GenericOutput {
     fn state(&self) -> &Option<RawValue> {
         &self.state
     }
-
-    fn into_variant(self) -> DeviceType {
-        DeviceType::Output(self)
-    }
 }
 
 impl GenericOutput {
     /// Execute low-level GPIO command
     fn tx(&self, value: RawValue) -> Result<IOEvent, ErrorType> {
         if let Some(command) = &self.command {
-            command.execute(Some(value)).unwrap();
+            command.execute(Some(value))?;
         } else {
             return Err(no_internal_closure());
         };
@@ -160,5 +154,17 @@ mod tests {
 
         // assert that event was added to log
         assert_eq!(log.try_lock().unwrap().iter().count(), 1);
+    }
+}
+
+impl std::fmt::Debug for GenericOutput {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Output Device: - {{ name: {}, id: {}, kind: {}}}",
+            self.name(),
+            self.id(),
+            self.metadata().kind
+        )
     }
 }

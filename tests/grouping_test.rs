@@ -1,7 +1,7 @@
 // TODO: these tests need to be added to "src/storage/grouping.rs"
 use chrono::Duration;
 use sensd::action::IOCommand;
-use sensd::io::{IODirection, IOKind, RawValue};
+use sensd::io::{IOKind, RawValue};
 use sensd::settings::Settings;
 use sensd::storage::Group;
 use std::sync::Arc;
@@ -16,18 +16,16 @@ fn test_add_device() {
             "test name",
             0,
             IOKind::PH,
-            IODirection::Input,
             command.clone(),
         ),
         (
             "second sensor",
             1,
             IOKind::EC,
-            IODirection::Input,
             command.clone(),
         ),
     ];
-    poller.add_devices(&config).unwrap();
+    poller.build_inputs(&config).unwrap();
 
     assert_eq!(poller.inputs.iter().count(), 2)
 }
@@ -44,18 +42,16 @@ fn test_add_to_log() {
             "test name",
             0,
             IOKind::Temperature,
-            IODirection::Input,
             command.clone(),
         ),
         (
             "second sensor",
             1,
             IOKind::Color,
-            IODirection::Input,
             command.clone(),
         ),
     ];
-    poller.add_devices(&config).unwrap();
+    poller.build_inputs(&config).unwrap();
 
     // check that all logs are empty
     const COUNT: usize = 15;

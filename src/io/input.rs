@@ -1,7 +1,8 @@
+use std::fmt::Formatter;
 use crate::action::{Command, IOCommand, Publisher};
-use crate::errors::ErrorType;
+use crate::errors::{ErrorType, no_internal_closure};
 use crate::helpers::Def;
-use crate::io::{no_internal_closure, Device, DeviceMetadata, DeviceType, IODirection, IOEvent, IOKind, IdType, RawValue};
+use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue};
 use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
@@ -65,10 +66,6 @@ impl Device for GenericInput {
     /// `state` field should be updated by `write()`
     fn state(&self) -> &Option<RawValue> {
         &self.state
-    }
-
-    fn into_variant(self) -> DeviceType {
-        DeviceType::Input(self)
     }
 }
 
@@ -205,5 +202,17 @@ mod tests {
         input = input.init_log(None);
 
         assert_eq!(true, input.has_log());
+    }
+}
+
+impl std::fmt::Debug for GenericInput {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Input Device - {{ name: {}, id: {}, kind: {}}}",
+            self.name(),
+            self.id(),
+            self.metadata().kind
+        )
     }
 }

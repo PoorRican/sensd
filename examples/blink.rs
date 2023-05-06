@@ -11,7 +11,7 @@ extern crate serde;
 use std::sync::Arc;
 
 use sensd::action::IOCommand;
-use sensd::io::{DeviceType, IODirection, IOKind, IdType, RawValue};
+use sensd::io::{IOKind, IdType, RawValue};
 use sensd::settings::Settings;
 use sensd::storage::{Group, Persistent};
 use std::ops::DerefMut;
@@ -46,14 +46,12 @@ fn init(name: &str) -> Group {
 ///
 /// Use of `Group::add_devices()` is demonstrated.
 fn setup_devices(poller: &mut Group) {
-    let config = vec![(
+    poller.build_input(
         "Mock Output",
-        OUTPUT_ID,
-        IOKind::Light,
-        IODirection::Output,
-        IOCommand::Output(|val| Ok(println!("\n{}\n", val))),
-    )];
-    poller.add_devices(&config).unwrap();
+        &OUTPUT_ID,
+        &Some(IOKind::Light),
+        &IOCommand::Output(|val| Ok(println!("\n{}\n", val))),
+    ).unwrap();
 }
 
 /// Alternate boolean value to pass to output.
@@ -87,13 +85,9 @@ fn main() {
     loop {
         {
             let mut binding = wrapped_device.try_lock().unwrap();
-            let output_device = binding.deref_mut();
-
-            if let DeviceType::Output(output) = output_device {
-                output
-                    .write(value)
-                    .expect("Error while calling `::write()` on output device");
-            };
+            binding.deref_mut()
+                .write(value)
+                .expect("Error while calling `::write()` on output device");
         }
 
         poller.save(&None).expect("Error while saving");

@@ -1,6 +1,7 @@
 use crate::errors::{Error, ErrorKind, ErrorType};
-use crate::io::{DeferredDevice, DeviceType, IOEvent, RawValue};
+use crate::io::{GenericOutput, IOEvent, RawValue};
 use std::ops::DerefMut;
+use crate::helpers::Def;
 
 pub type BoxedAction = Box<dyn Action>;
 
@@ -24,12 +25,12 @@ pub trait Action {
     ///
     /// # Returns
     /// - `&mut self`: enables builder pattern
-    fn set_output(self, device: DeferredDevice) -> Self
+    fn set_output(self, device: Def<GenericOutput>) -> Self
     where
         Self: Sized;
 
     /// Getter function for `output` field.
-    fn output(&self) -> Option<DeferredDevice>;
+    fn output(&self) -> Option<Def<GenericOutput>>;
 
     /// Setter function for output device field
     ///
@@ -43,13 +44,7 @@ pub trait Action {
         if let Some(inner) = self.output() {
             let mut binding = inner.try_lock().unwrap();
             let device = binding.deref_mut();
-            match device {
-                DeviceType::Output(output) => output.write(value),
-                _ => Err(Error::new(
-                    ErrorKind::DeviceError,
-                    "Associated output device is misconfigured.",
-                )),
-            }
+            device.write(value)
         } else {
             Err(Error::new(
                 ErrorKind::DeviceError,

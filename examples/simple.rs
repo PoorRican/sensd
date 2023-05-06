@@ -26,7 +26,7 @@ use std::sync::Arc;
 
 use sensd::action::{Comparison, IOCommand};
 use sensd::errors::ErrorType;
-use sensd::io::{DeviceType, IODirection, IOKind, RawValue};
+use sensd::io::{IOKind, RawValue};
 use sensd::settings::Settings;
 use sensd::storage::{Group, Persistent};
 
@@ -64,18 +64,16 @@ fn setup_poller(poller: &mut Group) {
             "test name",
             0,
             IOKind::PH,
-            IODirection::Input,
             IOCommand::Input(|| RawValue::Float(1.2)),
         ),
         (
             "second sensor",
             1,
             IOKind::Flow,
-            IODirection::Input,
             IOCommand::Input(|| RawValue::Float(0.5)),
         ),
     ];
-    poller.add_devices(&config).unwrap();
+    poller.build_inputs(&config).unwrap();
 }
 
 /// █▓▒░ Add a single `ThresholdNotifier` to all device in `Group`.
@@ -85,16 +83,16 @@ fn setup_poller(poller: &mut Group) {
 fn build_actions(poller: &mut Group) {
     println!("\n█▓▒░ Building subscribers ...");
 
-    for (id, input) in poller.inputs.iter() {
-        if let DeviceType::Input(device) = input.try_lock().unwrap().deref_mut() {
-            println!("- Initializing subscriber ...");
+    for (id, device) in poller.inputs.iter() {
+        let mut binding = device.try_lock().unwrap();
+        let input = binding.deref_mut();
+        println!("- Initializing subscriber ...");
 
-            let name = format!("Subscriber for Input:{}", id);
-            let threshold = RawValue::Float(1.0);
-            let trigger = Comparison::GT;
-            if let Some(publisher) = device.publisher_mut() {
-                publisher.attach_threshold(&name, threshold, trigger, None);
-            }
+        let name = format!("Subscriber for Input:{}", id);
+        let threshold = RawValue::Float(1.0);
+        let trigger = Comparison::GT;
+        if let Some(publisher) = input.publisher_mut() {
+            publisher.attach_threshold(&name, threshold, trigger, None);
         }
     }
 

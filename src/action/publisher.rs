@@ -1,7 +1,8 @@
 //! Implements a control system based off of evaluating incoming data.
 
 use crate::action::{Action, BoxedAction, Comparison, SchedRoutineHandler, ThresholdAction};
-use crate::io::{DeferredDevice, IOEvent, RawValue};
+use crate::helpers::Def;
+use crate::io::{GenericOutput, IOEvent, RawValue};
 
 /// Collection of actions for propagating single device input.
 ///
@@ -51,7 +52,7 @@ impl Publisher {
         name: &str,
         threshold: RawValue,
         trigger: Comparison,
-        output: Option<DeferredDevice>,
+        output: Option<Def<GenericOutput>>,
     ) -> &mut Self {
         let mut action = ThresholdAction::new(name.to_string(), threshold, trigger);
 
