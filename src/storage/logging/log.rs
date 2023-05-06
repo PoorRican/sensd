@@ -2,7 +2,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::{Entry, Iter};
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::ops::Deref;
@@ -10,45 +9,17 @@ use std::path::Path;
 use std::sync::Arc;
 
 use crate::errors::{Error, ErrorKind, ErrorType};
-use crate::helpers::{writable_or_create, Def};
+use crate::helpers::writable_or_create;
 use crate::io::{DeviceMetadata, IOEvent, IdType};
 use crate::settings::Settings;
-use crate::storage::Persistent;
+use crate::storage::{EventCollection, Persistent};
 
-/// Hashmap type alias defines a type alias `LogType` for storing `IOEvent` by `DateTime<Utc>` keys.
-pub type LogType = HashMap<DateTime<Utc>, IOEvent>;
-
-/// Primary container for storing `Log` instances.
-pub type LogContainer = Vec<Def<Log>>;
 
 /// Default filetype suffix.
 ///
 /// Used by `Log::filename()`, but this should probably be moved to settings
 const FILETYPE: &str = ".json";
 
-/// Transparently enables a reference to `Log` to be shared.
-pub trait Chronicle {
-    /// Property to return reference to field
-    ///
-    /// Upgrading of `Weak` reference should occur here
-    fn log(&self) -> Option<Def<Log>>;
-
-    fn add_to_log(&self, event: IOEvent) {
-        if let Some(log) = self.log() {
-            log.try_lock()
-                .unwrap()
-                .push(event.timestamp, event)
-                .expect("Unknown error when adding event to log");
-        }
-    }
-
-    fn has_log(&self) -> bool {
-        match self.log() {
-            Some(_) => true,
-            None => false,
-        }
-    }
-}
 
 /// Log abstraction of `IOEvent` keyed by datetime
 ///
@@ -62,7 +33,7 @@ pub struct Log {
     #[serde(skip)]
     settings: Arc<Settings>,
 
-    log: LogType,
+    log: EventCollection,
 }
 
 impl Log {
@@ -83,7 +54,7 @@ impl Log {
     pub fn new(metadata: &DeviceMetadata, settings: Option<Arc<Settings>>) -> Self {
         let id = metadata.id;
         let name = metadata.name.clone();
-        let log = LogType::default();
+        let log = EventCollection::default();
 
         Self {
             id,
@@ -109,7 +80,7 @@ impl Log {
         self.log.iter()
     }
 
-    fn push(
+    pub fn push(
         &mut self,
         timestamp: DateTime<Utc>,
         event: IOEvent,
