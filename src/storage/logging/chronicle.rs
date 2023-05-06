@@ -21,7 +21,7 @@ pub trait Chronicle {
     ///
     /// - If underlying [`std::sync::Arc`] reference is poisoned and cannot be locked.
     /// - When an error occurs during [`Log::push()`]
-    fn add_to_log(&self, event: IOEvent) {
+    fn push_to_log(&self, event: IOEvent) {
         if let Some(log) = self.log() {
             log.try_lock()
                 .unwrap()

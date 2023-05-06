@@ -97,7 +97,7 @@ impl GenericOutput {
         // update cached state
         self.state = Some(event.data.value);
 
-        self.add_to_log(event);
+        self.push_to_log(event);
 
         Ok(event)
     }
