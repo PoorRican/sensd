@@ -12,18 +12,17 @@ use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::writable_or_create;
 use crate::io::{DeviceMetadata, IOEvent, IdType};
 use crate::settings::Settings;
-use crate::storage::{EventCollection, Persistent};
+use crate::storage::{EventCollection, Persistent, FILETYPE};
 
 
-/// Default filetype suffix.
+/// A record of [`IOEvent`]s from a single device keyed by datetime
 ///
-/// Used by `Log::filename()`, but this should probably be moved to settings
-const FILETYPE: &str = ".json";
-
-
-/// Log abstraction of `IOEvent` keyed by datetime
+/// Encapsulates a [`EventCollection`] along with information of originating source.
 ///
-/// Encapsulates a `LogType` alongside a weak reference to a `Device`
+/// # Usage
+///
+/// Since log is used in multiple places throughout the input and control action lifecycle, it should be wrapped
+/// behind `Def`.
 #[derive(Serialize, Deserialize)]
 pub struct Log {
     // TODO: split logs using ID
@@ -37,35 +36,62 @@ pub struct Log {
 }
 
 impl Log {
-    /// Full path to log file.
+
+    /// Constructor for [`Log`]
     ///
-    /// No directories or files are created by this function.
+    /// # Parameters
     ///
-    /// # Args:
-    /// path: Optional argument to override typical storage path
+    /// - `metadata`: Reference to [`DeviceMetadata`] of originating device
+    ///
+    /// # Returns
+    ///
+    /// Empty log with identity attributes belonging to given device.
+    pub fn new(metadata: &DeviceMetadata, settings: Option<Arc<Settings>>) -> Self {
+        let id = metadata.id;
+        let name = metadata.name.clone();
+        let log = EventCollection::default();
+        let settings = settings.unwrap_or_else(|| Arc::new(Settings::default()));
+
+        Self {
+            id,
+            name,
+            log,
+            settings,
+        }
+    }
+
+    /// Full path to log file
+    ///
+    /// # Parameters:
+    ///
+    /// - `path`: Optional argument to override typical storage path defined by [`Settings`]. When passed,
+    ///           filename is appended to given path.
+    ///
+    /// # Issues
+    ///
+    /// - See [#126](https://github.com/PoorRican/sensd/issues/126) which implements validation of `path`.
+    ///
+    /// # Returns
+    ///
+    /// `String` of full path *including filename*
     fn full_path(&self, path: &Option<String>) -> String {
-        let prefix = path.as_ref().unwrap_or_else(|| &self.settings.data_root);
+        let prefix = path.as_ref().unwrap_or(&self.settings.data_root);
         let dir = Path::new(prefix);
 
         let full_path = dir.join(self.filename());
         String::from(full_path.to_str().unwrap())
     }
 
-    pub fn new(metadata: &DeviceMetadata, settings: Option<Arc<Settings>>) -> Self {
-        let id = metadata.id;
-        let name = metadata.name.clone();
-        let log = EventCollection::default();
-
-        Self {
-            id,
-            name,
-            log,
-            settings: settings.unwrap_or_else(|| Arc::new(Settings::default())),
-        }
-    }
-
     /// Generate generic filename based on settings, owner, and id
-    pub fn filename(&self) -> String {
+    ///
+    /// # Returns
+    ///
+    /// A formatted filename as `String` with JSON filetype prefix.
+    ///
+    /// # See Also
+    ///
+    /// - [`FILETYPE`] for definition of filetype suffix
+    fn filename(&self) -> String {
         format!(
             "{}_{}_{}{}",
             self.settings.log_fn_prefix.clone(),
@@ -75,11 +101,27 @@ impl Log {
         )
     }
 
-    /// Iterator for log
+    /// Iterator over keys and values
+    ///
+    /// # Returns
+    ///
+    /// Iterator that returns ([`DateTime<Utc>`], [`IOEvent`]).
     pub fn iter(&self) -> Iter<DateTime<Utc>, IOEvent> {
         self.log.iter()
     }
 
+    /// Push a new event to log
+    ///
+    /// # Parameters
+    ///
+    /// - `event`: new event to append
+    ///
+    /// # Returns
+    ///
+    /// A `Result` that contains:
+    ///
+    /// - `Ok`: with a reference to inserted log is inserted when [`IOEvent.timestamp`] does not exist in log
+    /// - `Err`: with an [`ErrorKind::ContainerError`] error if timestamp already exists in log
     pub fn push(
         &mut self,
         event: IOEvent,
@@ -93,6 +135,27 @@ impl Log {
 
 // Implement save/load operations for `Log`
 impl Persistent for Log {
+    /// Save log to disk in JSON format
+    ///
+    /// # Parameters
+    ///
+    /// - `path`: path to save to. This path should not include a filename.
+    ///
+    /// # Issues
+    ///
+    /// - See [#126](https://github.com/PoorRican/sensd/issues/126) which implements validation of `path`.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing:
+    ///
+    /// - `Ok`: with `()` when log is not empty, and serialization and write to disk is successful.
+    /// - `Err`: with appropriate error when `Log` is empty *OR*
+    ///   when an error is returned by[`serde_json::to_writer_pretty()`].
+    ///
+    /// # See Also
+    ///
+    /// - [`Log::full_path()`] explains usage of `path` parameter.
     fn save(&self, path: &Option<String>) -> Result<(), ErrorType> {
         if self.log.is_empty() {
             Err(Error::new(
@@ -115,6 +178,27 @@ impl Persistent for Log {
         }
     }
 
+    /// Load log from JSON file
+    ///
+    /// # Parameters
+    ///
+    /// - `path`: path to read and load from. This path should not include a filename.
+    ///
+    /// # Issues
+    ///
+    /// - See [#126](https://github.com/PoorRican/sensd/issues/126) which implements validation of `path`.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing:
+    ///
+    /// - `Ok()`: with `()` when loading from disk and deserialization is successful.
+    /// - `Err`: with appropriate error when `Log` is not empty, when path/file is not valid, *OR*
+    ///   when an error is returned by[`serde_json::from_reader()`]
+    ///
+    /// # See Also
+    ///
+    /// - [`Log::full_path()`] explains usage of `path` parameter.
     fn load(&mut self, path: &Option<String>) -> Result<(), ErrorType> {
         if self.log.is_empty() {
             let file = File::open(self.full_path(path).deref())?;

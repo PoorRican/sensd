@@ -1,5 +1,10 @@
 use crate::errors::ErrorType;
 
+/// Default filetype suffix.
+///
+/// Used by [`Log::filename()`]
+pub const FILETYPE: &str = ".json";
+
 /// Expresses an interface to save or load from disk
 pub trait Persistent {
     /// save data to disk

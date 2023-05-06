@@ -4,8 +4,12 @@ use crate::storage::Log;
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 
-/// Hashmap type alias defines a type alias `LogType` for storing `IOEvent` by `DateTime<Utc>` keys.
+/// Mapped collection for storing [`IOEvent`]s by [`DateTime<Utc>`] keys
+///
+/// All events should originate from a single source.
 pub type EventCollection = HashMap<DateTime<Utc>, IOEvent>;
 
-/// Primary container for storing `Log` instances.
+/// Primary container for storing multiple [`Log`] instances
+///
+/// [`Log`] instances may belong to a single source or multiple sources.
 pub type LogContainer = Vec<Def<Log>>;
