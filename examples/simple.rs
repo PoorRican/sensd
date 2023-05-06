@@ -24,7 +24,7 @@ extern crate serde;
 use std::ops::DerefMut;
 use std::sync::Arc;
 
-use sensd::action::{IOCommand, Trigger};
+use sensd::action::{Action, actions, IOCommand, Trigger};
 use sensd::errors::ErrorType;
 use sensd::io::{IOKind, RawValue};
 use sensd::settings::Settings;
@@ -92,7 +92,11 @@ fn build_actions(poller: &mut Group) {
         let threshold = RawValue::Float(1.0);
         let trigger = Trigger::GT;
         if let Some(publisher) = input.publisher_mut() {
-            publisher.attach_threshold(&name, threshold, trigger, None);
+            publisher.subscribe(
+                actions::Threshold::new(
+                    name, threshold, trigger
+                ).into_boxed()
+            );
         }
     }
 
