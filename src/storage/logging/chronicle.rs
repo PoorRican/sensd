@@ -13,7 +13,7 @@ pub trait Chronicle {
         if let Some(log) = self.log() {
             log.try_lock()
                 .unwrap()
-                .push(event.timestamp, event)
+                .push(event)
                 .expect("Unknown error when adding event to log");
         }
     }

@@ -82,10 +82,9 @@ impl Log {
 
     pub fn push(
         &mut self,
-        timestamp: DateTime<Utc>,
         event: IOEvent,
     ) -> Result<&mut IOEvent, ErrorType> {
-        match self.log.entry(timestamp) {
+        match self.log.entry(event.timestamp) {
             Entry::Occupied(_) => Err(Error::new(ErrorKind::ContainerError, "Key already exists")),
             Entry::Vacant(entry) => Ok(entry.insert(event)),
         }
@@ -158,7 +157,7 @@ mod tests {
                 DeviceType::Input(inner) => inner.generate_event(RawValue::default()),
                 DeviceType::Output(inner) => inner.generate_event(RawValue::default()),
             };
-            log.lock().unwrap().push(event.timestamp, event).unwrap();
+            log.lock().unwrap().push(event).unwrap();
             thread::sleep(Duration::from_nanos(1)); // add delay so that we don't finish too quickly
         }
     }
