@@ -45,7 +45,7 @@ fn test_poll() {
 
     let command = IOCommand::Input(move || RawValue::default());
 
-    let mut group = Group::new("main", None);
+    let mut group = Group::new("main", Some(settings.clone()));
     group
         .push_input(
 
