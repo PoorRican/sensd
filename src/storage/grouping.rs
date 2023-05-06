@@ -1,8 +1,7 @@
-use crate::action::IOCommand;
 use crate::errors::ErrorType;
-use crate::helpers::{check_results, Def};
+use crate::helpers::check_results;
 use crate::io::{
-    Device, DeviceContainer, Input, Output, IOEvent, IOKind,
+    Device, DeviceContainer, Input, Output, IOEvent,
     IdType,
 };
 use crate::settings::Settings;
@@ -90,74 +89,47 @@ impl Group {
         }
     }
 
-    pub fn build_input(
-        &mut self,
-        name: &str,
-        id: &IdType,
-        kind: &Option<IOKind>,
-        command: &IOCommand,
-    ) -> Result<Def<Input>, ErrorType> {
-        let settings = Some(self.settings.clone());
+    /// Store [`Input`] in internal collection
+    ///
+    /// # Parameters
+    ///
+    /// - `device`: [`Input`] device guarded by [`Def`]
+    ///
+    /// # Panics
+    ///
+    /// Panic is raised if `device` can't be locked.
+    pub fn push_input(&mut self, input: Input) -> &mut Self {
+        let id = input.id();
 
-        let input = Input::new(String::from(name), *id, *kind)
-            .init_log(settings)
-            .init_publisher()
-            .set_command(command.clone())
-            .into_deferred();
+        self.inputs.insert(id, input.into_deferred());
 
-        self.inputs.insert(*id, input.clone());
-
-        Ok(input)
+        self
     }
 
-    pub fn build_output(
-        &mut self,
-        name: &str,
-        id: &IdType,
-        kind: &Option<IOKind>,
-        command: &IOCommand,
-    ) -> Result<Def<Output>, ErrorType> {
-        let settings = Some(self.settings.clone());
+    /// Store [`Output`] in internal collection
+    ///
+    /// # Parameters
+    ///
+    /// - `device`: [`Output`] device guarded by [`Def`]
+    ///
+    /// # Panics
+    ///
+    /// Panic is raised if `device` can't be locked.
+    pub fn push_output(&mut self, device: Output) -> &mut Self {
+        let id = device.id();
 
-        let output = Output::new(String::from(name), *id, *kind)
-            .init_log(settings)
-            .set_command(command.clone())
-            .into_deferred();
+        self.outputs.insert(id, device.into_deferred());
 
-        self.outputs.insert(*id, output.clone());
-
-        Ok(output)
-    }
-
-    /// Wrapper for [`Group::build_input()`] for building multiple input device/log abstractions
-    pub fn build_inputs(
-        &mut self,
-        arr: &[(&str, IdType, IOKind, IOCommand)],
-    ) -> Result<(), ErrorType> {
-        let mut results = Vec::default();
-        for (name, id, kind, command) in arr.iter().to_owned() {
-            let result = self.build_input(name, id, &Some(*kind), command);
-            results.push(result);
-        }
-        check_results(&results)
-    }
-
-    /// Wrapper for [`Group::build_output()`] for building multiple output device/log abstractions
-    pub fn build_outputs(
-        &mut self,
-        arr: &[(&str, IdType, IOKind, IOCommand)],
-    ) -> Result<(), ErrorType> {
-        let mut results = Vec::default();
-        for (name, id, kind, command) in arr.iter().to_owned() {
-            let result = self.build_output(name, id, &Some(*kind), command);
-            results.push(result);
-        }
-        check_results(&results)
+        self
     }
 
     /// Facade to return operating frequency
     pub fn interval(&self) -> Duration {
         self.settings.interval
+    }
+
+    pub fn settings(&self) -> Arc<Settings> {
+        self.settings.clone()
     }
 
     /// Load all device logs

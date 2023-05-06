@@ -21,12 +21,11 @@ extern crate chrono;
 extern crate sensd;
 extern crate serde;
 
-use std::ops::DerefMut;
 use std::sync::Arc;
 
 use sensd::action::{Action, actions, IOCommand, Trigger};
 use sensd::errors::ErrorType;
-use sensd::io::{IOKind, RawValue};
+use sensd::io::{IOKind, RawValue, Input, Device};
 use sensd::settings::Settings;
 use sensd::storage::{Group, Persistent};
 
@@ -55,54 +54,6 @@ fn init(name: &str) -> Group {
     group
 }
 
-/// █▓▒░ Setup and add devices to given `Group`.
-///
-/// Initial formatting for basic devices is demonstrated.
-fn setup_poller(poller: &mut Group) {
-    let config = vec![
-        (
-            "test name",
-            0,
-            IOKind::PH,
-            IOCommand::Input(|| RawValue::Float(1.2)),
-        ),
-        (
-            "second sensor",
-            1,
-            IOKind::Flow,
-            IOCommand::Input(|| RawValue::Float(0.5)),
-        ),
-    ];
-    poller.build_inputs(&config).unwrap();
-}
-
-/// █▓▒░ Add a single `ThresholdNotifier` to all device in `Group`.
-///
-/// This demonstrates the initialization of `ThresholdNotifier` subscribers and shows how
-/// subscribers are added to `Group` via `::.
-fn build_actions(poller: &mut Group) {
-    println!("\n█▓▒░ Building subscribers ...");
-
-    for (id, device) in poller.inputs.iter() {
-        let mut binding = device.try_lock().unwrap();
-        let input = binding.deref_mut();
-        println!("- Initializing subscriber ...");
-
-        let name = format!("Subscriber for Input:{}", id);
-        let threshold = RawValue::Float(1.0);
-        let trigger = Trigger::GT;
-        if let Some(publisher) = input.publisher_mut() {
-            publisher.subscribe(
-                actions::Threshold::new(
-                    name, threshold, trigger
-                ).into_boxed()
-            );
-        }
-    }
-
-    println!("\n... Finished Initializing subscribers\n");
-}
-
 /// █▓▒░ Handle polling of all devices in `Group`
 fn poll(poller: &mut Group) -> Result<(), ErrorType> {
     match poller.poll() {
@@ -120,8 +71,66 @@ fn poll(poller: &mut Group) -> Result<(), ErrorType> {
 fn main() {
     let mut poller = init("main");
 
-    setup_poller(&mut poller);
-    build_actions(&mut poller);
+    // setup ph sensor
+    {
+        let name = "test name";
+        let id = 0;
+        let kind = IOKind::PH;
+        let command = IOCommand::Input(|| RawValue::Float(1.2));
+
+        // build input device
+        let mut input =
+            Input::new(
+                name.into(),
+                id,
+                Some(kind),
+            ).set_command(
+                command
+            ).init_log(
+                Some(poller.settings())
+            ).init_publisher();
+
+        // setup publisher/action
+        input.publisher_mut().as_mut().unwrap()
+            .subscribe(
+                actions::Threshold::new(
+                    format!("Subscriber for Input:{}", id),
+                    RawValue::Float(1.0),
+                    Trigger::GT,
+                ).into_boxed()
+            );
+
+        poller.push_input(input);
+    }
+    // setup flow sensor
+    {
+        let name = "second sensor";
+        let id = 1;
+        let kind = IOKind::PH;
+        let command = IOCommand::Input(|| RawValue::Float(1.2));
+
+        // build input device
+        let mut input = Input::new(
+            name.into(),
+            id,
+            Some(kind),
+        )
+            .set_command(command)
+            .init_log(Some(poller.settings()))
+            .init_publisher();
+
+        // setup publisher/action
+        input.publisher_mut().as_mut().unwrap()
+            .subscribe(
+                actions::Threshold::new(
+                    format!("Subscriber for Input:{}", id),
+                    RawValue::Float(1.0),
+                    Trigger::GT,
+                ).into_boxed()
+            );
+
+        poller.push_input(input);
+    }
 
     println!("█▓▒░ Beginning polling ░▒▓█\n");
 
