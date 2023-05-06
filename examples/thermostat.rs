@@ -16,13 +16,13 @@ extern crate chrono;
 extern crate sensd;
 extern crate serde;
 
-use sensd::action::{actions::Comparison, IOCommand};
+use sensd::action::{IOCommand, Comparison};
 use sensd::errors::ErrorType;
-use sensd::io::{IOKind, IdType, RawValue};
+use sensd::io::{IdType, IOKind, RawValue};
 use sensd::settings::Settings;
 use sensd::storage::{Group, Persistent};
-use std::ops::DerefMut;
 
+use std::ops::DerefMut;
 use std::sync::Arc;
 
 const INPUT_ID: IdType = 0;

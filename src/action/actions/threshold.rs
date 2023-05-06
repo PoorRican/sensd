@@ -1,34 +1,8 @@
 use crate::action::{Action, BoxedAction};
 use crate::errors::ErrorType;
-use crate::io::{Output, IOEvent, RawValue};
-use std::fmt::{Display, Formatter};
+use crate::io::{IOEvent, Output, RawValue};
+use crate::action::comparison::Comparison;
 use crate::helpers::Def;
-
-#[derive(Debug, Clone)]
-/// Discrete variants that abstract comparison of external and threshold values.
-///
-/// External value should be always be on the left-side; internal threshold should be on the right side.
-/// Internal command should be executed when this inequality returns true.
-///
-/// Used by [`Threshold::evaluate()`]
-pub enum Comparison {
-    GT,
-    LT,
-    GTE,
-    LTE,
-}
-
-impl Display for Comparison {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let name = match self {
-            Comparison::GT => ">",
-            Comparison::LT => "<",
-            Comparison::GTE => "≥",
-            Comparison::LTE => "≤",
-        };
-        write!(f, "{}", name)
-    }
-}
 
 /// Bang-bang (on-off) controller
 ///

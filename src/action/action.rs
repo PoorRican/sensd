@@ -1,5 +1,5 @@
 use crate::errors::{Error, ErrorKind, ErrorType};
-use crate::io::{Output, IOEvent, RawValue};
+use crate::io::{IOEvent, Output, RawValue};
 use std::ops::DerefMut;
 use crate::helpers::Def;
 

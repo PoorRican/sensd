@@ -1,8 +1,9 @@
 //! Implements a control system based off of evaluating incoming data.
 
-use crate::action::{Action, BoxedAction, SchedRoutineHandler, actions::Comparison, actions};
+use crate::action::{Action, actions, BoxedAction, SchedRoutineHandler};
+use crate::action::comparison::Comparison;
 use crate::helpers::Def;
-use crate::io::{Output, IOEvent, RawValue};
+use crate::io::{IOEvent, Output, RawValue};
 
 /// Collection of actions for propagating single device input.
 ///
