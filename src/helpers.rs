@@ -1,7 +1,7 @@
-use std::fs::{File, create_dir_all};
+use std::fs::{create_dir_all, File};
 use std::ops::Deref;
 use std::path::Path;
-use std::sync::{Arc, Mutex, MutexGuard, TryLockResult, PoisonError};
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError, TryLockResult};
 
 use crate::errors::ErrorType;
 

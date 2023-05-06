@@ -1,14 +1,17 @@
 use crate::action::{Command, IOCommand};
 use crate::errors::ErrorType;
 use crate::helpers::Def;
-use crate::io::{no_internal_closure, Device, DeviceMetadata, IODirection, IOEvent, IOKind, RawValue, IdType, DeviceType};
+use crate::io::{
+    no_internal_closure, Device, DeviceMetadata, DeviceType, IODirection, IOEvent, IOKind, IdType,
+    RawValue,
+};
 use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
 pub struct GenericOutput {
     metadata: DeviceMetadata,
     // cached state
-    state: RawValue,
+    state: Option<RawValue>,
     log: Option<Def<Log>>,
     command: Option<IOCommand>,
 }
@@ -28,7 +31,7 @@ impl Device for GenericOutput {
         Self: Sized,
     {
         let kind = kind.unwrap_or_default();
-        let state = RawValue::default();
+        let state = None;
         let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Output);
 
         let command = None;
@@ -46,9 +49,9 @@ impl Device for GenericOutput {
         &self.metadata
     }
 
-    fn add_command(mut self, command: IOCommand) -> Self
+    fn set_command(mut self, command: IOCommand) -> Self
     where
-        Self: Sized
+        Self: Sized,
     {
         self.command = Some(command);
         self
@@ -56,6 +59,13 @@ impl Device for GenericOutput {
 
     fn set_log(&mut self, log: Def<Log>) {
         self.log = Some(log)
+    }
+
+    /// Immutable reference to cached state
+    ///
+    /// `state` field should be updated by `write()`
+    fn state(&self) -> &Option<RawValue> {
+        &self.state
     }
 
     fn into_variant(self) -> DeviceType {
@@ -85,17 +95,11 @@ impl GenericOutput {
         let event = self.tx(value).expect("Error returned by `tx()`");
 
         // update cached state
-        self.state = event.data.value;
+        self.state = Some(event.data.value);
 
         self.add_to_log(event);
 
         Ok(event)
-    }
-
-    /// Immutable reference to cached state
-    /// `state` field should be updated by `write()`
-    pub fn state(&self) -> &RawValue {
-        &self.state
     }
 }
 
@@ -131,9 +135,7 @@ mod tests {
     #[test]
     /// Test that `tx()` was called, cached state was updated, and IOEvent added to log.
     fn test_write() {
-        let mut output =
-            GenericOutput::default()
-                .init_log(None);
+        let mut output = GenericOutput::default().init_log(None);
         let log = output.log().unwrap();
 
         assert_eq!(log.try_lock().unwrap().iter().count(), 0);
@@ -142,14 +144,14 @@ mod tests {
         output.command = Some(COMMAND);
 
         // check `state` before `::write()`
-        assert_ne!(value, *output.state());
+        assert_eq!(None, *output.state());
 
         let event = output
             .write(value)
             .expect("Unknown error returned by `::write()`");
 
         // check state after `::write()`
-        assert_eq!(value, *output.state());
+        assert_eq!(value, output.state().unwrap());
 
         // check returned `IOEvent`
         assert_eq!(value, event.data.value);

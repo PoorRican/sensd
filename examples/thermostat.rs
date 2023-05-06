@@ -1,6 +1,6 @@
 //! An example of demonstrating a bang-bang (on-off) controller to maintain temperature.
 //!
-//! This example is non-functional and simulates HW GPIO via `println()`. 
+//! This example is non-functional and simulates HW GPIO via `println()`.
 //!
 //! # Operation
 //!
@@ -11,17 +11,17 @@
 //! # Note
 //!
 //! ## █▓▒░ Unsafe Code
-//! In order to simulate an external device, 
+//! In order to simulate an external device,
 extern crate chrono;
 extern crate sensd;
 extern crate serde;
 
-use std::ops::DerefMut;
 use sensd::action::{Comparison, IOCommand};
 use sensd::errors::ErrorType;
-use sensd::io::{IODirection, IOKind, RawValue, DeferredDevice, IdType, DeviceType};
+use sensd::io::{DeferredDevice, DeviceType, IODirection, IOKind, IdType, RawValue};
 use sensd::settings::Settings;
-use sensd::storage::{Persistent, Group};
+use sensd::storage::{Group, Persistent};
+use std::ops::DerefMut;
 
 use std::sync::Arc;
 
@@ -29,7 +29,7 @@ const INPUT_ID: IdType = 0;
 const OUTPUT_ID: IdType = 1;
 
 /// █▓▒░ Event Loop Operating frequency
-/// 
+///
 /// Frequency can be set to any arbitrary value and directly controls speed of event loop.
 /// Frequency shouldn't be too high since polling operations are currently blocking. No error
 /// occurs if polling time exceeds frequency.
@@ -39,7 +39,6 @@ const FREQUENCY: std::time::Duration = std::time::Duration::from_secs(5);
 
 const THRESHOLD: i8 = 10;
 static mut EXTERNAL_VALUE: RawValue = RawValue::Int8(0);
-
 
 /// █▓▒░ Load settings and setup `Group`.
 ///
@@ -88,7 +87,6 @@ fn build_actions(poller: &mut Group) {
     let output: DeferredDevice = poller.outputs.get(&OUTPUT_ID).unwrap().clone();
 
     if let DeviceType::Input(device) = input.try_lock().unwrap().deref_mut() {
-        device.init_publisher();
         println!("- Initializing subscriber ...");
 
         let name = format!("Subscriber for Input:{}", INPUT_ID);
@@ -109,13 +107,12 @@ fn poll(poller: &mut Group) -> Result<(), ErrorType> {
             Ok(_) => println!("\n"),
             Err(t) => {
                 return Err(t);
-            },
+            }
         },
         _ => (),
     };
     Ok(())
 }
-
 
 fn main() {
     let mut poller = init("main");
@@ -126,14 +123,12 @@ fn main() {
     println!("█▓▒░ Beginning polling ░▒▓█\n");
 
     let range = 5..11;
-    for value in range.clone().into_iter()
-        .chain(range.rev())
-        .cycle() {
-        
-        unsafe { EXTERNAL_VALUE = RawValue::Int8(value); }
+    for value in range.clone().into_iter().chain(range.rev()).cycle() {
+        unsafe {
+            EXTERNAL_VALUE = RawValue::Int8(value);
+        }
 
-        poll(&mut poller)
-            .expect("Error occurred during polling");
+        poll(&mut poller).expect("Error occurred during polling");
 
         std::thread::sleep(FREQUENCY);
     }

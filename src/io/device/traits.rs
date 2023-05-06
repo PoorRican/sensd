@@ -1,10 +1,10 @@
-use core::fmt::Formatter;
-use chrono::Utc;
 use crate::action::IOCommand;
 use crate::helpers::Def;
-use crate::io::{IdType, IOKind, DeviceMetadata, IODirection, RawValue, IOEvent, DeviceType};
+use crate::io::{DeviceMetadata, DeviceType, IODirection, IOEvent, IOKind, IdType, RawValue};
 use crate::settings::Settings;
 use crate::storage::{Chronicle, Log};
+use chrono::Utc;
+use core::fmt::Formatter;
 use std::sync::Arc;
 
 /// Defines a minimum interface for interacting with GPIO devices.
@@ -16,6 +16,7 @@ use std::sync::Arc;
 pub trait Device: Chronicle {
     /// Creates a new instance of the device with the given parameters.
     ///
+    /// # Parameters
     /// `name`: name of device.
     /// `id`: device ID.
     /// `kind`: kind of I/O device. Optional argument.
@@ -66,8 +67,9 @@ pub trait Device: Chronicle {
     }
 
     /// Setter for `command` field
-    fn add_command(self, command: IOCommand) -> Self
-        where Self: Sized;
+    fn set_command(self, command: IOCommand) -> Self
+    where
+        Self: Sized;
 
     /// Setter for `log` field
     fn set_log(&mut self, log: Def<Log>);
@@ -75,12 +77,15 @@ pub trait Device: Chronicle {
     /// Initialize, set, and return log.
     fn init_log(mut self, settings: Option<Arc<Settings>>) -> Self
     where
-        Self: Sized
+        Self: Sized,
     {
         let log = Def::new(Log::new(&self.metadata(), settings));
         self.set_log(log);
         self
     }
+
+    /// Immutable reference to cached state
+    fn state(&self) -> &Option<RawValue>;
 
     fn into_variant(self) -> DeviceType;
 }
@@ -91,7 +96,6 @@ pub trait DeviceTraits {
     fn kind(&self) -> IOKind;
     fn direction(&self) -> IODirection;
 }
-
 
 impl std::fmt::Debug for dyn Device {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

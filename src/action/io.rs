@@ -1,14 +1,10 @@
-//! Type aliases for functions and closures to assist `ActionBuilder`.
-//! These aliases allow for strongly structuring the dynamic initialization of subscriber/command instances.
-use crate::io::{IODirection, RawValue};
+use crate::action::Command;
 use crate::errors::ErrorType;
+use crate::io::{IODirection, RawValue};
 
-use super::Command;
-
-/// Implementation of Command design pattern for low-level I/O code
+/// Command design pattern for storing low-level I/O code
 ///
-/// Should be used as an interface for HAL code and otherwise perform no other logic. Data
-/// processing, or formatting of I/O values should be handled by `EvaluationFunction`.
+/// Should be used as an interface for HAL code and otherwise perform no other logic.
 #[derive(Clone)]
 pub enum IOCommand {
     /// Low-level code to read HW input
@@ -97,10 +93,3 @@ mod tests {
         assert_eq!(None, command.execute(Some(RawValue::Binary(true))).unwrap());
     }
 }
-
-
-
-
-
-
-

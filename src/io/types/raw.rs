@@ -1,13 +1,13 @@
 use crate::errors::Error;
 use float_cmp::approx_eq;
 use serde::{Deserialize, Serialize};
-use std::ops::{Add, Sub, Mul, Div, Neg, Rem};
 use std::fmt::{Display, Formatter};
+use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
 
 /// Type used for passing between IO abstractions.
 ///
-/// An enum is used to avoid defining a generic `IOEvent` which cannot be
-/// stored heterogeneously alongside differing types.
+/// An enum is used to avoid a generic implementation of [`crate::storage::Log`] caused by
+/// a generic implementation of [`crate::io::IOEvent`].
 ///
 /// # Notes
 /// The implemented types have been chosen as a good fit for GPIO. However,
@@ -21,6 +21,16 @@ pub enum RawValue {
     Int(i32),
     Float(f32),
 }
+
+impl RawValue {
+    pub fn is_numeric(&self) -> bool {
+        match self {
+            Self::Binary(_) => false,
+            _ => true,
+        }
+    }
+}
+
 impl Default for RawValue {
     fn default() -> Self {
         RawValue::PosInt8(u8::default())
@@ -54,13 +64,13 @@ impl TryFrom<u8> for RawValue {
     }
 }
 impl TryFrom<i8> for RawValue {
-    type Error =  Error;
+    type Error = Error;
     fn try_from(value: i8) -> Result<Self, Self::Error> {
         Ok(RawValue::Int8(value))
     }
 }
 impl TryFrom<u32> for RawValue {
-    type Error =  Error;
+    type Error = Error;
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         Ok(RawValue::PosInt(value))
     }
@@ -100,6 +110,7 @@ impl Add for RawValue {
         }
     }
 }
+
 impl Sub for RawValue {
     type Output = RawValue;
 
@@ -115,6 +126,7 @@ impl Sub for RawValue {
         }
     }
 }
+
 impl Mul for RawValue {
     type Output = RawValue;
 
@@ -130,6 +142,7 @@ impl Mul for RawValue {
         }
     }
 }
+
 impl Div for RawValue {
     type Output = RawValue;
 
@@ -150,12 +163,17 @@ impl Neg for RawValue {
     type Output = RawValue;
 
     fn neg(self) -> RawValue {
-        // TODO: Catch binary as type
         match self {
             RawValue::Int(x) => RawValue::Int(-x),
             RawValue::Float(x) => RawValue::Float(-x),
             RawValue::Int8(x) => RawValue::Int8(-x),
-            _ => panic!("Cannot negate non-numeric types"),
+            RawValue::Binary(x) => RawValue::Binary(
+                match x {
+                    true => false,
+                    false => true
+                }
+            ),
+            _ => panic!("Cannot negate unsigned types"),
         }
     }
 }
@@ -188,7 +206,6 @@ impl PartialEq for RawValue {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::io::RawValue;
@@ -199,12 +216,12 @@ mod tests {
         let b = RawValue::Int(7);
         let c = a + b;
         assert_eq!(c, RawValue::Int(12));
-    
+
         let a = RawValue::Float(3.14);
         let b = RawValue::Float(2.71);
         let c = a + b;
         assert_eq!(c, RawValue::Float(5.85));
-    
+
         let a = RawValue::Binary(true);
         let b = RawValue::Binary(false);
         let c = a + b;
@@ -225,7 +242,7 @@ mod tests {
         let b = RawValue::Int(7);
         let c = a - b;
         assert_eq!(c, RawValue::Int(-2));
-    
+
         let a = RawValue::Float(3.14);
         let b = RawValue::Float(2.71);
         let c = a - b;
@@ -248,7 +265,7 @@ mod tests {
         let b = RawValue::Int(7);
         let c = a * b;
         assert_eq!(c, RawValue::Int(35));
-    
+
         let a = RawValue::Float(3.14);
         let b = RawValue::Float(2.71);
         let c = a * b;
@@ -262,7 +279,7 @@ mod tests {
         let b = RawValue::Float(7.0);
         let _ = a * b;
     }
-    
+
     #[test]
     fn test_rawvalue_div() {
         let a = RawValue::Int(5);
@@ -274,7 +291,7 @@ mod tests {
         let b = RawValue::Int(5);
         let c = a / b;
         assert_eq!(c, RawValue::Int(1));
-    
+
         let a = RawValue::Float(3.14);
         let b = RawValue::Float(2.71);
         let c = a / b;

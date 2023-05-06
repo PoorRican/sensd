@@ -49,8 +49,7 @@ impl Settings {
         let log_fn_prefix = var("LOG_FN_PREFIX").unwrap_or_else(|_| String::from(LOG_FN_PREFIX));
         let sensors_fn_prefix =
             var("SENSORS_FN_PREFIX").unwrap_or_else(|_| String::from(SENSORS_FN_PREFIX));
-        let data_root =
-            var("DATA_ROOT").unwrap_or_else(|_| String::from(DATA_ROOT));
+        let data_root = var("DATA_ROOT").unwrap_or_else(|_| String::from(DATA_ROOT));
 
         Settings {
             version,

@@ -1,5 +1,5 @@
-use std::hash::Hash;
 use serde::Serialize;
+use std::hash::Hash;
 
 /// Traits required to be implemented for a type to be usable as an `id`
 pub trait IdTraits: Eq + Hash + Default + Serialize {}

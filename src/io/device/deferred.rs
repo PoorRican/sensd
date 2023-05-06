@@ -1,9 +1,7 @@
-use std::ops::Deref;
-use crate::io::{
-    DeviceType, DeviceWrapper, IOKind, IdType, IODirection, DeviceTraits
-};
 use crate::helpers::Def;
+use crate::io::{DeviceTraits, DeviceType, DeviceWrapper, IODirection, IOKind, IdType};
 use crate::storage::{Chronicle, Log};
+use std::ops::Deref;
 
 pub type DeferredDevice = Def<DeviceType>;
 impl DeviceWrapper for DeferredDevice {
@@ -44,4 +42,3 @@ impl Chronicle for DeferredDevice {
         }
     }
 }
-

@@ -1,15 +1,16 @@
-use crate::action::{Command, IOCommand, Publisher, PublisherInstance};
+use crate::action::{Command, IOCommand, Publisher};
 use crate::errors::ErrorType;
 use crate::helpers::Def;
-use crate::io::{no_internal_closure, Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, DeviceType};
+use crate::io::{no_internal_closure, Device, DeviceMetadata, DeviceType, IODirection, IOEvent, IOKind, IdType, RawValue};
 use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
 pub struct GenericInput {
     metadata: DeviceMetadata,
     log: Option<Def<Log>>,
-    publisher: Option<PublisherInstance>,
+    publisher: Option<Publisher>,
     command: Option<IOCommand>,
+    state: Option<RawValue>,
 }
 
 // Implement traits
@@ -32,12 +33,14 @@ impl Device for GenericInput {
         let publisher = None;
         let command = None;
         let log = None;
+        let state = None;
 
         Self {
             metadata,
             log,
             publisher,
             command,
+            state,
         }
     }
 
@@ -45,9 +48,9 @@ impl Device for GenericInput {
         &self.metadata
     }
 
-    fn add_command(mut self, command: IOCommand) -> Self
+    fn set_command(mut self, command: IOCommand) -> Self
     where
-        Self: Sized
+        Self: Sized,
     {
         self.command = Some(command);
         self
@@ -55,6 +58,13 @@ impl Device for GenericInput {
 
     fn set_log(&mut self, log: Def<Log>) {
         self.log = Some(log);
+    }
+
+    /// Immutable reference to cached state
+    ///
+    /// `state` field should be updated by `write()`
+    fn state(&self) -> &Option<RawValue> {
+        &self.state
     }
 
     fn into_variant(self) -> DeviceType {
@@ -80,7 +90,7 @@ impl GenericInput {
     /// No error is raised when there is no associated publisher.
     fn propagate(&mut self, event: &IOEvent) {
         if let Some(publisher) = &mut self.publisher {
-            publisher.notify(&event);
+            publisher.propagate(&event);
         };
     }
 
@@ -101,10 +111,12 @@ impl GenericInput {
     }
 
     /// Create and set publisher or silently fail
-    pub fn init_publisher(&mut self) -> &mut Self {
+    pub fn init_publisher(mut self) -> Self
+    where
+        Self: Sized {
         match self.publisher {
             None => {
-                self.publisher = Some(PublisherInstance::default());
+                self.publisher = Some(Publisher::default());
             }
             _ => {
                 eprintln!("Publisher already exists!");
@@ -113,23 +125,12 @@ impl GenericInput {
         self
     }
 
-    pub fn set_publisher(&mut self, publisher: PublisherInstance) -> Result<(), ()> {
-        match self.publisher {
-            None => {
-                self.publisher = Some(publisher);
-                Ok(())
-            }
-            _ => Err(()),
-        }
-    }
-
-    pub fn publisher_mut(&mut self) -> &mut Option<PublisherInstance> {
+    pub fn publisher_mut(&mut self) -> &mut Option<Publisher> {
         &mut self.publisher
     }
 
-    pub fn publisher(&self) -> &Option<PublisherInstance> {
+    pub fn publisher(&self) -> &Option<Publisher> {
         &self.publisher
-
     }
 
     pub fn has_publisher(&self) -> bool {
@@ -149,7 +150,7 @@ impl Chronicle for GenericInput {
 // Testing
 #[cfg(test)]
 mod tests {
-    use crate::action::{IOCommand, PublisherInstance};
+    use crate::action::{IOCommand};
     use crate::io::{Device, GenericInput, RawValue};
     use crate::storage::Chronicle;
 
@@ -168,40 +169,41 @@ mod tests {
 
     #[test]
     fn test_read() {
-        let mut input =
-            GenericInput::default()
-                .init_log(None);
+        let mut input = GenericInput::default().init_log(None);
         let log = input.log();
 
         input.command = Some(COMMAND);
 
-        assert_eq!(log.clone()
-                       .unwrap()
-                       .try_lock().unwrap()
-                       .iter().count(),
-                   0);
+        assert_eq!(log.clone().unwrap().try_lock().unwrap().iter().count(), 0);
 
         let event = input.read().unwrap();
         assert_eq!(event.data.value, DUMMY_OUTPUT);
         assert_eq!(event.data.kind, input.kind());
 
         // assert that event was added to log
-        assert_eq!(log.unwrap()
-                       .try_lock().unwrap()
-                       .iter().count(),
-                   1);
+        assert_eq!(log.unwrap().try_lock().unwrap().iter().count(), 1);
     }
 
     /// Test `::add_publisher()` and `::has_publisher()`
     #[test]
-    fn test_add_publisher() {
+    fn test_init_publisher() {
         let mut input = GenericInput::default();
 
         assert_eq!(false, input.has_publisher());
 
-        let publisher = PublisherInstance::default();
-        input.set_publisher(publisher).unwrap();
+        input = input.init_publisher();
 
         assert_eq!(true, input.has_publisher());
+    }
+
+    #[test]
+    fn test_init_log() {
+        let mut input = GenericInput::default();
+
+        assert_eq!(false, input.has_log());
+
+        input = input.init_log(None);
+
+        assert_eq!(true, input.has_log());
     }
 }

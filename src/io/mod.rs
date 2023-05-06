@@ -1,5 +1,4 @@
 //! Encapsulate IO for devices
-mod calibrated;
 mod device;
 mod event;
 mod input;
@@ -7,7 +6,6 @@ mod metadata;
 mod output;
 mod types;
 
-pub use calibrated::Calibrated;
 pub use device::*;
 pub use event::IOEvent;
 pub use input::*;
