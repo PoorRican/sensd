@@ -86,6 +86,22 @@ impl Threshold {
         }
     }
 
+    /// Constructor that accepts `output` parameter
+    ///
+    /// # Parameters
+    ///
+    /// - `name`: name of action
+    /// - `threshold`: Threshold that controls what external value actuates/de-actuates device
+    /// - `trigger`: Defines the relationship between threshold and external value.
+    /// - `output`: Output device
+    ///
+    /// # Returns
+    ///
+    /// Initialized [`Threshold`] action with `output` set.
+    pub fn with_output(name: String, threshold: RawValue, trigger: Comparison, output: Def<Output>) -> Self {
+        Self::new(name, threshold, trigger).set_output(output)
+    }
+
     #[inline]
     /// Getter for internal `threshold` value
     pub fn threshold(&self) -> RawValue {
