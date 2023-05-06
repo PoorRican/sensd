@@ -2,7 +2,7 @@ use crate::action::IOCommand;
 use crate::errors::ErrorType;
 use crate::helpers::{check_results, Def};
 use crate::io::{
-    Device, DeviceContainer, GenericInput, GenericOutput, IOEvent, IOKind,
+    Device, DeviceContainer, Input, GenericOutput, IOEvent, IOKind,
     IdType,
 };
 use crate::settings::Settings;
@@ -36,16 +36,16 @@ pub struct Group {
     // internal containers
     pub logs: LogContainer,
 
-    pub inputs: DeviceContainer<IdType, GenericInput>,
+    pub inputs: DeviceContainer<IdType, Input>,
     pub outputs: DeviceContainer<IdType, GenericOutput>,
 }
 
 impl Group {
     /// Primary callable to iterate through input device container once.
     ///
-    /// [`GenericInput::read()`] is called on each input device at the frequency dictated by
-    /// [`Group::interval()`]. Generated [`IOEvent`] instances are handled by [`GenericInput::read()`].
-    /// Failure does not halt execution. Instead, failed calls to [`GenericInput::read()`] are returned as an
+    /// [`Input::read()`] is called on each input device at the frequency dictated by
+    /// [`Group::interval()`]. Generated [`IOEvent`] instances are handled by [`Input::read()`].
+    /// Failure does not halt execution. Instead, failed calls to [`Input::read()`] are returned as an
     /// array of [`Result`] objects. [`check_results()`] should be used to catch and handle any errors
     ///
     /// # Returns
@@ -76,7 +76,7 @@ impl Group {
         let settings = settings.unwrap_or_else(|| Arc::new(Settings::default()));
         let last_execution = Utc::now() - settings.interval;
 
-        let inputs = <DeviceContainer<IdType, GenericInput>>::default();
+        let inputs = <DeviceContainer<IdType, Input>>::default();
         let outputs = <DeviceContainer<IdType, GenericOutput>>::default();
         let logs = Vec::default();
 
@@ -96,10 +96,10 @@ impl Group {
         id: &IdType,
         kind: &Option<IOKind>,
         command: &IOCommand,
-    ) -> Result<Def<GenericInput>, ErrorType> {
+    ) -> Result<Def<Input>, ErrorType> {
         let settings = Some(self.settings.clone());
 
-        let input = GenericInput::new(String::from(name), *id, *kind)
+        let input = Input::new(String::from(name), *id, *kind)
             .init_log(settings)
             .init_publisher()
             .set_command(command.clone())

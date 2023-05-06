@@ -229,7 +229,7 @@ impl Persistent for Log {
 mod tests {
     use crate::action::IOCommand;
     use crate::helpers::Def;
-    use crate::io::{Device, GenericInput, IOKind, IdType, RawValue};
+    use crate::io::{Device, Input, IOKind, IdType, RawValue};
     use crate::storage::{Chronicle, Log, Persistent};
     use std::path::Path;
     use std::time::Duration;
@@ -259,7 +259,7 @@ mod tests {
         let filename;
         // test save
         {
-            let device = GenericInput::new(String::from(SENSOR_NAME), ID, Some(IOKind::Flow))
+            let device = Input::new(String::from(SENSOR_NAME), ID, Some(IOKind::Flow))
                 .set_command(COMMAND)
                 .init_log(None);
             let log = device.log().unwrap();
@@ -277,7 +277,7 @@ mod tests {
         // test load
         // build back up then load
         {
-            let device = GenericInput::new(String::from(SENSOR_NAME), ID, Some(IOKind::Flow))
+            let device = Input::new(String::from(SENSOR_NAME), ID, Some(IOKind::Flow))
                 .set_command(COMMAND)
                 .init_log(None);
             let log = device.log().unwrap();

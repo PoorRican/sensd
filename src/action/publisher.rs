@@ -8,8 +8,8 @@ use crate::io::{GenericOutput, IOEvent, RawValue};
 ///
 /// A [`Publisher`] has a 1-to-1 relationship with a input device and stores all [`Action`] instances
 /// ("subscribers" as per observer design pattern) associated with that input device. When data is read from
-/// input device ([`crate::io::GenericInput::rx()`], the generated [`IOEvent`] should be passed to to all
-/// [`Action`] instances. This propagation of [`IOEvent`] is handled in [`crate::io::GenericInput::read()`],
+/// input device ([`crate::io::Input::rx()`], the generated [`IOEvent`] should be passed to to all
+/// [`Action`] instances. This propagation of [`IOEvent`] is handled in [`crate::io::Input::read()`],
 /// which calls [`Publisher::propagate()`].
 ///
 /// Additionally, [`Publisher`] maintains an internal collection of scheduled [`crate::action::Routine`]s
