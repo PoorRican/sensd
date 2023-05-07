@@ -47,11 +47,14 @@ impl Threshold {
     ///
     /// - [`Action::with_output()`] for constructor that accepts an `output` parameter.
     // TODO: there should be an option to inverse polarity
-    pub fn new(name: String, threshold: RawValue, trigger: Trigger) -> Self {
+    pub fn new<N>(name: N, threshold: RawValue, trigger: Trigger) -> Self
+    where
+        N: Into<String>
+    {
         // TODO: add a type check to ensure that `output` accepts a binary value
 
         Self {
-            name,
+            name: name.into(),
             threshold,
             trigger,
             output: None,
@@ -70,8 +73,11 @@ impl Threshold {
     /// # Returns
     ///
     /// Initialized [`Threshold`] action with `output` set.
-    pub fn with_output(name: String, threshold: RawValue, trigger: Trigger, output: Def<Output>) -> Self {
-        Self::new(name, threshold, trigger).set_output(output)
+    pub fn with_output<N>(name: N, threshold: RawValue, trigger: Trigger, output: Def<Output>) -> Self
+    where
+        N: Into<String>
+    {
+        Self::new(name.into(), threshold, trigger).set_output(output)
     }
 
     #[inline]
@@ -149,5 +155,33 @@ impl Action for Threshold {
     #[inline]
     fn into_boxed(self) -> BoxedAction {
         Box::new(self)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::action::actions::Threshold;
+    use crate::action::Trigger;
+    use crate::io::{Device, Output, RawValue};
+
+    #[test]
+    /// Ensure that `name` can be given to `new()` constructor as `String` or `&str`
+    fn new_name_parameter() {
+        let name = "test name";
+        Threshold::new(name, RawValue::default(), Trigger::GT);
+
+        let name = String::from(name);
+        Threshold::new(name, RawValue::default(), Trigger::GT);
+    }
+
+    #[test]
+    /// Ensure that `name` can be given to `with_output()` constructor as `String` or `&str`
+    fn with_output_name_parameter() {
+        let output = Output::default().into_deferred();
+        let name = "test name";
+        Threshold::with_output(name, RawValue::default(), Trigger::GT, output.clone());
+
+        let name = String::from(name);
+        Threshold::with_output(name, RawValue::default(), Trigger::GT, output);
     }
 }

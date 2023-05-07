@@ -71,7 +71,10 @@ impl Group {
     /// Initialized empty containers.
     ///
     /// Builder and setter functions should be used to populate containers.
-    pub fn new(name: &str, settings: Option<Arc<Settings>>) -> Self {
+    pub fn new<N>(name: N, settings: Option<Arc<Settings>>) -> Self
+    where
+        N: Into<String>
+    {
         let settings = settings.unwrap_or_else(|| Arc::new(Settings::default()));
         let last_execution = Utc::now() - settings.interval;
 
@@ -80,7 +83,7 @@ impl Group {
         let logs = Vec::default();
 
         Self {
-            name: String::from(name),
+            name: name.into(),
             settings,
             last_execution,
             logs,
@@ -212,6 +215,13 @@ mod tests {
     use crate::storage::Group;
 
     use std::fs::remove_dir_all;
+
+    #[test]
+    /// Test that constructor accepts `name` as `&str` or `String`
+    fn new_name_parameter() {
+        Group::new("as &str", None);
+        Group::new(String::from("as String"), None);
+    }
 
     /// Test [`Group::dir()`]
     #[test]

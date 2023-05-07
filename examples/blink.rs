@@ -48,7 +48,7 @@ fn init(name: &str) -> Group {
 fn setup_devices(poller: &mut Group) {
     poller.push_input(
         Input::new(
-            "Mock Output".into(),
+            "Mock Output",
             OUTPUT_ID,
             Some(IOKind::Light),
         ).set_command(

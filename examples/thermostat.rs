@@ -106,7 +106,7 @@ fn main() {
     poller.push_input(
         unsafe {
             Input::new(
-                "mock temp sensor".into(),
+                "mock temp sensor",
                 INPUT_ID,
                 Some(IOKind::Temperature),
             ).set_command(
@@ -118,7 +118,7 @@ fn main() {
     // build output
     poller.push_output(
         Output::new(
-            "test mock cooling device".into(),
+            "test mock cooling device",
             OUTPUT_ID,
             Some(IOKind::Temperature),
         ).set_command(

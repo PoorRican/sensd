@@ -23,13 +23,14 @@ impl Device for Input {
     /// * `id`: arbitrary, numeric ID to differentiate from other sensors
     ///
     /// returns: MockPhSensor
-    fn new(name: String, id: IdType, kind: Option<IOKind>) -> Self
+    fn new<N>(name: N, id: IdType, kind: Option<IOKind>) -> Self
     where
         Self: Sized,
+        N: Into<String>
     {
         let kind = kind.unwrap_or_default();
 
-        let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::In);
+        let metadata: DeviceMetadata = DeviceMetadata::new(name.into(), id, kind, IODirection::In);
 
         let publisher = None;
         let command = None;
@@ -155,6 +156,13 @@ mod tests {
 
     const DUMMY_OUTPUT: RawValue = RawValue::Float(1.2);
     const COMMAND: IOCommand = IOCommand::Input(move || DUMMY_OUTPUT);
+
+    #[test]
+    /// Test that constructor accepts `name` as `&str` or `String`
+    fn new_name_parameter() {
+        Input::new("as &str", 0, None);
+        Input::new(String::from("as String"), 0, None);
+    }
 
     #[test]
     fn test_rx() {

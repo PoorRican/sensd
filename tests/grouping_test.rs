@@ -15,19 +15,19 @@ fn test_builder_pattern() {
     group
         .push_input(
             Input::new(
-                "test name".into(),
+                "test name",
                 0,
                 Some(IOKind::PH),
             ).set_command(command.clone()))
         .push_input(
             Input::new(
-                "second sensor".into(),
+                "second sensor",
                 1,
                 Some(IOKind::EC),
             ).set_command(command.clone()))
         .push_output(
             Output::new(
-                "output device".into(),
+                "output device",
                 2,
                 Some(IOKind::Flow)
             ).set_command(IOCommand::Output(|_| Ok(())))
@@ -50,7 +50,7 @@ fn test_poll() {
         .push_input(
 
             Input::new(
-                "test name".into(),
+                "test name",
                 0,
                 Some(IOKind::PH),
             ).set_command(
@@ -60,7 +60,7 @@ fn test_poll() {
         ).push_input(
 
             Input::new(
-                "second sensor".into(),
+                "second sensor",
                 1,
                 Some(IOKind::EC),
             ).set_command(

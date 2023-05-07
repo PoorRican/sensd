@@ -81,7 +81,7 @@ fn main() {
         // build input device
         let mut input =
             Input::new(
-                name.into(),
+                name,
                 id,
                 Some(kind),
             ).set_command(
@@ -111,7 +111,7 @@ fn main() {
 
         // build input device
         let mut input = Input::new(
-            name.into(),
+            name,
             id,
             Some(kind),
         )
