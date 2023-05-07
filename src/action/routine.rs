@@ -1,3 +1,4 @@
+use std::ops::Not;
 use crate::action::{Command, IOCommand};
 use crate::errors::ErrorType;
 use crate::helpers::Def;
@@ -60,6 +61,10 @@ impl Routine {
             weak_log = None;
         }
 
+        if command.is_output().not() {
+            panic!("Command is not Output");
+        }
+
         let metadata: DeviceMetadata = metadata.into().unwrap_or_default();
 
         Self {
@@ -83,7 +88,7 @@ impl Routine {
     pub fn attempt(&self) -> bool {
         let now = Utc::now();
         if now >= self.timestamp {
-            let result = self.execute(Some(self.value));
+            let result = self.execute(self.value);
             match result {
                 Ok(event) => {
                     let event = event.unwrap();
@@ -102,7 +107,11 @@ impl Routine {
 }
 
 impl Command<IOEvent> for Routine {
-    fn execute(&self, value: Option<RawValue>) -> Result<Option<IOEvent>, ErrorType> {
+    fn execute<V>(&self, value: V) -> Result<Option<IOEvent>, ErrorType>
+    where
+        V: Into<Option<RawValue>>
+    {
+        let value = value.into();
         match self.command.execute(value) {
             Ok(_) => {
                 let event = IOEvent::new(&self.metadata, self.timestamp, value.unwrap());
@@ -236,6 +245,17 @@ mod meta_tests {
         let command = IOCommand::Output(|_| Ok(()));
 
         let routine = Routine::new(timestamp, metadata, value, log.clone(), command);
+        assert!(routine.attempt());
+    }
+
+    #[test]
+    #[should_panic]
+    fn validate_command() {
+        let timestamp = Utc::now();
+        let value = RawValue::Binary(true);
+        let command = IOCommand::Input(|| RawValue::default());
+
+        let routine = Routine::new(timestamp, None, value, None, command);
         assert!(routine.attempt());
     }
 }

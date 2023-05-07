@@ -1,84 +1,83 @@
 use crate::action::{Action, BoxedAction};
-use crate::errors::ErrorType;
-use crate::io::{Output, IOEvent, RawValue};
-use std::fmt::{Display, Formatter};
+use crate::io::{IOEvent, Output, RawValue};
+use crate::action::trigger::Trigger;
 use crate::helpers::Def;
 
-#[derive(Debug, Clone)]
-/// Discrete variants that abstract comparison of external and threshold values.
+/// Bang-bang (on-off) controller
 ///
-/// External value should be always be on the left-side; internal threshold should be on the right side.
-/// Internal command should be executed when this inequality returns true.
+/// If threshold is exceeded, a notification is printed and output is actuated until next polling cycle
+/// where input value is below threshold. In the future, upper and lower thresholds will be added for
+/// finer control.
 ///
-/// Used by [`ThresholdAction::evaluate()`]
-pub enum Comparison {
-    GT,
-    LT,
-    GTE,
-    LTE,
-}
-
-impl Display for Comparison {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let name = match self {
-            Comparison::GT => ">",
-            Comparison::LT => "<",
-            Comparison::GTE => "≥",
-            Comparison::LTE => "≤",
-        };
-        write!(f, "{}", name)
-    }
-}
-
-/// Subscriber that reacts in a binary fashion if threshold is exceeded.
-///
-/// If the threshold is exceeded, a notification is printed, and optionally output is actuated.
-/// Accuracy, is not the primary goal of this action type, but rather strict control of an external
-/// variable is chosen so as to not use as many CPI cycles. Output device stays actuated as long as
-/// threshold is exceeded. In the future, upper and lower thresholds will be added for fine tuning
-/// of action execution.
-///
-/// Unlike the [`crate::action::PIDMonitor`] subscriber, [`ThresholdAction`] is unable create a [`Routine`].
+/// Unlike the [`crate::action::PIDMonitor`] subscriber, [`Threshold`] is unable create a [`Routine`].
 /// Instead, functionality implements simple on/off behavior.
 ///
-/// # Scenarios
+/// # Usage
 ///
 /// ## Reservoir Fill Level
-/// Given a reservoir, with a sensor for reading fill level, a pump for increasing fill level and a
-/// valve for decreasing fill level. The refill pump could be set to turn on at 25% but might stop
-/// when fill level reaches 30%. Likewise, the dump valve might be set to decrease fill level at 90%,
-/// but dumping might stop at 80%.
 ///
+/// Given a reservoir, with a sensor for reading fill level, a pump for increasing fill level, and a
+/// valve that decreases fill level. Two separate [`Threshold`] could be used for controlling
+/// this system based off of input from the level sensor. Depending on polling frequency there might be
+/// some variance between threshold value and the input value when actuation stops.
 // TODO: add upper/lower threshold
-pub struct ThresholdAction {
+pub struct Threshold {
     name: String,
     threshold: RawValue,
 
-    trigger: Comparison,
+    trigger: Trigger,
     output: Option<Def<Output>>,
 }
 
-impl ThresholdAction {
-    /// Constructor for [`ThresholdAction`]
-    ///
-    /// # Notes
-    /// [`Action::set_output()`] is used as a builder function to add an output device after initialization.
+impl Threshold {
+    /// Constructor for [`Threshold`]
     ///
     /// # Parameters
+    ///
     /// - `name`: name of action
     /// - `threshold`: Threshold that controls what external value actuates/de-actuates device
     /// - `trigger`: Defines the relationship between threshold and external value.
+    ///
+    /// # Returns
+    /// Initialized [`Threshold`] action without `output` set.
+    ///
+    /// **Note**: [`Action::set_output()`] builder function should be chained after initialization.
+    ///
+    /// # See Also
+    ///
+    /// - [`Action::with_output()`] for constructor that accepts an `output` parameter.
     // TODO: there should be an option to inverse polarity
-    pub fn new(name: String, threshold: RawValue, trigger: Comparison) -> Self {
-        // TODO: add a type check to `RawValue` to ensure a numeric value
+    pub fn new<N>(name: N, threshold: RawValue, trigger: Trigger) -> Self
+    where
+        N: Into<String>
+    {
         // TODO: add a type check to ensure that `output` accepts a binary value
 
         Self {
-            name,
+            name: name.into(),
             threshold,
             trigger,
             output: None,
         }
+    }
+
+    /// Constructor that accepts `output` parameter
+    ///
+    /// # Parameters
+    ///
+    /// - `name`: name of action
+    /// - `threshold`: Threshold that controls what external value actuates/de-actuates device
+    /// - `trigger`: Defines the relationship between threshold and external value.
+    /// - `output`: Output device
+    ///
+    /// # Returns
+    ///
+    /// Initialized [`Threshold`] action with `output` set.
+    pub fn with_output<N>(name: N, threshold: RawValue, trigger: Trigger, output: Def<Output>) -> Self
+    where
+        N: Into<String>
+    {
+        Self::new(name.into(), threshold, trigger).set_output(output)
     }
 
     #[inline]
@@ -88,60 +87,55 @@ impl ThresholdAction {
     }
 
     #[inline]
-    /// Actuate output device
+    /// Actuate output device without runtime validation
     ///
-    /// Sends a `true` value to output device
-    ///
-    /// # Returns
-    /// - `Ok(IOEvent)`: when I/O operation completes successfully.
-    /// - `Err(ErrorType)`: when an error occurs during I/O operation
-    fn on(&self) -> Result<IOEvent, ErrorType> {
-        self.write(RawValue::Binary(true))
+    /// Sends a `true` value to output device. Does not check value [`Result`] from [`Action::write()`].
+    fn on_unchecked(&self) {
+        let _ = self.write(RawValue::Binary(true));
     }
 
     #[inline]
-    /// De-actuate output device.
+    /// De-actuate output device without runtime validation
     ///
-    /// Sends a `false` value to output device
-    ///
-    /// # Returns
-    /// - `Ok(IOEvent)`: when I/O operation completes successfully.
-    /// - `Err(ErrorType)`: when an error occurs during I/O operation
-    fn off(&self) -> Result<IOEvent, ErrorType> {
-        self.write(RawValue::Binary(false))
+    /// Sends a `false` value to output device. Does not check value [`Result`] from [`Action::write()`].
+    fn off_unchecked(&self) {
+        let _ = self.write(RawValue::Binary(false));
     }
 }
 
-impl Action for ThresholdAction {
+impl Action for Threshold {
     #[inline]
     /// Name of action
     fn name(&self) -> &String {
         &self.name
     }
 
+    #[inline]
     /// Evaluate external data
     ///
-    /// Incoming data is compared against [`ThresholdAction::threshold()`] using internal `trigger`.
-    /// If incoming data exceeds threshold, output device is actuated. Otherwise, output device is deactivated.
-    // TODO: check state cache of output device to avoid redundant calls to output device.
+    /// Incoming data is compared against internal threshold using [`Trigger::exceeded()`]. If
+    /// incoming data exceeds threshold, output device is actuated. Otherwise, output device is
+    /// deactivated.
+    ///
+    /// # Notes
+    ///
+    /// - This function is inline because it is used in iterator loops
+    /// - Any error returned by [`Self::write()`] is dropped by [`Self::on_unchecked()`] and
+    ///   [`Self::off_unchecked()`]
     fn evaluate(&mut self, data: &IOEvent) {
         let input = data.data.value;
-        let exceeded = match &self.trigger {
-            &Comparison::GT => input > self.threshold,
-            &Comparison::GTE => input >= self.threshold,
-            &Comparison::LT => input < self.threshold,
-            &Comparison::LTE => input <= self.threshold,
-        };
-        if exceeded {
-            let msg = format!("{} {} {}", input, &self.trigger, self.threshold);
-            self.notify(msg.as_str());
+        let exceeded = self.trigger.exceeded(input, self.threshold);
 
-            if let Some(_) = self.output {
-                self.on().unwrap();
-            }
-        } else if let Some(_) = self.output {
-            self.off().unwrap();
-        }
+        match exceeded {
+            true => {
+                // Notify if exceeded
+                let msg = format!("{} {} {}", input, &self.trigger, self.threshold);
+                self.notify(msg.as_str());
+
+                self.on_unchecked();
+            },
+            false => { self.off_unchecked() },
+        };
     }
 
     fn set_output(mut self, device: Def<Output>) -> Self
@@ -161,5 +155,33 @@ impl Action for ThresholdAction {
     #[inline]
     fn into_boxed(self) -> BoxedAction {
         Box::new(self)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::action::actions::Threshold;
+    use crate::action::Trigger;
+    use crate::io::{Device, Output, RawValue};
+
+    #[test]
+    /// Ensure that `name` can be given to `new()` constructor as `String` or `&str`
+    fn new_name_parameter() {
+        let name = "test name";
+        Threshold::new(name, RawValue::default(), Trigger::GT);
+
+        let name = String::from(name);
+        Threshold::new(name, RawValue::default(), Trigger::GT);
+    }
+
+    #[test]
+    /// Ensure that `name` can be given to `with_output()` constructor as `String` or `&str`
+    fn with_output_name_parameter() {
+        let output = Output::default().into_deferred();
+        let name = "test name";
+        Threshold::with_output(name, RawValue::default(), Trigger::GT, output.clone());
+
+        let name = String::from(name);
+        Threshold::with_output(name, RawValue::default(), Trigger::GT, output);
     }
 }

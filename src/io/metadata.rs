@@ -35,16 +35,19 @@ impl DeviceMetadata {
     /// ```
     /// use sensd::io::{IOKind, DeviceMetadata, IODirection};
     ///
-    /// let name = "Device".to_string();
+    /// let name = "Device";
     /// let id = 1;
     /// let kind = IOKind::PH;
     /// let direction = IODirection::default();
     ///
     /// let info = DeviceMetadata::new(name, id, kind, direction);
     /// ```
-    pub fn new(name: String, id: IdType, kind: io::IOKind, direction: io::IODirection) -> Self {
+    pub fn new<N>(name: N, id: IdType, kind: io::IOKind, direction: io::IODirection) -> Self
+    where
+        N: Into<String>,
+    {
         DeviceMetadata {
-            name,
+            name: name.into(),
             id,
             kind,
             direction,
@@ -59,5 +62,17 @@ impl std::fmt::Display for DeviceMetadata {
             "Device Info {{ Kind: {}, Direction: {} }}",
             self.kind, self.direction,
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::io::{DeviceMetadata, IODirection, IOKind};
+
+    #[test]
+    /// Test that constructor accepts `name` parameter as `&str` or `String`
+    fn new_name_parameter() {
+        DeviceMetadata::new("as &str", 0, IOKind::default(), IODirection::default());
+        DeviceMetadata::new(String::from("as String"), 0, IOKind::default(), IODirection::default());
     }
 }

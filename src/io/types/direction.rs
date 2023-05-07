@@ -8,15 +8,15 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, Default, PartialEq)]
 pub enum IODirection {
     #[default]
-    Input,
-    Output,
+    In,
+    Out,
 }
 
 impl Display for IODirection {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let name = match self {
-            IODirection::Input => "Input",
-            IODirection::Output => "Output",
+            IODirection::In => "Input",
+            IODirection::Out => "Output",
         };
         write!(f, "{}", name)
     }

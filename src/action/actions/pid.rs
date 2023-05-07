@@ -3,7 +3,7 @@ use crate::helpers::Def;
 use crate::io::{Output, IOEvent, RawValue};
 
 /// Subscriber abstracting a PID controller
-pub struct PIDMonitor {
+pub struct PID {
     name: String,
     _setpoint: RawValue,
 
@@ -11,7 +11,7 @@ pub struct PIDMonitor {
     output: Def<Output>,
 }
 
-impl Action for PIDMonitor {
+impl Action for PID {
     fn name(&self) -> &String {
         &self.name
     }

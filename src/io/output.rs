@@ -24,13 +24,14 @@ impl Device for Output {
     /// * `id`: arbitrary, numeric ID to differentiate from other devices
     ///
     /// returns: GenericOutput
-    fn new(name: String, id: IdType, kind: Option<IOKind>) -> Self
+    fn new<N>(name: N, id: IdType, kind: Option<IOKind>) -> Self
     where
         Self: Sized,
+        N: Into<String>
     {
         let kind = kind.unwrap_or_default();
         let state = None;
-        let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Output);
+        let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Out);
 
         let command = None;
         let log = None;
@@ -51,6 +52,8 @@ impl Device for Output {
     where
         Self: Sized,
     {
+        command.agrees(IODirection::Out)
+            .expect("Command is not output");
         self.command = Some(command);
         self
     }
@@ -112,6 +115,13 @@ mod tests {
     /// Dummy output command for testing.
     /// Accepts value and returns `Ok(())`
     const COMMAND: IOCommand = IOCommand::Output(move |_| Ok(()));
+
+    #[test]
+    /// Test that constructor accepts `name` as `&str` or `String`
+    fn new_name_parameter() {
+        Output::new("as &str", 0, None);
+        Output::new(String::from("as String"), 0, None);
+    }
 
     #[test]
     fn test_tx() {

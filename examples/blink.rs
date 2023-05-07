@@ -11,10 +11,10 @@ extern crate serde;
 use std::sync::Arc;
 
 use sensd::action::IOCommand;
-use sensd::io::{IOKind, IdType, RawValue};
+use sensd::io::{IOKind, IdType, RawValue, Input, Device};
 use sensd::settings::Settings;
 use sensd::storage::{Group, Persistent};
-use std::ops::DerefMut;
+use std::ops::{DerefMut, Neg};
 
 /// █▓▒░ Event Loop Operating frequency
 ///
@@ -46,26 +46,15 @@ fn init(name: &str) -> Group {
 ///
 /// Use of `Group::add_devices()` is demonstrated.
 fn setup_devices(poller: &mut Group) {
-    poller.build_input(
-        "Mock Output",
-        &OUTPUT_ID,
-        &Some(IOKind::Light),
-        &IOCommand::Output(|val| Ok(println!("\n{}\n", val))),
-    ).unwrap();
-}
-
-/// Alternate boolean value to pass to output.
-///
-/// Boolean value is modified
-fn alternate_value(value: &mut RawValue) {
-    if let RawValue::Binary(inner) = value {
-        *value = match inner {
-            true => RawValue::Binary(false),
-            false => RawValue::Binary(true),
-        };
-    } else {
-        panic!("Variant is not `RawValue::Binary`");
-    }
+    poller.push_input(
+        Input::new(
+            "Mock Output",
+            OUTPUT_ID,
+            Some(IOKind::Light),
+        ).set_command(
+            IOCommand::Output(|val| Ok(println!("\n{}\n", val)))
+        )
+    );
 }
 
 fn main() {
@@ -92,7 +81,7 @@ fn main() {
 
         poller.save(&None).expect("Error while saving");
 
-        alternate_value(&mut value); // alternate output value
+        value = value.neg();    // alternate output value
 
         std::thread::sleep(FREQUENCY);
     }

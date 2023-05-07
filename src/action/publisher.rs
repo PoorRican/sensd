@@ -1,8 +1,7 @@
 //! Implements a control system based off of evaluating incoming data.
 
-use crate::action::{Action, BoxedAction, Comparison, SchedRoutineHandler, ThresholdAction};
-use crate::helpers::Def;
-use crate::io::{Output, IOEvent, RawValue};
+use crate::action::{BoxedAction, SchedRoutineHandler};
+use crate::io::IOEvent;
 
 /// Collection of actions for propagating single device input.
 ///
@@ -32,36 +31,6 @@ impl Publisher {
     /// This is a facade for [`SchedRoutineHandler::attempt_routines()`], which contains more detailed notes.
     pub fn attempt_routines(&mut self) {
         self.scheduled.attempt_routines()
-    }
-
-    /// Builder function for building then internally storing a [`ThresholdAction`].
-    ///
-    /// # Parameters
-    /// - `name`: Label for action
-    /// - `threshold`: threshold used to actuate output. Should be a numeric value and not a binary value.
-    /// - `trigger`: [`Comparison`] variant to use to compare incoming data and `threshold`
-    /// - `output`: output device to attach to [`ThresholdAction`].
-    ///
-    /// # Panics
-    /// If `output` is `Some`, but not [`crate::io::device::DeviceType::Output`]
-    ///
-    /// # Returns
-    /// `&mut Self` is returned to allow for chaining.
-    pub fn attach_threshold(
-        &mut self,
-        name: &str,
-        threshold: RawValue,
-        trigger: Comparison,
-        output: Option<Def<Output>>,
-    ) -> &mut Self {
-        let mut action = ThresholdAction::new(name.to_string(), threshold, trigger);
-
-        if let Some(output) = output {
-            action = action.set_output(output);
-        }
-
-        self.subscribe(action.into_boxed());
-        self
     }
 
     /// Get collection of subscribed [`Actions`] (stored as [`BoxedAction`]).

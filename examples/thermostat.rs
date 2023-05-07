@@ -16,13 +16,13 @@ extern crate chrono;
 extern crate sensd;
 extern crate serde;
 
-use sensd::action::{Comparison, IOCommand};
+use sensd::action::{Action, actions, IOCommand, Trigger};
 use sensd::errors::ErrorType;
-use sensd::io::{IOKind, IdType, RawValue};
+use sensd::io::{Device, IdType, Input, IOKind, Output, RawValue};
 use sensd::settings::Settings;
 use sensd::storage::{Group, Persistent};
-use std::ops::DerefMut;
 
+use std::ops::DerefMut;
 use std::sync::Arc;
 
 const INPUT_ID: IdType = 0;
@@ -56,27 +56,6 @@ fn init(name: &str) -> Group {
     group
 }
 
-/// █▓▒░ Add devices to `Group`
-///
-/// Initial formatting for when using the `Group::add_device()`  is demonstrated.
-unsafe fn setup_poller(poller: &mut Group) {
-    // build input
-    poller.build_input(
-        "mock temp sensor",
-        &INPUT_ID,
-        &Some(IOKind::Temperature),
-        &IOCommand::Input(|| EXTERNAL_VALUE),
-    ).unwrap();
-
-    // build output
-    poller.build_output(
-            "test mock cooling device",
-            &OUTPUT_ID,
-            &Some(IOKind::Temperature),
-            &IOCommand::Output(|val| Ok(println!("\nSimulated HW Output: {}\n", val))),
-    ).unwrap();
-}
-
 /// █▓▒░ Add a single `ThresholdNotifier` to all device in `Group`.
 fn build_actions(poller: &mut Group) {
     println!("\n█▓▒░ Building subscribers ...");
@@ -90,9 +69,17 @@ fn build_actions(poller: &mut Group) {
 
     let name = format!("Subscriber for Input:{}", INPUT_ID);
     let threshold = RawValue::Int8(THRESHOLD);
-    let trigger = Comparison::LT;
+    let trigger = Trigger::LT;
     if let Some(publisher) = binding.publisher_mut() {
-        publisher.attach_threshold(&name, threshold, trigger, Some(output.clone()));
+        publisher.subscribe(
+            actions::Threshold::new(
+                name,
+                threshold,
+                trigger,
+            )
+                .set_output(output)
+                .into_boxed()
+        );
     }
 
     println!("\n... Finished Initializing subscribers\n");
@@ -114,7 +101,30 @@ fn poll(poller: &mut Group) -> Result<(), ErrorType> {
 
 fn main() {
     let mut poller = init("main");
-    unsafe { setup_poller(&mut poller) }
+
+    // build input
+    poller.push_input(
+        unsafe {
+            Input::new(
+                "mock temp sensor",
+                INPUT_ID,
+                Some(IOKind::Temperature),
+            ).set_command(
+                IOCommand::Input(|| EXTERNAL_VALUE)
+            ).init_log(None)
+        }
+    );
+
+    // build output
+    poller.push_output(
+        Output::new(
+            "test mock cooling device",
+            OUTPUT_ID,
+            Some(IOKind::Temperature),
+        ).set_command(
+            IOCommand::Output(|val| Ok(println!("\nSimulated HW Output: {}\n", val)))
+        ).init_log(None)
+    );
 
     build_actions(&mut poller);
 
