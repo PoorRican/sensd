@@ -50,6 +50,14 @@ impl Device for Input {
         &self.metadata
     }
 
+    fn set_name<N>(&mut self, name: N) where N: Into<String> {
+        self.metadata.name = name.into();
+    }
+
+    fn set_id(&mut self, id: IdType) {
+        self.metadata.id = id;
+    }
+
     fn set_command(mut self, command: IOCommand) -> Self
     where
         Self: Sized,

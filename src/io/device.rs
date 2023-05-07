@@ -39,10 +39,16 @@ pub trait Device: Chronicle {
         self.metadata().name.clone()
     }
 
+    fn set_name<N>(&mut self, name: N)
+    where
+        N: Into<String>;
+
     /// Returns the ID of the device.
     fn id(&self) -> IdType {
         self.metadata().id
     }
+
+    fn set_id(&mut self, id: IdType);
 
     /// Returns the I/O direction of the device.
     fn direction(&self) -> IODirection {
