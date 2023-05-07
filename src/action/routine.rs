@@ -1,3 +1,4 @@
+use std::ops::Not;
 use crate::action::{Command, IOCommand};
 use crate::errors::ErrorType;
 use crate::helpers::Def;
@@ -58,6 +59,10 @@ impl Routine {
             weak_log = Some(Arc::downgrade(&log.into()));
         } else {
             weak_log = None;
+        }
+
+        if command.is_output().not() {
+            panic!("Command is not Output");
         }
 
         let metadata: DeviceMetadata = metadata.into().unwrap_or_default();
@@ -240,6 +245,17 @@ mod meta_tests {
         let command = IOCommand::Output(|_| Ok(()));
 
         let routine = Routine::new(timestamp, metadata, value, log.clone(), command);
+        assert!(routine.attempt());
+    }
+
+    #[test]
+    #[should_panic]
+    fn validate_command() {
+        let timestamp = Utc::now();
+        let value = RawValue::Binary(true);
+        let command = IOCommand::Input(|| RawValue::default());
+
+        let routine = Routine::new(timestamp, None, value, None, command);
         assert!(routine.attempt());
     }
 }

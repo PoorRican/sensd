@@ -18,6 +18,20 @@ pub enum IOCommand {
 }
 
 impl IOCommand {
+    pub fn is_output(&self) -> bool {
+        match self {
+            Self::Input(_) => false,
+            Self::Output(_) => true,
+        }
+    }
+
+    pub fn is_input(&self) -> bool {
+        match self {
+            Self::Input(_) => true,
+            Self::Output(_) => false,
+        }
+    }
+
     /// Get direction of `IOCommand` instance.
     ///
     /// Used to verify device type aligns with function intention: input with input, vice versa.
