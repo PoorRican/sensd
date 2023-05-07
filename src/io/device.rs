@@ -17,7 +17,7 @@ pub type DeviceContainer<K, D> = HashMap<K, Def<D>>;
 /// Additionally, an accessor, `metadata()` is defined to provide for the facade methods to access
 /// device name, id, direction, and kind. Therefore, implementing structs shall implement a field
 /// `metadata` that is mutably accessed through the reciprocal getter method.
-pub trait Device: Chronicle {
+pub trait Device: Chronicle + DeviceGetters {
     /// Creates a new instance of the device with the given parameters.
     ///
     /// # Parameters
@@ -31,35 +31,12 @@ pub trait Device: Chronicle {
         N: Into<String>,
         K: Into<Option<IOKind>>;
 
-    /// Returns a reference to the device's metadata
-    /// from which information such as name, ID, kind, and I/O direction are inferred.
-    fn metadata(&self) -> &DeviceMetadata;
-
-    /// Returns the name of the device.
-    fn name(&self) -> String {
-        self.metadata().name.clone()
-    }
-
     fn set_name<N>(&mut self, name: N)
     where
         N: Into<String>;
 
-    /// Returns the ID of the device.
-    fn id(&self) -> IdType {
-        self.metadata().id
-    }
 
     fn set_id(&mut self, id: IdType);
-
-    /// Returns the I/O direction of the device.
-    fn direction(&self) -> IODirection {
-        self.metadata().direction
-    }
-
-    /// Returns the type of device as `IOKind`.
-    fn kind(&self) -> IOKind {
-        self.metadata().kind
-    }
 
     /// Generate an `IOEvent` instance from provided value
     ///
@@ -97,9 +74,6 @@ pub trait Device: Chronicle {
         self
     }
 
-    /// Immutable reference to cached state
-    fn state(&self) -> &Option<RawValue>;
-
     fn into_deferred(self) -> Def<Self>
     where
         Self: Sized
@@ -108,3 +82,46 @@ pub trait Device: Chronicle {
     }
 }
 
+pub trait DeviceGetters {
+    /// Reference to device metadata
+    ///
+    /// Information such as `name`, `id`, `kind`, and `direction` are taken from metadata.
+    ///
+    /// # Returns
+    ///
+    /// An immutable reference to internal device metadata
+    ///
+    /// # See Also
+    ///
+    /// - [`DeviceMetadata`]
+    fn metadata(&self) -> &DeviceMetadata;
+
+    /// Returns the name of the device.
+    fn name(&self) -> String {
+        self.metadata().name.clone()
+    }
+
+    /// Returns the ID of the device.
+    fn id(&self) -> IdType {
+        self.metadata().id
+    }
+
+    /// Returns the I/O direction of the device.
+    fn direction(&self) -> IODirection {
+        self.metadata().direction
+    }
+
+    /// Returns the type of device as `IOKind`.
+    fn kind(&self) -> IOKind {
+        self.metadata().kind
+    }
+
+    /// Immutable reference to cached state
+    ///
+    /// # Returns
+    ///
+    /// An `Option` that is:
+    /// - `None` upon initialization since device has not been read from or written to.
+    /// - `RawValue` after first read or write, and represents last known state.
+    fn state(&self) -> &Option<RawValue>;
+}

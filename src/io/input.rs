@@ -2,7 +2,7 @@ use std::fmt::Formatter;
 use crate::action::{Command, IOCommand, Publisher};
 use crate::errors::{ErrorType, no_internal_closure};
 use crate::helpers::Def;
-use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue};
+use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue, DeviceGetters};
 use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
@@ -47,10 +47,6 @@ impl Device for Input {
         }
     }
 
-    fn metadata(&self) -> &DeviceMetadata {
-        &self.metadata
-    }
-
     fn set_name<N>(&mut self, name: N) where N: Into<String> {
         self.metadata.name = name.into();
     }
@@ -71,6 +67,12 @@ impl Device for Input {
 
     fn set_log(&mut self, log: Def<Log>) {
         self.log = Some(log);
+    }
+}
+
+impl DeviceGetters for Input {
+    fn metadata(&self) -> &DeviceMetadata {
+        &self.metadata
     }
 
     /// Immutable reference to cached state
@@ -161,7 +163,7 @@ impl Chronicle for Input {
 mod tests {
     use std::sync::Arc;
     use crate::action::{IOCommand};
-    use crate::io::{Device, Input, IOKind, RawValue};
+    use crate::io::{Device, DeviceGetters, Input, IOKind, RawValue};
     use crate::settings::Settings;
     use crate::storage::Chronicle;
 

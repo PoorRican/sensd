@@ -1,10 +1,7 @@
 use std::collections::hash_map::Entry;
 use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::{check_results, Def};
-use crate::io::{
-    Device, DeviceContainer, Input, Output, IOEvent,
-    IdType,
-};
+use crate::io::{Device, DeviceContainer, Input, Output, IOEvent, IdType, DeviceGetters};
 use crate::settings::Settings;
 use crate::storage::{Chronicle, Persistent};
 use chrono::{DateTime, Duration, Utc};

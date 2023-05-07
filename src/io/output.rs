@@ -2,7 +2,7 @@ use std::fmt::Formatter;
 use crate::action::{Command, IOCommand};
 use crate::errors::{ErrorType, no_internal_closure};
 use crate::helpers::Def;
-use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue};
+use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue, DeviceGetters};
 use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
@@ -12,6 +12,19 @@ pub struct Output {
     state: Option<RawValue>,
     log: Option<Def<Log>>,
     command: Option<IOCommand>,
+}
+
+impl DeviceGetters for Output {
+    fn metadata(&self) -> &DeviceMetadata {
+        &self.metadata
+    }
+
+    /// Immutable reference to cached state
+    ///
+    /// `state` field should be updated by `write()`
+    fn state(&self) -> &Option<RawValue> {
+        &self.state
+    }
 }
 
 // Implement traits
@@ -45,10 +58,6 @@ impl Device for Output {
         }
     }
 
-    fn metadata(&self) -> &DeviceMetadata {
-        &self.metadata
-    }
-
     fn set_name<N>(&mut self, name: N) where N: Into<String> {
         self.metadata.name = name.into();
     }
@@ -69,13 +78,6 @@ impl Device for Output {
 
     fn set_log(&mut self, log: Def<Log>) {
         self.log = Some(log)
-    }
-
-    /// Immutable reference to cached state
-    ///
-    /// `state` field should be updated by `write()`
-    fn state(&self) -> &Option<RawValue> {
-        &self.state
     }
 }
 
@@ -119,7 +121,7 @@ impl Chronicle for Output {
 mod tests {
     use std::sync::Arc;
     use crate::action::IOCommand;
-    use crate::io::{Device, IOKind, Output, RawValue};
+    use crate::io::{Device, DeviceGetters, IOKind, Output, RawValue};
     use crate::settings::Settings;
     use crate::storage::Chronicle;
 
