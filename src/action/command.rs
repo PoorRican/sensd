@@ -15,5 +15,7 @@ pub trait Command<T> {
     /// # Returns
     /// - `Ok(T)`: returned when execution completes without error.
     /// - `Err(ErrorType)`: [`ErrorType`] is returned when an error occurs during operation.
-    fn execute(&self, value: Option<RawValue>) -> Result<Option<T>, ErrorType>;
+    fn execute<V>(&self, value: V) -> Result<Option<T>, ErrorType>
+    where
+        V: Into<Option<RawValue>>;
 }

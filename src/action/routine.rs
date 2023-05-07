@@ -83,7 +83,7 @@ impl Routine {
     pub fn attempt(&self) -> bool {
         let now = Utc::now();
         if now >= self.timestamp {
-            let result = self.execute(Some(self.value));
+            let result = self.execute(self.value);
             match result {
                 Ok(event) => {
                     let event = event.unwrap();
@@ -102,7 +102,11 @@ impl Routine {
 }
 
 impl Command<IOEvent> for Routine {
-    fn execute(&self, value: Option<RawValue>) -> Result<Option<IOEvent>, ErrorType> {
+    fn execute<V>(&self, value: V) -> Result<Option<IOEvent>, ErrorType>
+    where
+        V: Into<Option<RawValue>>
+    {
+        let value = value.into();
         match self.command.execute(value) {
             Ok(_) => {
                 let event = IOEvent::new(&self.metadata, self.timestamp, value.unwrap());

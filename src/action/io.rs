@@ -64,13 +64,15 @@ impl Command<RawValue> for IOCommand {
     /// # Returns
     /// If internal function is `IOCommand::Input`, then the value that is read from device is returned.
     /// Otherwise, if `IOCommand::Output`, then `None` is returned.
-    fn execute(&self, value: Option<RawValue>) -> Result<Option<RawValue>, ErrorType> {
+    fn execute<V>(&self, value: V) -> Result<Option<RawValue>, ErrorType>
+    where
+        V: Into<Option<RawValue>>
+    {
+        let value = value.into();
         match self {
             Self::Input(inner) => {
                 // throw warning for unused value
-                if let Some(_) = value {
-                    unused_value()
-                }
+                value.is_some().then(unused_value);
 
                 let read_value = inner();
 
