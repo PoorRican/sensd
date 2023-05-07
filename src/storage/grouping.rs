@@ -6,7 +6,7 @@ use crate::io::{
     IdType,
 };
 use crate::settings::Settings;
-use crate::storage::{LogContainer, Persistent};
+use crate::storage::{Chronicle, Persistent};
 use chrono::{DateTime, Duration, Utc};
 use std::fs::create_dir_all;
 use std::path::{Path, PathBuf};
@@ -32,9 +32,6 @@ pub struct Group {
 
     /// Non-mutable storage of runtime settings
     settings: Arc<Settings>,
-
-    // internal containers
-    pub logs: LogContainer,
 
     pub inputs: DeviceContainer<IdType, Input>,
     pub outputs: DeviceContainer<IdType, Output>,
@@ -81,13 +78,11 @@ impl Group {
 
         let inputs = <DeviceContainer<IdType, Input>>::default();
         let outputs = <DeviceContainer<IdType, Output>>::default();
-        let logs = Vec::default();
 
         Self {
             name: name.into(),
             settings,
             last_execution,
-            logs,
             inputs,
             outputs,
         }
@@ -159,10 +154,27 @@ impl Group {
     /// other device logs.
     fn load_logs(&self, path: &Option<String>) -> Result<(), ErrorType> {
         let mut results = Vec::new();
-        for log in self.logs.iter() {
-            let result = log.try_lock().unwrap().load(path);
-            results.push(result);
+
+        for device in self.outputs.values() {
+            let binding = device.try_lock().unwrap();
+            if binding.has_log() {
+                let result = binding.log().unwrap()
+                    .try_lock().unwrap()
+                    .load(path);
+                results.push(result);
+            }
         }
+
+        for device in self.inputs.values() {
+            let binding = device.try_lock().unwrap();
+            if binding.has_log() {
+                let result = binding.log().unwrap()
+                    .try_lock().unwrap()
+                    .load(path);
+                results.push(result);
+            }
+        }
+
         check_results(&results)
     }
 
@@ -181,10 +193,27 @@ impl Group {
     /// other device logs.
     fn save_logs(&self, path: &Option<String>) -> Result<(), ErrorType> {
         let mut results = Vec::new();
-        for log in self.logs.iter() {
-            let result = log.try_lock().unwrap().save(path);
-            results.push(result);
+
+        for device in self.inputs.values() {
+            let binding = device.try_lock().unwrap();
+            if binding.has_log() {
+                let result = binding.log().unwrap()
+                    .try_lock().unwrap()
+                    .save(path);
+                results.push(result);
+            }
         }
+
+        for device in self.outputs.values() {
+            let binding = device.try_lock().unwrap();
+            if binding.has_log() {
+                let result = binding.log().unwrap()
+                    .try_lock().unwrap()
+                    .save(path);
+                results.push(result);
+            }
+        }
+
         check_results(&results)
     }
 

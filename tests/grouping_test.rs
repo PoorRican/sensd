@@ -3,7 +3,7 @@ use chrono::Duration;
 use sensd::action::IOCommand;
 use sensd::io::{Device, Input, IOKind, Output, RawValue};
 use sensd::settings::Settings;
-use sensd::storage::Group;
+use sensd::storage::{Chronicle, Group};
 use std::sync::Arc;
 
 #[test]
@@ -74,7 +74,9 @@ fn test_poll() {
     // check that all logs are empty
     const COUNT: usize = 15;
     for iteration in 0..COUNT {
-        for log in group.logs.iter() {
+        for input in group.inputs.values() {
+            let binding = input.try_lock().unwrap();
+            let log = binding.log().unwrap();
             assert_eq!(log.lock().unwrap().iter().count(), iteration);
         }
 
@@ -85,7 +87,10 @@ fn test_poll() {
         ));
     }
 
-    for log in group.logs.iter() {
-        assert_eq!(COUNT, log.lock().unwrap().iter().count())
+    for input in group.inputs.values() {
+        let binding = input.try_lock().unwrap();
+        let log = binding.log().unwrap();
+
+        assert_eq!(COUNT, log.lock().unwrap().iter().count());
     }
 }
