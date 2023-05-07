@@ -51,6 +51,8 @@ impl Device for Output {
     where
         Self: Sized,
     {
+        command.agrees(IODirection::Out)
+            .expect("Command is not output");
         self.command = Some(command);
         self
     }

@@ -30,7 +30,7 @@ fn test_builder_pattern() {
                 "output device".into(),
                 2,
                 Some(IOKind::Flow)
-            ).set_command(command.clone())
+            ).set_command(IOCommand::Output(|_| Ok(())))
         );
 
     assert_eq!(group.inputs.iter().count(), 2);

@@ -53,6 +53,8 @@ impl Device for Input {
     where
         Self: Sized,
     {
+        command.agrees(IODirection::In)
+            .expect("Command is not input");
         self.command = Some(command);
         self
     }

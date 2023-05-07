@@ -27,6 +27,24 @@ impl IOCommand {
             IOCommand::Output(_) => IODirection::Out,
         }
     }
+
+    /// Validation to check agreement between command and external [`IODirection`]
+    ///
+    /// # Parameters
+    ///
+    /// - `direction`: external direction to check against internal variant
+    ///
+    /// # Returns
+    ///
+    /// A `Result` that is:
+    /// - `Ok` if internal variant agrees with external direction
+    /// - `Err` if internal variant disagrees with external direction
+    pub fn agrees(&self, direction: IODirection) -> Result<(), ()> {
+        match direction == self.direction() {
+            true => Ok(()),
+            false => Err(())
+        }
+    }
 }
 
 impl Default for IOCommand {
@@ -91,5 +109,26 @@ mod tests {
         let command = IOCommand::default();
         assert_eq!(command.direction(), IODirection::Out);
         assert_eq!(None, command.execute(Some(RawValue::Binary(true))).unwrap());
+    }
+
+    #[test]
+    fn test_agrees() {
+        let mut command = IOCommand::Output(|_| Ok(()));
+        assert_eq!((),
+                   command.agrees(IODirection::Out)
+                       .unwrap());
+        assert_eq!((),
+                   command.agrees(IODirection::In)
+                       .err()
+                       .unwrap());
+
+        command = IOCommand::Input(|| RawValue::default());
+        assert_eq!((),
+                   command.agrees(IODirection::In)
+                       .unwrap());
+        assert_eq!((),
+                   command.agrees(IODirection::Out)
+                       .err()
+                       .unwrap());
     }
 }
