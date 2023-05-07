@@ -108,7 +108,7 @@ fn main() {
             Input::new(
                 "mock temp sensor",
                 INPUT_ID,
-                Some(IOKind::Temperature),
+                IOKind::Temperature,
             ).set_command(
                 IOCommand::Input(|| EXTERNAL_VALUE)
             ).init_log(None)
@@ -120,7 +120,7 @@ fn main() {
         Output::new(
             "test mock cooling device",
             OUTPUT_ID,
-            Some(IOKind::Temperature),
+            IOKind::Temperature,
         ).set_command(
             IOCommand::Output(|val| Ok(println!("\nSimulated HW Output: {}\n", val)))
         ).init_log(None)

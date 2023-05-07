@@ -2,7 +2,7 @@ use std::fmt::Formatter;
 use crate::action::{Command, IOCommand};
 use crate::errors::{ErrorType, no_internal_closure};
 use crate::helpers::Def;
-use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue};
+use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue, DeviceGetters, DeviceSetters};
 use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
@@ -12,6 +12,33 @@ pub struct Output {
     state: Option<RawValue>,
     log: Option<Def<Log>>,
     command: Option<IOCommand>,
+}
+
+impl DeviceGetters for Output {
+    fn metadata(&self) -> &DeviceMetadata {
+        &self.metadata
+    }
+
+    /// Immutable reference to cached state
+    ///
+    /// `state` field should be updated by `write()`
+    fn state(&self) -> &Option<RawValue> {
+        &self.state
+    }
+}
+
+impl DeviceSetters for Output {
+    fn set_name<N>(&mut self, name: N) where N: Into<String> {
+        self.metadata.name = name.into();
+    }
+
+    fn set_id(&mut self, id: IdType) {
+        self.metadata.id = id;
+    }
+
+    fn set_log(&mut self, log: Def<Log>) {
+        self.log = Some(log);
+    }
 }
 
 // Implement traits
@@ -24,12 +51,13 @@ impl Device for Output {
     /// * `id`: arbitrary, numeric ID to differentiate from other devices
     ///
     /// returns: GenericOutput
-    fn new<N>(name: N, id: IdType, kind: Option<IOKind>) -> Self
+    fn new<N, K>(name: N, id: IdType, kind: K) -> Self
     where
         Self: Sized,
-        N: Into<String>
+        N: Into<String>,
+        K: Into<Option<IOKind>>,
     {
-        let kind = kind.unwrap_or_default();
+        let kind = kind.into().unwrap_or_default();
         let state = None;
         let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Out);
 
@@ -44,10 +72,6 @@ impl Device for Output {
         }
     }
 
-    fn metadata(&self) -> &DeviceMetadata {
-        &self.metadata
-    }
-
     fn set_command(mut self, command: IOCommand) -> Self
     where
         Self: Sized,
@@ -56,17 +80,6 @@ impl Device for Output {
             .expect("Command is not output");
         self.command = Some(command);
         self
-    }
-
-    fn set_log(&mut self, log: Def<Log>) {
-        self.log = Some(log)
-    }
-
-    /// Immutable reference to cached state
-    ///
-    /// `state` field should be updated by `write()`
-    fn state(&self) -> &Option<RawValue> {
-        &self.state
     }
 }
 
@@ -108,8 +121,10 @@ impl Chronicle for Output {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use crate::action::IOCommand;
-    use crate::io::{Device, Output, RawValue};
+    use crate::io::{Device, DeviceGetters, IOKind, Output, RawValue};
+    use crate::settings::Settings;
     use crate::storage::Chronicle;
 
     /// Dummy output command for testing.
@@ -121,6 +136,13 @@ mod tests {
     fn new_name_parameter() {
         Output::new("as &str", 0, None);
         Output::new(String::from("as String"), 0, None);
+    }
+
+    #[test]
+    fn new_kind_parameter() {
+        Output::new("", 0, None);
+        Output::new("", 0, Some(IOKind::Unassigned));
+        Output::new("", 0, IOKind::Unassigned);
     }
 
     #[test]
@@ -164,6 +186,43 @@ mod tests {
 
         // assert that event was added to log
         assert_eq!(log.try_lock().unwrap().iter().count(), 1);
+    }
+
+
+    #[test]
+    fn test_init_log() {
+        // test w/ None
+        {
+            let mut output = Output::default();
+
+            assert_eq!(false, output.has_log());
+
+            output = output.init_log(None);
+
+            assert_eq!(true, output.has_log());
+        }
+
+        // test `Into<_>` conversion
+        {
+            let mut output = Output::default();
+
+            assert_eq!(false, output.has_log());
+
+            output = output.init_log(Arc::new(Settings::default()));
+
+            assert_eq!(true, output.has_log());
+        }
+
+        // test wrapping in `Some(_)`
+        {
+            let mut output = Output::default();
+
+            assert_eq!(false, output.has_log());
+
+            output = output.init_log(Some(Arc::new(Settings::default())));
+
+            assert_eq!(true, output.has_log());
+        }
     }
 }
 

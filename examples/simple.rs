@@ -87,7 +87,7 @@ fn main() {
             ).set_command(
                 command
             ).init_log(
-                Some(poller.settings())
+                poller.settings()
             ).init_publisher();
 
         // setup publisher/action
@@ -113,10 +113,10 @@ fn main() {
         let mut input = Input::new(
             name,
             id,
-            Some(kind),
+            kind,
         )
             .set_command(command)
-            .init_log(Some(poller.settings()))
+            .init_log(poller.settings())
             .init_publisher();
 
         // setup publisher/action

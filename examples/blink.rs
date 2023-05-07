@@ -50,7 +50,7 @@ fn setup_devices(poller: &mut Group) {
         Input::new(
             "Mock Output",
             OUTPUT_ID,
-            Some(IOKind::Light),
+            IOKind::Light,
         ).set_command(
             IOCommand::Output(|val| Ok(println!("\n{}\n", val)))
         )

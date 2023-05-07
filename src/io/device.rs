@@ -17,7 +17,7 @@ pub type DeviceContainer<K, D> = HashMap<K, Def<D>>;
 /// Additionally, an accessor, `metadata()` is defined to provide for the facade methods to access
 /// device name, id, direction, and kind. Therefore, implementing structs shall implement a field
 /// `metadata` that is mutably accessed through the reciprocal getter method.
-pub trait Device: Chronicle {
+pub trait Device: Chronicle + DeviceGetters + DeviceSetters {
     /// Creates a new instance of the device with the given parameters.
     ///
     /// # Parameters
@@ -25,13 +25,74 @@ pub trait Device: Chronicle {
     /// `id`: device ID.
     /// `kind`: kind of I/O device. Optional argument.
     /// `log`: Optional deferred owned log for the device.
-    fn new<N>(name: N, id: IdType, kind: Option<IOKind>) -> Self
+    fn new<N, K>(name: N, id: IdType, kind: K) -> Self
     where
         Self: Sized,
-        N: Into<String>;
+        N: Into<String>,
+        K: Into<Option<IOKind>>;
 
-    /// Returns a reference to the device's metadata
-    /// from which information such as name, ID, kind, and I/O direction are inferred.
+    /// Generate an `IOEvent` instance from provided value
+    ///
+    /// This is used by internal `command` for building events from given data.
+    /// Input devices pass read value; output devices pass write value.
+    ///
+    /// # Notes
+    /// Utc time is generated within this function. This allows each call to be more accurately
+    /// recorded instead of using a single time when polling. Accurate record keeping is more
+    /// valuable than a slight hit to performance.
+    ///
+    /// Additionally, internally generating timestamp adds a layer of separation between
+    /// device trait objects and any of it's owners (i.e.: `PollGroup`).
+    fn generate_event(&self, value: RawValue) -> IOEvent {
+        let dt = Utc::now();
+        IOEvent::new(self.metadata(), dt, value)
+    }
+
+    /// Setter for `command` field as builder method
+    ///
+    /// # Notes
+    ///
+    /// Since this function is a builder command, and is meant to be used with method chaining,
+    /// it is not included in [`DeviceSetters`]
+    ///
+    /// # Returns
+    ///
+    /// Passes ownership of `self`
+    fn set_command(self, command: IOCommand) -> Self
+    where
+        Self: Sized;
+
+    /// Initialize, set, and return log.
+    fn init_log<S>(mut self, settings: S) -> Self
+    where
+        Self: Sized,
+        S: Into<Option<Arc<Settings>>>,
+    {
+        let log = Def::new(Log::new(&self.metadata(), settings));
+        self.set_log(log);
+        self
+    }
+
+    fn into_deferred(self) -> Def<Self>
+    where
+        Self: Sized
+    {
+        Def::new(self)
+    }
+}
+
+pub trait DeviceGetters {
+    /// Reference to device metadata
+    ///
+    /// Information such as `name`, `id`, `kind`, and `direction` are taken from metadata.
+    ///
+    /// # Returns
+    ///
+    /// An immutable reference to internal device metadata
+    ///
+    /// # See Also
+    ///
+    /// - [`DeviceMetadata`]
     fn metadata(&self) -> &DeviceMetadata;
 
     /// Returns the name of the device.
@@ -54,49 +115,23 @@ pub trait Device: Chronicle {
         self.metadata().kind
     }
 
-    /// Generate an `IOEvent` instance from provided value
+    /// Immutable reference to cached state
     ///
-    /// This is used by internal `command` for building events from given data.
-    /// Input devices pass read value; output devices pass write value.
+    /// # Returns
     ///
-    /// # Notes
-    /// Utc time is generated within this function. This allows each call to be more accurately
-    /// recorded instead of using a single time when polling. Accurate record keeping is more
-    /// valuable than a slight hit to performance.
-    ///
-    /// Additionally, internally generating timestamp adds a layer of separation between
-    /// device trait objects and any of it's owners (i.e.: `PollGroup`).
-    fn generate_event(&self, value: RawValue) -> IOEvent {
-        let dt = Utc::now();
-        IOEvent::new(self.metadata(), dt, value)
-    }
+    /// An `Option` that is:
+    /// - `None` upon initialization since device has not been read from or written to.
+    /// - `RawValue` after first read or write, and represents last known state.
+    fn state(&self) -> &Option<RawValue>;
+}
 
-    /// Setter for `command` field
-    fn set_command(self, command: IOCommand) -> Self
-    where
-        Self: Sized;
+pub trait DeviceSetters {
+    fn set_name<N>(&mut self, name: N)
+        where
+            N: Into<String>;
+
+    fn set_id(&mut self, id: IdType);
 
     /// Setter for `log` field
     fn set_log(&mut self, log: Def<Log>);
-
-    /// Initialize, set, and return log.
-    fn init_log(mut self, settings: Option<Arc<Settings>>) -> Self
-    where
-        Self: Sized,
-    {
-        let log = Def::new(Log::new(&self.metadata(), settings));
-        self.set_log(log);
-        self
-    }
-
-    /// Immutable reference to cached state
-    fn state(&self) -> &Option<RawValue>;
-
-    fn into_deferred(self) -> Def<Self>
-    where
-        Self: Sized
-    {
-        Def::new(self)
-    }
 }
-

@@ -2,7 +2,7 @@ use std::fmt::Formatter;
 use crate::action::{Command, IOCommand, Publisher};
 use crate::errors::{ErrorType, no_internal_closure};
 use crate::helpers::Def;
-use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue};
+use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue, DeviceGetters, DeviceSetters};
 use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
@@ -23,12 +23,13 @@ impl Device for Input {
     /// * `id`: arbitrary, numeric ID to differentiate from other sensors
     ///
     /// returns: MockPhSensor
-    fn new<N>(name: N, id: IdType, kind: Option<IOKind>) -> Self
+    fn new<N, K>(name: N, id: IdType, kind: K) -> Self
     where
         Self: Sized,
-        N: Into<String>
+        N: Into<String>,
+        K: Into<Option<IOKind>>,
     {
-        let kind = kind.unwrap_or_default();
+        let kind = kind.into().unwrap_or_default();
 
         let metadata: DeviceMetadata = DeviceMetadata::new(name.into(), id, kind, IODirection::In);
 
@@ -46,10 +47,6 @@ impl Device for Input {
         }
     }
 
-    fn metadata(&self) -> &DeviceMetadata {
-        &self.metadata
-    }
-
     fn set_command(mut self, command: IOCommand) -> Self
     where
         Self: Sized,
@@ -59,9 +56,11 @@ impl Device for Input {
         self.command = Some(command);
         self
     }
+}
 
-    fn set_log(&mut self, log: Def<Log>) {
-        self.log = Some(log);
+impl DeviceGetters for Input {
+    fn metadata(&self) -> &DeviceMetadata {
+        &self.metadata
     }
 
     /// Immutable reference to cached state
@@ -69,6 +68,20 @@ impl Device for Input {
     /// `state` field should be updated by `write()`
     fn state(&self) -> &Option<RawValue> {
         &self.state
+    }
+}
+
+impl DeviceSetters for Input {
+    fn set_name<N>(&mut self, name: N) where N: Into<String> {
+        self.metadata.name = name.into();
+    }
+
+    fn set_id(&mut self, id: IdType) {
+        self.metadata.id = id;
+    }
+
+    fn set_log(&mut self, log: Def<Log>) {
+        self.log = Some(log);
     }
 }
 
@@ -150,8 +163,10 @@ impl Chronicle for Input {
 // Testing
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use crate::action::{IOCommand};
-    use crate::io::{Device, Input, RawValue};
+    use crate::io::{Device, DeviceGetters, Input, IOKind, RawValue};
+    use crate::settings::Settings;
     use crate::storage::Chronicle;
 
     const DUMMY_OUTPUT: RawValue = RawValue::Float(1.2);
@@ -162,6 +177,13 @@ mod tests {
     fn new_name_parameter() {
         Input::new("as &str", 0, None);
         Input::new(String::from("as String"), 0, None);
+    }
+
+    #[test]
+    fn new_kind_parameter() {
+        Input::new("", 0, None);
+        Input::new("", 0, Some(IOKind::Unassigned));
+        Input::new("", 0, IOKind::Unassigned);
     }
 
     #[test]
@@ -205,13 +227,38 @@ mod tests {
 
     #[test]
     fn test_init_log() {
-        let mut input = Input::default();
+        // test w/ None
+        {
+            let mut input = Input::default();
 
-        assert_eq!(false, input.has_log());
+            assert_eq!(false, input.has_log());
 
-        input = input.init_log(None);
+            input = input.init_log(None);
 
-        assert_eq!(true, input.has_log());
+            assert_eq!(true, input.has_log());
+        }
+
+        // test `Into<_>` conversion
+        {
+            let mut input = Input::default();
+
+            assert_eq!(false, input.has_log());
+
+            input = input.init_log(Arc::new(Settings::default()));
+
+            assert_eq!(true, input.has_log());
+        }
+
+        // test wrapping in `Some(_)`
+        {
+            let mut input = Input::default();
+
+            assert_eq!(false, input.has_log());
+
+            input = input.init_log(Some(Arc::new(Settings::default())));
+
+            assert_eq!(true, input.has_log());
+        }
     }
 }
 

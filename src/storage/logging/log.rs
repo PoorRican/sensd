@@ -46,11 +46,14 @@ impl Log {
     /// # Returns
     ///
     /// Empty log with identity attributes belonging to given device.
-    pub fn new(metadata: &DeviceMetadata, settings: Option<Arc<Settings>>) -> Self {
+    pub fn new<S>(metadata: &DeviceMetadata, settings: S) -> Self
+    where
+        S: Into<Option<Arc<Settings>>>,
+    {
         let id = metadata.id;
         let name = metadata.name.clone();
         let log = EventCollection::default();
-        let settings = settings.unwrap_or_else(|| Arc::new(Settings::default()));
+        let settings = settings.into().unwrap_or_else(|| Arc::new(Settings::default()));
 
         Self {
             id,
@@ -229,11 +232,13 @@ impl Persistent for Log {
 mod tests {
     use crate::action::IOCommand;
     use crate::helpers::Def;
-    use crate::io::{Device, Input, IOKind, IdType, RawValue};
+    use crate::io::{Device, Input, IOKind, IdType, RawValue, DeviceMetadata};
     use crate::storage::{Chronicle, Log, Persistent};
     use std::path::Path;
     use std::time::Duration;
     use std::{fs, thread};
+    use std::sync::Arc;
+    use crate::settings::Settings;
 
     fn add_to_log<D>(device: &D, log: &Def<Log>, count: usize)
     where
@@ -244,6 +249,17 @@ mod tests {
             log.lock().unwrap().push(event).unwrap();
             thread::sleep(Duration::from_nanos(1)); // add delay so that we don't finish too quickly
         }
+    }
+
+    #[test]
+    /// Test that constructor `Into<_>` conversion works properly for `settings` parameter
+    fn constructor_settings_parameter() {
+        let metadata = DeviceMetadata::default();
+        let settings = Arc::new(Settings::default());
+
+        Log::new(&metadata, None);
+        Log::new(&metadata, Some(settings.clone()));
+        Log::new(&metadata, settings);
     }
 
     #[test]
@@ -259,7 +275,7 @@ mod tests {
         let filename;
         // test save
         {
-            let device = Input::new(String::from(SENSOR_NAME), ID, Some(IOKind::Flow))
+            let device = Input::new(String::from(SENSOR_NAME), ID, IOKind::Flow)
                 .set_command(COMMAND)
                 .init_log(None);
             let log = device.log().unwrap();
@@ -277,7 +293,7 @@ mod tests {
         // test load
         // build back up then load
         {
-            let device = Input::new(String::from(SENSOR_NAME), ID, Some(IOKind::Flow))
+            let device = Input::new(SENSOR_NAME, ID, IOKind::Flow)
                 .set_command(COMMAND)
                 .init_log(None);
             let log = device.log().unwrap();
