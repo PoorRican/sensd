@@ -17,19 +17,19 @@ fn test_builder_pattern() {
             Input::new(
                 "test name",
                 0,
-                Some(IOKind::PH),
+                IOKind::PH,
             ).set_command(command.clone()))
         .push_input(
             Input::new(
                 "second sensor",
                 1,
-                Some(IOKind::EC),
+                IOKind::EC,
             ).set_command(command.clone()))
         .push_output(
             Output::new(
                 "output device",
                 2,
-                Some(IOKind::Flow)
+                IOKind::Flow
             ).set_command(IOCommand::Output(|_| Ok(())))
         );
 
@@ -52,7 +52,7 @@ fn test_poll() {
             Input::new(
                 "test name",
                 0,
-                Some(IOKind::PH),
+                IOKind::PH,
             ).set_command(
                 command.clone()
             ).init_log(Some(settings.clone()))
@@ -62,7 +62,7 @@ fn test_poll() {
             Input::new(
                 "second sensor",
                 1,
-                Some(IOKind::EC),
+                IOKind::EC,
             ).set_command(
                 command.clone()
             ).init_log(

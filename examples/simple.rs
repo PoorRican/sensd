@@ -113,7 +113,7 @@ fn main() {
         let mut input = Input::new(
             name,
             id,
-            Some(kind),
+            kind,
         )
             .set_command(command)
             .init_log(Some(poller.settings()))

@@ -259,7 +259,7 @@ mod tests {
         let filename;
         // test save
         {
-            let device = Input::new(String::from(SENSOR_NAME), ID, Some(IOKind::Flow))
+            let device = Input::new(String::from(SENSOR_NAME), ID, IOKind::Flow)
                 .set_command(COMMAND)
                 .init_log(None);
             let log = device.log().unwrap();
@@ -277,7 +277,7 @@ mod tests {
         // test load
         // build back up then load
         {
-            let device = Input::new(String::from(SENSOR_NAME), ID, Some(IOKind::Flow))
+            let device = Input::new(SENSOR_NAME, ID, IOKind::Flow)
                 .set_command(COMMAND)
                 .init_log(None);
             let log = device.log().unwrap();

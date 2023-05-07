@@ -23,12 +23,13 @@ impl Device for Input {
     /// * `id`: arbitrary, numeric ID to differentiate from other sensors
     ///
     /// returns: MockPhSensor
-    fn new<N>(name: N, id: IdType, kind: Option<IOKind>) -> Self
+    fn new<N, K>(name: N, id: IdType, kind: K) -> Self
     where
         Self: Sized,
-        N: Into<String>
+        N: Into<String>,
+        K: Into<Option<IOKind>>,
     {
-        let kind = kind.unwrap_or_default();
+        let kind = kind.into().unwrap_or_default();
 
         let metadata: DeviceMetadata = DeviceMetadata::new(name.into(), id, kind, IODirection::In);
 
@@ -159,7 +160,7 @@ impl Chronicle for Input {
 #[cfg(test)]
 mod tests {
     use crate::action::{IOCommand};
-    use crate::io::{Device, Input, RawValue};
+    use crate::io::{Device, Input, IOKind, RawValue};
     use crate::storage::Chronicle;
 
     const DUMMY_OUTPUT: RawValue = RawValue::Float(1.2);
@@ -170,6 +171,13 @@ mod tests {
     fn new_name_parameter() {
         Input::new("as &str", 0, None);
         Input::new(String::from("as String"), 0, None);
+    }
+
+    #[test]
+    fn new_kind_parameter() {
+        Input::new("", 0, None);
+        Input::new("", 0, Some(IOKind::Unassigned));
+        Input::new("", 0, IOKind::Unassigned);
     }
 
     #[test]

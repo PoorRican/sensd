@@ -24,12 +24,13 @@ impl Device for Output {
     /// * `id`: arbitrary, numeric ID to differentiate from other devices
     ///
     /// returns: GenericOutput
-    fn new<N>(name: N, id: IdType, kind: Option<IOKind>) -> Self
+    fn new<N, K>(name: N, id: IdType, kind: K) -> Self
     where
         Self: Sized,
-        N: Into<String>
+        N: Into<String>,
+        K: Into<Option<IOKind>>,
     {
-        let kind = kind.unwrap_or_default();
+        let kind = kind.into().unwrap_or_default();
         let state = None;
         let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Out);
 
@@ -117,7 +118,7 @@ impl Chronicle for Output {
 #[cfg(test)]
 mod tests {
     use crate::action::IOCommand;
-    use crate::io::{Device, Output, RawValue};
+    use crate::io::{Device, IOKind, Output, RawValue};
     use crate::storage::Chronicle;
 
     /// Dummy output command for testing.
@@ -129,6 +130,13 @@ mod tests {
     fn new_name_parameter() {
         Output::new("as &str", 0, None);
         Output::new(String::from("as String"), 0, None);
+    }
+
+    #[test]
+    fn new_kind_parameter() {
+        Output::new("", 0, None);
+        Output::new("", 0, Some(IOKind::Unassigned));
+        Output::new("", 0, IOKind::Unassigned);
     }
 
     #[test]

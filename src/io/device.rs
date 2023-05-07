@@ -25,10 +25,11 @@ pub trait Device: Chronicle {
     /// `id`: device ID.
     /// `kind`: kind of I/O device. Optional argument.
     /// `log`: Optional deferred owned log for the device.
-    fn new<N>(name: N, id: IdType, kind: Option<IOKind>) -> Self
+    fn new<N, K>(name: N, id: IdType, kind: K) -> Self
     where
         Self: Sized,
-        N: Into<String>;
+        N: Into<String>,
+        K: Into<Option<IOKind>>;
 
     /// Returns a reference to the device's metadata
     /// from which information such as name, ID, kind, and I/O direction are inferred.
