@@ -2,7 +2,7 @@ use std::fmt::Formatter;
 use crate::action::{Command, IOCommand};
 use crate::errors::{ErrorType, no_internal_closure};
 use crate::helpers::Def;
-use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue, DeviceGetters};
+use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue, DeviceGetters, DeviceSetters};
 use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
@@ -24,6 +24,20 @@ impl DeviceGetters for Output {
     /// `state` field should be updated by `write()`
     fn state(&self) -> &Option<RawValue> {
         &self.state
+    }
+}
+
+impl DeviceSetters for Output {
+    fn set_name<N>(&mut self, name: N) where N: Into<String> {
+        self.metadata.name = name.into();
+    }
+
+    fn set_id(&mut self, id: IdType) {
+        self.metadata.id = id;
+    }
+
+    fn set_log(&mut self, log: Def<Log>) {
+        self.log = Some(log);
     }
 }
 
@@ -58,14 +72,6 @@ impl Device for Output {
         }
     }
 
-    fn set_name<N>(&mut self, name: N) where N: Into<String> {
-        self.metadata.name = name.into();
-    }
-
-    fn set_id(&mut self, id: IdType) {
-        self.metadata.id = id;
-    }
-
     fn set_command(mut self, command: IOCommand) -> Self
     where
         Self: Sized,
@@ -74,10 +80,6 @@ impl Device for Output {
             .expect("Command is not output");
         self.command = Some(command);
         self
-    }
-
-    fn set_log(&mut self, log: Def<Log>) {
-        self.log = Some(log)
     }
 }
 

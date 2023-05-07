@@ -17,7 +17,7 @@ pub type DeviceContainer<K, D> = HashMap<K, Def<D>>;
 /// Additionally, an accessor, `metadata()` is defined to provide for the facade methods to access
 /// device name, id, direction, and kind. Therefore, implementing structs shall implement a field
 /// `metadata` that is mutably accessed through the reciprocal getter method.
-pub trait Device: Chronicle + DeviceGetters {
+pub trait Device: Chronicle + DeviceGetters + DeviceSetters {
     /// Creates a new instance of the device with the given parameters.
     ///
     /// # Parameters
@@ -30,13 +30,6 @@ pub trait Device: Chronicle + DeviceGetters {
         Self: Sized,
         N: Into<String>,
         K: Into<Option<IOKind>>;
-
-    fn set_name<N>(&mut self, name: N)
-    where
-        N: Into<String>;
-
-
-    fn set_id(&mut self, id: IdType);
 
     /// Generate an `IOEvent` instance from provided value
     ///
@@ -55,13 +48,19 @@ pub trait Device: Chronicle + DeviceGetters {
         IOEvent::new(self.metadata(), dt, value)
     }
 
-    /// Setter for `command` field
+    /// Setter for `command` field as builder method
+    ///
+    /// # Notes
+    ///
+    /// Since this function is a builder command, and is meant to be used with method chaining,
+    /// it is not included in [`DeviceSetters`]
+    ///
+    /// # Returns
+    ///
+    /// Passes ownership of `self`
     fn set_command(self, command: IOCommand) -> Self
     where
         Self: Sized;
-
-    /// Setter for `log` field
-    fn set_log(&mut self, log: Def<Log>);
 
     /// Initialize, set, and return log.
     fn init_log<S>(mut self, settings: S) -> Self
@@ -124,4 +123,15 @@ pub trait DeviceGetters {
     /// - `None` upon initialization since device has not been read from or written to.
     /// - `RawValue` after first read or write, and represents last known state.
     fn state(&self) -> &Option<RawValue>;
+}
+
+pub trait DeviceSetters {
+    fn set_name<N>(&mut self, name: N)
+        where
+            N: Into<String>;
+
+    fn set_id(&mut self, id: IdType);
+
+    /// Setter for `log` field
+    fn set_log(&mut self, log: Def<Log>);
 }

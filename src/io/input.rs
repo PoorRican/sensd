@@ -2,7 +2,7 @@ use std::fmt::Formatter;
 use crate::action::{Command, IOCommand, Publisher};
 use crate::errors::{ErrorType, no_internal_closure};
 use crate::helpers::Def;
-use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue, DeviceGetters};
+use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue, DeviceGetters, DeviceSetters};
 use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
@@ -47,14 +47,6 @@ impl Device for Input {
         }
     }
 
-    fn set_name<N>(&mut self, name: N) where N: Into<String> {
-        self.metadata.name = name.into();
-    }
-
-    fn set_id(&mut self, id: IdType) {
-        self.metadata.id = id;
-    }
-
     fn set_command(mut self, command: IOCommand) -> Self
     where
         Self: Sized,
@@ -63,10 +55,6 @@ impl Device for Input {
             .expect("Command is not input");
         self.command = Some(command);
         self
-    }
-
-    fn set_log(&mut self, log: Def<Log>) {
-        self.log = Some(log);
     }
 }
 
@@ -80,6 +68,20 @@ impl DeviceGetters for Input {
     /// `state` field should be updated by `write()`
     fn state(&self) -> &Option<RawValue> {
         &self.state
+    }
+}
+
+impl DeviceSetters for Input {
+    fn set_name<N>(&mut self, name: N) where N: Into<String> {
+        self.metadata.name = name.into();
+    }
+
+    fn set_id(&mut self, id: IdType) {
+        self.metadata.id = id;
+    }
+
+    fn set_log(&mut self, log: Def<Log>) {
+        self.log = Some(log);
     }
 }
 
