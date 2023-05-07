@@ -117,8 +117,10 @@ impl Chronicle for Output {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use crate::action::IOCommand;
     use crate::io::{Device, IOKind, Output, RawValue};
+    use crate::settings::Settings;
     use crate::storage::Chronicle;
 
     /// Dummy output command for testing.
@@ -180,6 +182,43 @@ mod tests {
 
         // assert that event was added to log
         assert_eq!(log.try_lock().unwrap().iter().count(), 1);
+    }
+
+
+    #[test]
+    fn test_init_log() {
+        // test w/ None
+        {
+            let mut output = Output::default();
+
+            assert_eq!(false, output.has_log());
+
+            output = output.init_log(None);
+
+            assert_eq!(true, output.has_log());
+        }
+
+        // test `Into<_>` conversion
+        {
+            let mut output = Output::default();
+
+            assert_eq!(false, output.has_log());
+
+            output = output.init_log(Arc::new(Settings::default()));
+
+            assert_eq!(true, output.has_log());
+        }
+
+        // test wrapping in `Some(_)`
+        {
+            let mut output = Output::default();
+
+            assert_eq!(false, output.has_log());
+
+            output = output.init_log(Some(Arc::new(Settings::default())));
+
+            assert_eq!(true, output.has_log());
+        }
     }
 }
 

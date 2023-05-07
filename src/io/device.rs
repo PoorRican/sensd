@@ -87,9 +87,10 @@ pub trait Device: Chronicle {
     fn set_log(&mut self, log: Def<Log>);
 
     /// Initialize, set, and return log.
-    fn init_log(mut self, settings: Option<Arc<Settings>>) -> Self
+    fn init_log<S>(mut self, settings: S) -> Self
     where
         Self: Sized,
+        S: Into<Option<Arc<Settings>>>,
     {
         let log = Def::new(Log::new(&self.metadata(), settings));
         self.set_log(log);

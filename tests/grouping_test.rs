@@ -55,7 +55,7 @@ fn test_poll() {
                 IOKind::PH,
             ).set_command(
                 command.clone()
-            ).init_log(Some(settings.clone()))
+            ).init_log(settings.clone())
 
         ).push_input(
 
@@ -66,7 +66,7 @@ fn test_poll() {
             ).set_command(
                 command.clone()
             ).init_log(
-                Some(settings.clone())
+                settings.clone()
             )
 
         );
