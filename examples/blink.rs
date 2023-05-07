@@ -8,11 +8,8 @@ extern crate chrono;
 extern crate sensd;
 extern crate serde;
 
-use std::sync::Arc;
-
 use sensd::action::IOCommand;
 use sensd::io::{IOKind, IdType, RawValue, Input, Device};
-use sensd::settings::Settings;
 use sensd::storage::{Group, Persistent};
 use std::ops::{DerefMut, Neg};
 
@@ -34,10 +31,7 @@ const OUTPUT_ID: IdType = 0;
 /// # Returns
 /// Single initialized Group
 fn init(name: &str) -> Group {
-    let settings: Arc<Settings> = Arc::new(Settings::initialize());
-    println!("Initialized settings");
-
-    let group = Group::new(name.clone(), Some(settings));
+    let group = Group::new(name.clone());
     println!("Initialized poll group: \"{}\"", name);
     group
 }

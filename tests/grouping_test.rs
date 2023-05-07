@@ -11,7 +11,7 @@ use std::sync::Arc;
 fn test_builder_pattern() {
     let command = IOCommand::Input(move || RawValue::default());
 
-    let mut group = Group::new("main", None);
+    let mut group = Group::new("main");
     group
         .push_input(
             Input::new(
@@ -45,7 +45,7 @@ fn test_poll() {
 
     let command = IOCommand::Input(move || RawValue::default());
 
-    let mut group = Group::new("main", Some(settings.clone()));
+    let mut group = Group::with_settings("main", settings.clone());
     group
         .push_input(
 

@@ -19,11 +19,9 @@ extern crate serde;
 use sensd::action::{Action, actions, IOCommand, Trigger};
 use sensd::errors::ErrorType;
 use sensd::io::{Device, IdType, Input, IOKind, Output, RawValue};
-use sensd::settings::Settings;
 use sensd::storage::{Group, Persistent};
 
 use std::ops::DerefMut;
-use std::sync::Arc;
 
 const INPUT_ID: IdType = 0;
 const OUTPUT_ID: IdType = 1;
@@ -48,10 +46,7 @@ static mut EXTERNAL_VALUE: RawValue = RawValue::Int8(0);
 /// # Returns
 /// Single initialized Group
 fn init(name: &str) -> Group {
-    let settings: Arc<Settings> = Arc::new(Settings::initialize());
-    println!("Initialized settings");
-
-    let group = Group::new(name.clone(), Some(settings));
+    let group = Group::new(name.clone());
     println!("Initialized poll group: \"{}\"", name);
     group
 }

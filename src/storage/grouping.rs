@@ -9,6 +9,7 @@ use std::fs::create_dir_all;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+#[derive(Default)]
 /// High-level container to manage multiple [`Device`] objects, logging, and actions.
 ///
 /// [`Group::poll()`] and [`Group::attempt_routines()`] are the primary callables for function. Both functions are
@@ -27,7 +28,7 @@ pub struct Group {
     /// Buffer to store time of the last successful poll.
     last_execution: DateTime<Utc>,
 
-    /// Non-mutable storage of runtime settings
+    /// Immutable storage of runtime settings
     settings: Arc<Settings>,
 
     pub inputs: DeviceContainer<IdType, Input>,
@@ -63,14 +64,64 @@ impl Group {
         }
     }
 
-    /// Initialized empty containers.
+    /// Primary constructor.
     ///
-    /// Builder and setter functions should be used to populate containers.
-    pub fn new<N>(name: N, settings: Option<Arc<Settings>>) -> Self
+    /// Since `settings` represents individual runtime settings, default is used. Setter functions may be
+    /// used to manipulate settings and populate containers.
+    ///
+    /// # Parameters
+    ///
+    /// - `name`: Name of group used for directory/file naming.
+    ///
+    /// # Returns
+    ///
+    /// Initialized `Group` with `name, default settings, and empty containers.
+    ///
+    /// # See Also
+    ///
+    /// [`Settings] for runtime settings options.
+    pub fn new<N>(name: N) -> Self
     where
         N: Into<String>
     {
-        let settings = settings.unwrap_or_else(|| Arc::new(Settings::default()));
+        let settings = Arc::new(Settings::default());
+        let last_execution = Utc::now() - settings.interval;
+
+        let inputs = <DeviceContainer<IdType, Input>>::default();
+        let outputs = <DeviceContainer<IdType, Output>>::default();
+
+        Self {
+            name: name.into(),
+            settings,
+            last_execution,
+            inputs,
+            outputs,
+        }
+    }
+
+    /// Alternate constructor with `settings` parameter
+    ///
+    /// Setter methods should be used to populate containers and manipulate `settings`.
+    ///
+    /// # Parameters
+    ///
+    /// - `name`: Name of group used for directory/file naming.
+    /// - `settings`: Pre-existing runtime settings
+    ///
+    /// # Returns
+    ///
+    /// Initialized `Group` using given `name` and `settings`, with empty containers
+    ///
+    /// # See Also
+    ///
+    /// [`Settings] for runtime settings options.
+    pub fn with_settings<N, S>(name: N, settings: S) -> Self
+        where
+            N: Into<String>,
+            S: Into<Option<Arc<Settings>>>
+    {
+        let settings = settings.into()
+            .unwrap_or(Arc::new(Settings::default()));
         let last_execution = Utc::now() - settings.interval;
 
         let inputs = <DeviceContainer<IdType, Input>>::default();
@@ -263,14 +314,14 @@ mod tests {
     #[test]
     /// Test that constructor accepts `name` as `&str` or `String`
     fn new_name_parameter() {
-        Group::new("as &str", None);
-        Group::new(String::from("as String"), None);
+        Group::new("as &str");
+        Group::new(String::from("as String"));
     }
 
     #[test]
     fn insert_input() {
         const ITERATIONS: u32 = 15;
-        let mut group = Group::new("name", None);
+        let mut group = Group::new("name");
 
         assert_eq!(0, group.inputs.len());
 
@@ -305,7 +356,7 @@ mod tests {
     fn insert_output() {
         const ITERATIONS: u32 = 15;
 
-        let mut group = Group::new("name", None);
+        let mut group = Group::new("name");
 
         assert_eq!(0, group.outputs.len());
 
@@ -339,7 +390,7 @@ mod tests {
 
     #[test]
     fn push_input() {
-        let mut group = Group::new("name", None);
+        let mut group = Group::new("name");
 
         assert_eq!(0, group.inputs.len());
 
@@ -356,14 +407,14 @@ mod tests {
     #[test]
     #[should_panic]
     fn push_input_panics() {
-        let mut group = Group::new("name", None);
+        let mut group = Group::new("name");
         group.push_input(Input::new("", 0, None));
         group.push_input(Input::new("", 0, None));
     }
 
     #[test]
     fn push_output() {
-        let mut group = Group::new("name", None);
+        let mut group = Group::new("name");
 
         assert_eq!(0, group.outputs.len());
 
@@ -380,7 +431,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn push_output_panics() {
-        let mut group = Group::new("name", None);
+        let mut group = Group::new("name");
         group.push_output(Output::new("", 0, None));
         group.push_output(Output::new("", 0, None));
     }
@@ -397,7 +448,7 @@ mod tests {
         _settings.set_root(dir_name.clone());
 
         let expected = Path::new(DIR_NAME).join(GROUP_NAME);
-        let group = Group::new(GROUP_NAME, Some(Arc::new(_settings)));
+        let group = Group::with_settings(GROUP_NAME, Arc::new(_settings));
 
         // assert directory path is correct
         assert_eq!(expected.to_str().unwrap(), group.dir().to_str().unwrap());
@@ -414,7 +465,7 @@ mod tests {
         let mut _settings = Settings::default();
         _settings.set_root(dir_name.clone());
 
-        let group = Group::new(GROUP_NAME, Some(Arc::new(_settings)));
+        let group = Group::new(GROUP_NAME);
 
         // assert `setup_dir()` works as expected exists
         group.setup_dir();
