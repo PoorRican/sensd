@@ -40,7 +40,7 @@ fn test_builder_pattern() {
 #[test]
 fn test_poll() {
     let mut _settings = Settings::default();
-    _settings.interval = Duration::nanoseconds(1);
+    _settings.set_interval(Duration::nanoseconds(1));
     let settings = Arc::new(_settings);
 
     let command = IOCommand::Input(move || RawValue::default());

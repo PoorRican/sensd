@@ -15,7 +15,7 @@ const DATA_ROOT: &str = "sensd";
 /// Struct containing settings loaded from ".env"
 pub struct Settings {
     pub version: String,
-    pub interval: Duration,
+    interval: Duration,
 
     pub log_fn_prefix: String,
     pub sensors_fn_prefix: String,
@@ -59,7 +59,17 @@ impl Settings {
             data_root,
         }
     }
+
     pub fn set_root(&mut self, root: String) {
         self.data_root = root
+    }
+
+    #[inline]
+    pub fn interval(&self) -> &Duration {
+        &self.interval
+    }
+
+    pub fn set_interval(&mut self, interval: Duration) {
+        self.interval = interval
     }
 }

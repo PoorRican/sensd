@@ -1,10 +1,11 @@
-use std::collections::hash_map::Entry;
 use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::{check_results, Def};
 use crate::io::{Device, DeviceContainer, Input, Output, IOEvent, IdType, DeviceGetters};
 use crate::settings::Settings;
 use crate::storage::{Chronicle, Persistent};
+
 use chrono::{DateTime, Duration, Utc};
+use std::collections::hash_map::Entry;
 use std::fs::create_dir_all;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -50,7 +51,7 @@ impl Group {
     // TODO: custom `ErrorType` for failed read. Should include device metadata.
     pub fn poll(&mut self) -> Result<Vec<Result<IOEvent, ErrorType>>, ()> {
         let mut results: Vec<Result<IOEvent, ErrorType>> = Vec::new();
-        let next_execution = self.last_execution + self.interval();
+        let next_execution = self.last_execution + *self.interval();
 
         if next_execution <= Utc::now() {
             for input in self.inputs.values_mut() {
@@ -85,7 +86,7 @@ impl Group {
         N: Into<String>
     {
         let settings = Arc::new(Settings::default());
-        let last_execution = Utc::now() - settings.interval;
+        let last_execution = Utc::now() - *settings.interval();
 
         let inputs = <DeviceContainer<IdType, Input>>::default();
         let outputs = <DeviceContainer<IdType, Output>>::default();
@@ -120,20 +121,11 @@ impl Group {
             N: Into<String>,
             S: Into<Option<Arc<Settings>>>
     {
-        let settings = settings.into()
-            .unwrap_or(Arc::new(Settings::default()));
-        let last_execution = Utc::now() - settings.interval;
-
-        let inputs = <DeviceContainer<IdType, Input>>::default();
-        let outputs = <DeviceContainer<IdType, Output>>::default();
-
-        Self {
-            name: name.into(),
-            settings,
-            last_execution,
-            inputs,
-            outputs,
+        let mut group = Self::new(name.into());
+        if let Some(inner) = settings.into() {
+            group.set_settings(inner)
         }
+        group
     }
 
     pub fn insert_input(&mut self, id: IdType, input: Def<Input>) -> Result<Def<Input>, ErrorType> {
@@ -186,15 +178,6 @@ impl Group {
         self
     }
 
-    /// Facade to return operating frequency
-    pub fn interval(&self) -> Duration {
-        self.settings.interval
-    }
-
-    pub fn settings(&self) -> Arc<Settings> {
-        self.settings.clone()
-    }
-
     /// Load all device logs
     ///
     /// # Errors
@@ -237,6 +220,7 @@ impl Group {
     /// Save all device logs
     ///
     /// # Errors
+    ///
     /// Returns an error if any single save fails. However, failure does not prevent saving of
     /// other device logs.
     fn save_logs(&self, path: &Option<String>) -> Result<(), ErrorType> {
@@ -284,6 +268,61 @@ impl Group {
             }
         }
     }
+
+    //
+    // Getters
+
+    /// Getter for `name`
+    ///
+    /// # Returns
+    ///
+    /// Immutable reference to `name`
+    pub fn name(&self) -> &String {
+        &self.name
+    }
+
+    #[inline]
+    /// Getter for `interval`
+    ///
+    /// # Returns
+    ///
+    /// Immutable reference to `interval`
+    pub fn interval(&self) -> &Duration {
+        self.settings.interval()
+    }
+
+    /// Getter for `settings`
+    ///
+    /// # Returns
+    ///
+    /// An `Arc` reference to `Settings`
+    pub fn settings(&self) -> Arc<Settings> {
+        self.settings.clone()
+    }
+
+    //
+    // Setters
+
+    /// Setter for `name`
+    ///
+    /// # Parameters
+    ///
+    /// - `name`: new name for group. Uses `Into<_>` to coerce into `String`.
+    pub fn set_name<N>(&mut self, name: N)
+        where
+            N: Into<String>
+    {
+        self.name = name.into();
+    }
+
+    /// Setter for settings
+    ///
+    /// # Parameters
+    ///
+    /// - `settings`: `Arc` reference to new settings.
+    pub fn set_settings(&mut self, settings: Arc<Settings>) {
+        self.settings = settings
+    }
 }
 
 /// Only save and load log data since [`Group`] is statically initialized
@@ -309,6 +348,7 @@ mod tests {
     use crate::storage::Group;
 
     use std::fs::remove_dir_all;
+    use chrono::Duration;
     use crate::io::{Device, IdType, Input, Output};
 
     #[test]
@@ -316,6 +356,20 @@ mod tests {
     fn new_name_parameter() {
         Group::new("as &str");
         Group::new(String::from("as String"));
+    }
+
+    #[test]
+    /// Test that alternate constructor sets settings
+    fn with_settings() {
+        let duration = Duration::nanoseconds(15);
+
+        let mut settings = Settings::default();
+        settings.set_interval(duration);
+
+        let group = Group::with_settings(
+            "",
+            Arc::new(settings));
+        assert_eq!(duration, *group.interval());
     }
 
     #[test]
