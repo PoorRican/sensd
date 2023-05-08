@@ -4,12 +4,7 @@ use crate::io::{DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue};
 use crate::settings::Settings;
 use crate::storage::{Chronicle, Log};
 use chrono::Utc;
-use std::collections::HashMap;
 use std::sync::Arc;
-
-
-/// Alias for using a deferred devices in `Container`, indexed by `K`
-pub type DeviceContainer<K, D> = HashMap<K, Def<D>>;
 
 /// Defines a minimum interface for interacting with GPIO devices.
 ///

@@ -1,11 +1,10 @@
-use crate::errors::{Error, ErrorKind, ErrorType};
-use crate::helpers::{check_results, Def};
+use crate::errors::ErrorType;
+use crate::helpers::check_results;
 use crate::io::{Device, DeviceContainer, Input, Output, IOEvent, IdType, DeviceGetters};
 use crate::settings::Settings;
 use crate::storage::{Chronicle, Persistent};
 
 use chrono::{DateTime, Duration, Utc};
-use std::collections::hash_map::Entry;
 use std::fs::create_dir_all;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -128,13 +127,6 @@ impl Group {
         group
     }
 
-    pub fn insert_input(&mut self, id: IdType, input: Def<Input>) -> Result<Def<Input>, ErrorType> {
-        match self.inputs.entry(id) {
-            Entry::Occupied(_) => Err(Error::new(ErrorKind::ContainerError, "Input already exists")),
-            Entry::Vacant(entry) => Ok(entry.insert(input).clone()),
-        }
-    }
-
     /// Builder method to store [`Input`] in internal collection
     ///
     /// # Parameters
@@ -147,17 +139,10 @@ impl Group {
     pub fn push_input(&mut self, input: Input) -> &mut Self {
         let id = input.id();
 
-        self.insert_input(id, input.into_deferred())
+        self.inputs.insert(id, input.into_deferred())
             .unwrap();
 
         self
-    }
-
-    pub fn insert_output(&mut self, id: IdType, output: Def<Output>) -> Result<Def<Output>, ErrorType> {
-        match self.outputs.entry(id) {
-            Entry::Occupied(_) => Err(Error::new(ErrorKind::ContainerError, "Output already exists")),
-            Entry::Vacant(entry) => Ok(entry.insert(output).clone()),
-        }
     }
 
     /// Store [`Output`] in internal collection
@@ -172,7 +157,7 @@ impl Group {
     pub fn push_output(&mut self, device: Output) -> &mut Self {
         let id = device.id();
 
-        self.insert_output(id, device.into_deferred())
+        self.outputs.insert(id, device.into_deferred())
             .unwrap();
 
         self
@@ -349,7 +334,7 @@ mod tests {
 
     use std::fs::remove_dir_all;
     use chrono::Duration;
-    use crate::io::{Device, IdType, Input, Output};
+    use crate::io::{Device, Input, Output};
 
     #[test]
     /// Test that constructor accepts `name` as `&str` or `String`
@@ -370,76 +355,6 @@ mod tests {
             "",
             Arc::new(settings));
         assert_eq!(duration, *group.interval());
-    }
-
-    #[test]
-    fn insert_input() {
-        const ITERATIONS: u32 = 15;
-        let mut group = Group::new("name");
-
-        assert_eq!(0, group.inputs.len());
-
-        for id in 0..ITERATIONS {
-            let input = Input::new("", id, None).into_deferred();
-
-            assert!(
-                group.insert_input(id, input)
-                    .is_ok()
-            );
-            assert_eq!(
-                (id + 1) as usize,
-                group.inputs.len()
-            );
-        }
-
-        for id in 0..ITERATIONS {
-            let input = Input::new("", id, None).into_deferred();
-
-            assert!(
-                group.insert_input(id, input)
-                    .is_err()
-            );
-            assert_eq!(
-                ITERATIONS as usize,
-                group.inputs.len()
-            );
-        }
-    }
-
-    #[test]
-    fn insert_output() {
-        const ITERATIONS: u32 = 15;
-
-        let mut group = Group::new("name");
-
-        assert_eq!(0, group.outputs.len());
-
-        for id in 0..ITERATIONS {
-            let output = Output::new("", id, None).into_deferred();
-
-            assert!(
-                group.insert_output(id as IdType, output)
-                    .is_ok()
-            );
-            assert_eq!(
-                (id + 1) as usize,
-                group.outputs.len()
-            );
-        }
-
-        // check adding duplicates
-        for id in 0..ITERATIONS {
-            let output = Output::new("", id, None).into_deferred();
-
-            assert!(
-                group.insert_output(id as IdType, output)
-                    .is_err()
-            );
-            assert_eq!(
-                ITERATIONS as usize,
-                group.outputs.len()
-            );
-        }
     }
 
     #[test]

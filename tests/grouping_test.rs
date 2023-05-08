@@ -33,8 +33,8 @@ fn test_builder_pattern() {
             ).set_command(IOCommand::Output(|_| Ok(())))
         );
 
-    assert_eq!(group.inputs.iter().count(), 2);
-    assert_eq!(group.outputs.iter().count(), 1);
+    assert_eq!(group.inputs.len(), 2);
+    assert_eq!(group.outputs.len(), 1);
 }
 
 #[test]
