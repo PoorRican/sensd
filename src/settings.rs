@@ -12,6 +12,7 @@ const SENSORS_FN_PREFIX: &str = "sensors_";
 
 const DATA_ROOT: &str = "sensd";
 
+#[derive(PartialEq, Debug)]
 /// Struct containing settings loaded from ".env"
 pub struct Settings {
     pub version: String,

@@ -9,7 +9,6 @@ use std::fs::create_dir_all;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-#[derive(Default)]
 /// High-level container to manage multiple [`Device`] objects, logging, and actions.
 ///
 /// [`Group::poll()`] and [`Group::attempt_routines()`] are the primary callables for function. Both functions are
@@ -30,6 +29,8 @@ pub struct Group {
 
     /// Immutable storage of runtime settings
     settings: Arc<Settings>,
+
+    interval: Duration,
 
     pub inputs: DeviceContainer<IdType, Input>,
     pub outputs: DeviceContainer<IdType, Output>,
@@ -84,6 +85,7 @@ impl Group {
     where
         N: Into<String>
     {
+        let interval = Duration::seconds(5);
         let settings = Arc::new(Settings::default());
         let last_execution = Utc::now() - *settings.interval();
 
@@ -92,6 +94,7 @@ impl Group {
 
         Self {
             name: name.into(),
+            interval,
             settings,
             last_execution,
             inputs,
@@ -124,6 +127,16 @@ impl Group {
         if let Some(inner) = settings.into() {
             group.set_settings(inner)
         }
+        group
+    }
+
+    pub fn with_interval<N>(name: N, interval: Duration) -> Self
+        where
+            N: Into<String>,
+    {
+        let mut group = Self::new(name.into());
+        group.set_interval(interval);
+
         group
     }
 
@@ -273,7 +286,16 @@ impl Group {
     ///
     /// Immutable reference to `interval`
     pub fn interval(&self) -> &Duration {
-        self.settings.interval()
+        &self.interval
+    }
+
+    /// Setter for `interval`
+    ///
+    /// # Parameters
+    ///
+    /// - `interval`: any value that can be coerced into `Interval`
+    pub fn set_interval(&mut self, interval: Duration) {
+        self.interval = interval
     }
 
     /// Getter for `settings`
@@ -346,15 +368,24 @@ mod tests {
     #[test]
     /// Test that alternate constructor sets settings
     fn with_settings() {
-        let duration = Duration::nanoseconds(15);
-
         let mut settings = Settings::default();
-        settings.set_interval(duration);
+        settings.set_interval(Duration::nanoseconds(15));
+        let settings = Arc::new(settings);
 
         let group = Group::with_settings(
             "",
-            Arc::new(settings));
-        assert_eq!(duration, *group.interval());
+            settings.clone());
+        assert_eq!(settings, group.settings());
+    }
+
+    #[test]
+    fn with_interval() {
+        let interval = Duration::nanoseconds(30);
+
+        let group = Group::with_interval(
+            "",
+            interval);
+        assert!(interval.eq(group.interval()))
     }
 
     #[test]
