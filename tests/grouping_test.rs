@@ -3,7 +3,6 @@ use chrono::Duration;
 use sensd::action::IOCommand;
 use sensd::io::{Device, Input, IOKind, Output, RawValue};
 use sensd::storage::{Chronicle, Group};
-use std::sync::Arc;
 
 #[test]
 /// Test builder pattern for adding devices

@@ -11,6 +11,7 @@ use std::sync::Arc;
 use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::writable_or_create;
 use crate::io::{DeviceMetadata, IOEvent, IdType};
+use crate::settings;
 use crate::settings::Settings;
 use crate::storage::{EventCollection, Persistent, FILETYPE};
 
@@ -78,7 +79,8 @@ impl Log {
     ///
     /// `String` of full path *including filename*
     fn full_path(&self, path: &Option<String>) -> String {
-        let prefix = path.as_ref().unwrap_or(&self.settings.data_root);
+        let root = settings::DATA_ROOT.to_string();
+        let prefix = path.as_ref().unwrap_or(&root);
         let dir = Path::new(prefix);
 
         let full_path = dir.join(self.filename());
@@ -97,7 +99,7 @@ impl Log {
     fn filename(&self) -> String {
         format!(
             "{}_{}_{}{}",
-            self.settings.log_fn_prefix.clone(),
+            settings::LOG_FN_PREFIX,
             self.name,
             self.id.to_string().as_str(),
             FILETYPE
