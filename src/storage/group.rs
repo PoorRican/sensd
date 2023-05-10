@@ -87,7 +87,7 @@ impl Group {
     {
         let interval = Duration::seconds(5);
         let settings = Arc::new(Settings::default());
-        let last_execution = Utc::now() - *settings.interval();
+        let last_execution = Utc::now() - interval;
 
         let inputs = <DeviceContainer<IdType, Input>>::default();
         let outputs = <DeviceContainer<IdType, Output>>::default();
@@ -360,7 +360,7 @@ mod tests {
     /// Test that alternate constructor sets settings
     fn with_settings() {
         let mut settings = Settings::default();
-        settings.set_interval(Duration::nanoseconds(15));
+        settings.version = "blah".into();
         let settings = Arc::new(settings);
 
         let group = Group::with_settings(
@@ -447,7 +447,7 @@ mod tests {
 
     /// Test [`Group::init_root()`]
     #[test]
-    fn test_setup_dir() {
+    fn test_init_root() {
         const DIR_NAME: &str = "test_root";
         const GROUP_NAME: &str = "main";
 

@@ -2,7 +2,6 @@
 use chrono::Duration;
 use sensd::action::IOCommand;
 use sensd::io::{Device, Input, IOKind, Output, RawValue};
-use sensd::settings::Settings;
 use sensd::storage::{Chronicle, Group};
 use std::sync::Arc;
 
@@ -39,10 +38,6 @@ fn test_builder_pattern() {
 
 #[test]
 fn test_poll() {
-    let mut _settings = Settings::default();
-    _settings.set_interval(Duration::nanoseconds(1));
-    let settings = Arc::new(_settings);
-
     let command = IOCommand::Input(move || RawValue::default());
 
     let mut group = Group::with_interval("main", Duration::nanoseconds(1));
@@ -55,7 +50,7 @@ fn test_poll() {
                 IOKind::PH,
             ).set_command(
                 command.clone()
-            ).init_log(settings.clone())
+            ).init_log(None)
 
         ).push_input(
 
@@ -65,9 +60,7 @@ fn test_poll() {
                 IOKind::EC,
             ).set_command(
                 command.clone()
-            ).init_log(
-                settings.clone()
-            )
+            ).init_log(None)
 
         );
 
