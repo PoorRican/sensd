@@ -185,7 +185,7 @@ impl Group {
     }
 
     /// Attempt to create root data directory
-    pub fn setup_dir(self) -> Self {
+    pub fn init_root(self) -> Self {
         let path = self.dir();
         match path.exists() {
             true => (),
@@ -445,7 +445,7 @@ mod tests {
         assert_eq!(expected.to_str().unwrap(), group.dir().to_str().unwrap());
     }
 
-    /// Test [`Group::setup_dir()`]
+    /// Test [`Group::init_root()`]
     #[test]
     fn test_setup_dir() {
         const DIR_NAME: &str = "test_root";
@@ -457,7 +457,7 @@ mod tests {
         _settings.set_root(dir_name.clone());
 
         let group = Group::new(GROUP_NAME)
-            .setup_dir();
+            .init_root();
         assert!(group.dir().exists());
 
         remove_dir_all(group.dir().parent().unwrap()).unwrap();
