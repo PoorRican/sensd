@@ -69,11 +69,11 @@ pub trait Device: Chronicle + DeviceGetters + DeviceSetters {
 
     /// Setter for settings
     ///
-    /// Updates any internal field that uses settings (ie: [`Log`]
+    /// Updates any internal field that uses settings (ie: [`Log`])
     ///
     /// # Parameters
     ///
-    /// - `settings`: Updated version of `Settings` to give to fields
+    /// - `settings`: Updated version of [`Settings`] to give to fields
     fn set_settings(&self, settings: Arc<Settings>) {
         if self.has_log() {
             let binding = self.log().unwrap();

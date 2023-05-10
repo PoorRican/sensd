@@ -163,8 +163,10 @@ impl Chronicle for Input {
 // Testing
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use crate::action::{IOCommand};
     use crate::io::{Device, DeviceGetters, Input, IOKind, RawValue};
+    use crate::settings::Settings;
     use crate::storage::Chronicle;
 
     const DUMMY_OUTPUT: RawValue = RawValue::Float(1.2);
@@ -232,6 +234,23 @@ mod tests {
         input = input.init_log();
 
         assert_eq!(true, input.has_log());
+    }
+
+    #[test]
+    fn set_settings() {
+        let output = Input::default().init_log();
+
+        assert!(output.log()
+            .unwrap().try_lock().unwrap()
+            .settings()
+            .is_none());
+
+        output.set_settings(Arc::new(Settings::default()));
+
+        assert!(output.log()
+            .unwrap().try_lock().unwrap()
+            .settings()
+            .is_some());
     }
 }
 

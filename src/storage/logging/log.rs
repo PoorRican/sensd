@@ -142,6 +142,10 @@ impl Log {
         }
     }
 
+    pub fn settings(&self) -> Option<Arc<Settings>> {
+        self.settings.clone()
+    }
+
     pub fn set_settings(&mut self, settings: Arc<Settings>) {
         self.settings = Some(settings)
     }

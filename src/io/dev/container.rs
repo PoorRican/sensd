@@ -3,6 +3,8 @@ use crate::helpers::Def;
 use crate::io::{Device, IdTraits};
 use std::collections::hash_map::{Entry, Iter, Values, ValuesMut};
 use std::collections::HashMap;
+use std::sync::Arc;
+use crate::settings::Settings;
 
 /// Alias for using a deferred devices in `Container`, indexed by `K`
 #[derive(Default)]
@@ -42,11 +44,23 @@ where
     pub fn iter(&self) -> Iter<K, Def<D>> {
         self.0.iter()
     }
+
+    /// Call [`Device::set_settings()`] on all stored device objects
+    pub fn set_settings(&mut self, settings: Arc<Settings>) {
+        for binding in self.values_mut() {
+            let device = binding.try_lock().unwrap();
+            device.set_settings(settings.clone());
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::ops::Deref;
+    use std::sync::Arc;
     use crate::io::{Device, DeviceContainer, Output, Input};
+    use crate::settings::Settings;
+    use crate::storage::Chronicle;
 
     #[test]
     fn insert_output() {
@@ -115,6 +129,33 @@ mod tests {
                 container.len()
             );
         }
+    }
+
+    #[test]
+    /// Ensure that [`Device::set_settings()`] is called on each device
+    fn set_settings() {
+        let mut settings = Settings::default();
+        settings.set_root("New Root");
+
+        let input = Input::new("", 0, None)
+            .init_log();
+        assert!(
+            input.log()
+                .unwrap().try_lock().unwrap().deref()
+                .settings().is_none());
+
+        let mut container = DeviceContainer::default();
+        container.insert(0, input.into_deferred()).unwrap();
+
+        let input = container.get(&0).unwrap()
+                .try_lock().unwrap();
+        input.set_settings(Arc::new(settings));
+
+        assert!(
+            input
+                .log()
+                .unwrap().try_lock().unwrap().deref()
+                .settings().is_some());
     }
 
 }

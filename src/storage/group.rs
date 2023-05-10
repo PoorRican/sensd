@@ -142,6 +142,8 @@ impl Group {
 
     /// Builder method to store [`Input`] in internal collection
     ///
+    /// [`Device::set_settings()`] is called to pass settings to device.
+    ///
     /// # Parameters
     ///
     /// - `device`: [`Input`] device to be added
@@ -161,6 +163,8 @@ impl Group {
     }
 
     /// Store [`Output`] in internal collection
+    ///
+    /// [`Device::set_settings()`] is called to pass settings to device.
     ///
     /// # Parameters
     ///
@@ -267,11 +271,16 @@ impl Group {
 
     /// Setter for settings
     ///
+    /// Propagates changes to internal device containers using [`DeviceContainer::set_settings()`]
+    ///
     /// # Parameters
     ///
     /// - `settings`: `Arc` reference to new settings.
     pub fn set_settings(&mut self, settings: Arc<Settings>) {
-        self.settings = settings
+        self.settings = settings.clone();
+
+        self.inputs.set_settings(settings.clone());
+        self.outputs.set_settings(settings.clone());
     }
 }
 

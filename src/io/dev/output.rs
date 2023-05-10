@@ -121,8 +121,10 @@ impl Chronicle for Output {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use crate::action::IOCommand;
     use crate::io::{Device, DeviceGetters, IOKind, Output, RawValue};
+    use crate::settings::Settings;
     use crate::storage::Chronicle;
 
     /// Dummy output command for testing.
@@ -186,7 +188,6 @@ mod tests {
         assert_eq!(log.try_lock().unwrap().iter().count(), 1);
     }
 
-
     #[test]
     fn test_init_log() {
         let mut output = Output::default();
@@ -196,6 +197,23 @@ mod tests {
         output = output.init_log();
 
         assert_eq!(true, output.has_log());
+    }
+
+    #[test]
+    fn set_settings() {
+        let output = Output::default().init_log();
+
+        assert!(output.log()
+            .unwrap().try_lock().unwrap()
+            .settings()
+            .is_none());
+
+        output.set_settings(Arc::new(Settings::default()));
+
+        assert!(output.log()
+            .unwrap().try_lock().unwrap()
+            .settings()
+            .is_some());
     }
 }
 
