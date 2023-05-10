@@ -1,3 +1,4 @@
+//! Datalogging of `IOEvent` objects
 mod chronicle;
 mod log;
 mod types;

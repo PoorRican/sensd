@@ -184,7 +184,8 @@ impl Group {
     ///
     /// The dedicated directory for a [`Group`] is simply a sub-directory in the global path.
     pub fn dir(&self) -> PathBuf {
-        let path = Path::new(self.settings.data_root.as_str());
+        let root = self.settings.root_path();
+        let path = Path::new(root.as_str());
         path.join(self.name.as_str())
     }
 

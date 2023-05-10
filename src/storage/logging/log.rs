@@ -1,4 +1,3 @@
-//! Datalogging of `IOEvent` objects
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::{Entry, Iter};
@@ -64,7 +63,7 @@ impl Log {
 
     fn root(&self) -> String {
         if self.settings.is_some() {
-            self.settings.as_ref().unwrap().data_root.clone()
+            self.settings.as_ref().unwrap().root_path().deref().into()
         } else {
             settings::DATA_ROOT.to_string()
         }
