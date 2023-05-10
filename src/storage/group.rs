@@ -185,14 +185,15 @@ impl Group {
     }
 
     /// Attempt to create root data directory
-    pub fn setup_dir(&self) {
+    pub fn setup_dir(self) -> Self {
         let path = self.dir();
         match path.exists() {
             true => (),
             false => {
                 create_dir_all(path).expect("Could not create root data directory");
             }
-        }
+        };
+        self
     }
 
     pub fn attempt_routines(&self) {
@@ -455,10 +456,8 @@ mod tests {
         let mut _settings = Settings::default();
         _settings.set_root(dir_name.clone());
 
-        let group = Group::new(GROUP_NAME);
-
-        // assert `setup_dir()` works as expected exists
-        group.setup_dir();
+        let group = Group::new(GROUP_NAME)
+            .setup_dir();
         assert!(group.dir().exists());
 
         remove_dir_all(group.dir().parent().unwrap()).unwrap();
