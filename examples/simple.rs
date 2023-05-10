@@ -81,7 +81,6 @@ fn main() {
             ).set_command(
                 command
             ).init_log(
-                poller.settings()
             ).init_publisher();
 
         // setup publisher/action
@@ -110,7 +109,7 @@ fn main() {
             kind,
         )
             .set_command(command)
-            .init_log(poller.settings())
+            .init_log()
             .init_publisher();
 
         // setup publisher/action

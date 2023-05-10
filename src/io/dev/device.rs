@@ -58,14 +58,28 @@ pub trait Device: Chronicle + DeviceGetters + DeviceSetters {
         Self: Sized;
 
     /// Initialize, set, and return log.
-    fn init_log<S>(mut self, settings: S) -> Self
+    fn init_log(mut self) -> Self
     where
         Self: Sized,
-        S: Into<Option<Arc<Settings>>>,
     {
-        let log = Def::new(Log::new(&self.metadata(), settings));
+        let log = Def::new(Log::new(&self.metadata()));
         self.set_log(log);
         self
+    }
+
+    /// Setter for settings
+    ///
+    /// Updates any internal field that uses settings (ie: [`Log`]
+    ///
+    /// # Parameters
+    ///
+    /// - `settings`: Updated version of `Settings` to give to fields
+    fn set_settings(&self, settings: Arc<Settings>) {
+        if self.has_log() {
+            let binding = self.log().unwrap();
+            let mut log = binding.try_lock().unwrap();
+            log.set_settings(settings)
+        }
     }
 
     fn into_deferred(self) -> Def<Self>

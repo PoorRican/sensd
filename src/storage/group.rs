@@ -149,10 +149,12 @@ impl Group {
     /// # Returns
     ///
     /// Mutable reference to `self`
-    pub fn push_input(&mut self, input: Input) -> &mut Self {
-        let id = input.id();
+    pub fn push_input(&mut self, device: Input) -> &mut Self {
+        let id = device.id();
 
-        self.inputs.insert(id, input.into_deferred())
+        device.set_settings(self.settings.clone());
+
+        self.inputs.insert(id, device.into_deferred())
             .unwrap();
 
         self
@@ -169,6 +171,8 @@ impl Group {
     /// Panic is raised if `device` can't be locked.
     pub fn push_output(&mut self, device: Output) -> &mut Self {
         let id = device.id();
+
+        device.set_settings(self.settings.clone());
 
         self.outputs.insert(id, device.into_deferred())
             .unwrap();

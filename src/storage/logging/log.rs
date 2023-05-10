@@ -31,7 +31,7 @@ pub struct Log {
     #[serde(skip)]
     name: String,
     #[serde(skip)]
-    settings: Arc<Settings>,
+    settings: Option<Arc<Settings>>,
 
     log: EventCollection,
 }
@@ -47,20 +47,26 @@ impl Log {
     /// # Returns
     ///
     /// Empty log with identity attributes belonging to given device.
-    pub fn new<S>(metadata: &DeviceMetadata, settings: S) -> Self
-    where
-        S: Into<Option<Arc<Settings>>>,
+    pub fn new(metadata: &DeviceMetadata) -> Self
     {
         let id = metadata.id;
         let name = metadata.name.clone();
         let log = EventCollection::default();
-        let settings = settings.into().unwrap_or_else(|| Arc::new(Settings::default()));
+        let settings = None;
 
         Self {
             id,
             name,
             log,
             settings,
+        }
+    }
+
+    fn root(&self) -> String {
+        if self.settings.is_some() {
+            self.settings.as_ref().unwrap().data_root.clone()
+        } else {
+            settings::DATA_ROOT.to_string()
         }
     }
 
@@ -79,7 +85,7 @@ impl Log {
     ///
     /// `String` of full path *including filename*
     fn full_path(&self, path: &Option<String>) -> String {
-        let root = settings::DATA_ROOT.to_string();
+        let root = self.root();
         let prefix = path.as_ref().unwrap_or(&root);
         let dir = Path::new(prefix);
 
@@ -135,6 +141,10 @@ impl Log {
             Entry::Occupied(_) => Err(Error::new(ErrorKind::ContainerError, "Key already exists")),
             Entry::Vacant(entry) => Ok(entry.insert(event)),
         }
+    }
+
+    pub fn set_settings(&mut self, settings: Arc<Settings>) {
+        self.settings = Some(settings)
     }
 }
 
@@ -234,13 +244,11 @@ impl Persistent for Log {
 mod tests {
     use crate::action::IOCommand;
     use crate::helpers::Def;
-    use crate::io::{Device, Input, IOKind, IdType, RawValue, DeviceMetadata};
+    use crate::io::{Device, Input, IOKind, IdType, RawValue};
     use crate::storage::{Chronicle, Log, Persistent};
     use std::path::Path;
     use std::time::Duration;
     use std::{fs, thread};
-    use std::sync::Arc;
-    use crate::settings::Settings;
 
     fn add_to_log<D>(device: &D, log: &Def<Log>, count: usize)
     where
@@ -251,17 +259,6 @@ mod tests {
             log.lock().unwrap().push(event).unwrap();
             thread::sleep(Duration::from_nanos(1)); // add delay so that we don't finish too quickly
         }
-    }
-
-    #[test]
-    /// Test that constructor `Into<_>` conversion works properly for `settings` parameter
-    fn constructor_settings_parameter() {
-        let metadata = DeviceMetadata::default();
-        let settings = Arc::new(Settings::default());
-
-        Log::new(&metadata, None);
-        Log::new(&metadata, Some(settings.clone()));
-        Log::new(&metadata, settings);
     }
 
     #[test]
@@ -279,7 +276,7 @@ mod tests {
         {
             let device = Input::new(String::from(SENSOR_NAME), ID, IOKind::Flow)
                 .set_command(COMMAND)
-                .init_log(None);
+                .init_log();
             let log = device.log().unwrap();
 
             add_to_log(&device, &log, COUNT);
@@ -297,7 +294,7 @@ mod tests {
         {
             let device = Input::new(SENSOR_NAME, ID, IOKind::Flow)
                 .set_command(COMMAND)
-                .init_log(None);
+                .init_log();
             let log = device.log().unwrap();
 
             let mut _log = log.lock().unwrap();

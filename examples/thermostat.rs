@@ -106,7 +106,7 @@ fn main() {
                 IOKind::Temperature,
             ).set_command(
                 IOCommand::Input(|| EXTERNAL_VALUE)
-            ).init_log(None)
+            ).init_log()
         }
     );
 
@@ -118,7 +118,7 @@ fn main() {
             IOKind::Temperature,
         ).set_command(
             IOCommand::Output(|val| Ok(println!("\nSimulated HW Output: {}\n", val)))
-        ).init_log(None)
+        ).init_log()
     );
 
     build_actions(&mut poller);

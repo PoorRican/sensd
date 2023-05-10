@@ -49,7 +49,7 @@ fn test_poll() {
                 IOKind::PH,
             ).set_command(
                 command.clone()
-            ).init_log(None)
+            ).init_log()
 
         ).push_input(
 
@@ -59,7 +59,7 @@ fn test_poll() {
                 IOKind::EC,
             ).set_command(
                 command.clone()
-            ).init_log(None)
+            ).init_log()
 
         );
 
