@@ -176,75 +176,12 @@ impl Group {
         self
     }
 
-    /// Load all device logs
-    ///
-    /// # Errors
-    /// Returns an error if any single load fails. However, failure does not prevent loading of
-    /// other device logs.
-    fn load_logs(&self, path: &Option<String>) -> Result<(), ErrorType> {
-        let mut results = Vec::new();
-
-        for device in self.outputs.values() {
-            let binding = device.try_lock().unwrap();
-            if binding.has_log() {
-                let result = binding.log().unwrap()
-                    .try_lock().unwrap()
-                    .load(path);
-                results.push(result);
-            }
-        }
-
-        for device in self.inputs.values() {
-            let binding = device.try_lock().unwrap();
-            if binding.has_log() {
-                let result = binding.log().unwrap()
-                    .try_lock().unwrap()
-                    .load(path);
-                results.push(result);
-            }
-        }
-
-        check_results(&results)
-    }
-
     /// Dedicated directory for [`Group`]
     ///
     /// The dedicated directory for a [`Group`] is simply a sub-directory in the global path.
     pub fn dir(&self) -> PathBuf {
         let path = Path::new(self.settings.data_root.as_str());
         path.join(self.name.as_str())
-    }
-
-    /// Save all device logs
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if any single save fails. However, failure does not prevent saving of
-    /// other device logs.
-    fn save_logs(&self, path: &Option<String>) -> Result<(), ErrorType> {
-        let mut results = Vec::new();
-
-        for device in self.inputs.values() {
-            let binding = device.try_lock().unwrap();
-            if binding.has_log() {
-                let result = binding.log().unwrap()
-                    .try_lock().unwrap()
-                    .save(path);
-                results.push(result);
-            }
-        }
-
-        for device in self.outputs.values() {
-            let binding = device.try_lock().unwrap();
-            if binding.has_log() {
-                let result = binding.log().unwrap()
-                    .try_lock().unwrap()
-                    .save(path);
-                results.push(result);
-            }
-        }
-
-        check_results(&results)
     }
 
     /// Attempt to create root data directory
@@ -335,14 +272,67 @@ impl Group {
 /// Only save and load log data since [`Group`] is statically initialized
 /// If `&None` is given to either methods, then current directory is used.
 impl Persistent for Group {
+    /// Save all device logs
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if any single save fails. However, failure does not prevent saving of
+    /// other device logs.
     fn save(&self, path: &Option<String>) -> Result<(), ErrorType> {
-        let results = &[self.save_logs(path)];
-        check_results(results)
+        let mut results = Vec::new();
+
+        for device in self.inputs.values() {
+            let binding = device.try_lock().unwrap();
+            if binding.has_log() {
+                let result = binding.log().unwrap()
+                    .try_lock().unwrap()
+                    .save(path);
+                results.push(result);
+            }
+        }
+
+        for device in self.outputs.values() {
+            let binding = device.try_lock().unwrap();
+            if binding.has_log() {
+                let result = binding.log().unwrap()
+                    .try_lock().unwrap()
+                    .save(path);
+                results.push(result);
+            }
+        }
+
+        check_results(&results)
     }
 
+    /// Load all device logs
+    ///
+    /// # Errors
+    /// Returns an error if any single load fails. However, failure does not prevent loading of
+    /// other device logs.
     fn load(&mut self, path: &Option<String>) -> Result<(), ErrorType> {
-        let results = &[self.load_logs(path)];
-        check_results(results)
+        let mut results = Vec::new();
+
+        for device in self.outputs.values() {
+            let binding = device.try_lock().unwrap();
+            if binding.has_log() {
+                let result = binding.log().unwrap()
+                    .try_lock().unwrap()
+                    .load(path);
+                results.push(result);
+            }
+        }
+
+        for device in self.inputs.values() {
+            let binding = device.try_lock().unwrap();
+            if binding.has_log() {
+                let result = binding.log().unwrap()
+                    .try_lock().unwrap()
+                    .load(path);
+                results.push(result);
+            }
+        }
+
+        check_results(&results)
     }
 }
 
