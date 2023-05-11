@@ -73,7 +73,7 @@ fn main() {
                 .expect("Error while calling `::write()` on output device");
         }
 
-        poller.save(&None).expect("Error while saving");
+        poller.save().expect("Error while saving");
 
         value = value.neg();    // alternate output value
 

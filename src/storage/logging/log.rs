@@ -71,11 +71,6 @@ impl Log {
 
     /// Full path to log file
     ///
-    /// # Parameters:
-    ///
-    /// - `path`: Optional argument to override typical storage path defined by [`Settings`]. When passed,
-    ///           filename is appended to given path.
-    ///
     /// # Issues
     ///
     /// - See [#126](https://github.com/PoorRican/sensd/issues/126) which implements validation of `path`.
@@ -154,10 +149,6 @@ impl Log {
 impl Persistent for Log {
     /// Save log to disk in JSON format
     ///
-    /// # Parameters
-    ///
-    /// - `path`: path to save to. This path should not include a filename.
-    ///
     /// # Issues
     ///
     /// - See [#126](https://github.com/PoorRican/sensd/issues/126) which implements validation of `path`.
@@ -173,7 +164,7 @@ impl Persistent for Log {
     /// # See Also
     ///
     /// - [`Log::full_path()`] explains usage of `path` parameter.
-    fn save(&self, _path: &Option<String>) -> Result<(), ErrorType> {
+    fn save(&self) -> Result<(), ErrorType> {
         if self.log.is_empty() {
             Err(Error::new(
                 ErrorKind::ContainerEmpty,
@@ -216,7 +207,7 @@ impl Persistent for Log {
     /// # See Also
     ///
     /// - [`Log::full_path()`] explains usage of `path` parameter.
-    fn load(&mut self, _path: &Option<String>) -> Result<(), ErrorType> {
+    fn load(&mut self) -> Result<(), ErrorType> {
         if self.log.is_empty() {
             let file = File::open(self.full_path().deref())?;
             let reader = BufReader::new(file);
@@ -285,7 +276,7 @@ mod tests {
 
             add_to_log(&device, &log, COUNT);
             let _log = log.lock().unwrap();
-            _log.save(&None).unwrap();
+            _log.save().unwrap();
 
             // save filename for later
             filename = _log.full_path();
@@ -302,7 +293,7 @@ mod tests {
             let log = device.log().unwrap();
 
             let mut _log = log.lock().unwrap();
-            _log.load(&None).unwrap();
+            _log.load().unwrap();
 
             // check count of `IOEvent`
             assert_eq!(COUNT, _log.iter().count() as usize);

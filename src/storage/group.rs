@@ -6,6 +6,7 @@ use crate::storage::{Chronicle, Persistent};
 
 use chrono::{DateTime, Duration, Utc};
 use std::fs::create_dir_all;
+use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
 
 /// High-level container to manage multiple [`Device`] objects, logging, and actions.
@@ -318,15 +319,15 @@ impl Persistent for Group {
     ///
     /// Returns an error if any single save fails. However, failure is silent and does not prevent
     /// saving other device logs.
-    fn save(&self, path: &Option<String>) -> Result<(), ErrorType> {
+    fn save(&self) -> Result<(), ErrorType> {
         let mut results = Vec::new();
 
         for device in self.inputs.values() {
             let binding = device.try_lock().unwrap();
             if binding.has_log() {
                 let result = binding.log().unwrap()
-                    .try_lock().unwrap()
-                    .save(path);
+                    .try_lock().unwrap().deref()
+                    .save();
                 results.push(result);
             }
         }
@@ -335,8 +336,8 @@ impl Persistent for Group {
             let binding = device.try_lock().unwrap();
             if binding.has_log() {
                 let result = binding.log().unwrap()
-                    .try_lock().unwrap()
-                    .save(path);
+                    .try_lock().unwrap().deref()
+                    .save();
                 results.push(result);
             }
         }
@@ -349,15 +350,15 @@ impl Persistent for Group {
     /// # Errors
     /// Returns an error if any single load fails. However, failure is silent and does not prevent
     /// loading other device logs.
-    fn load(&mut self, path: &Option<String>) -> Result<(), ErrorType> {
+    fn load(&mut self) -> Result<(), ErrorType> {
         let mut results = Vec::new();
 
         for device in self.outputs.values() {
             let binding = device.try_lock().unwrap();
             if binding.has_log() {
                 let result = binding.log().unwrap()
-                    .try_lock().unwrap()
-                    .load(path);
+                    .try_lock().unwrap().deref_mut()
+                    .load();
                 results.push(result);
             }
         }
@@ -366,8 +367,8 @@ impl Persistent for Group {
             let binding = device.try_lock().unwrap();
             if binding.has_log() {
                 let result = binding.log().unwrap()
-                    .try_lock().unwrap()
-                    .load(path);
+                    .try_lock().unwrap().deref_mut()
+                    .load();
                 results.push(result);
             }
         }
@@ -398,7 +399,7 @@ mod tests {
     #[test]
     /// Test that alternate constructor sets settings
     fn with_root() {
-        let settings = Arc::new(Settings::default());
+        let settings = Settings::default();
 
         let group = Group::with_root(
             "",

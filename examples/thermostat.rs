@@ -83,7 +83,7 @@ fn build_actions(poller: &mut Group) {
 /// █▓▒░ Handle polling of all devices in `Group`
 fn poll(poller: &mut Group) -> Result<(), ErrorType> {
     match poller.poll() {
-        Ok(_) => match poller.save(&None) {
+        Ok(_) => match poller.save() {
             Ok(_) => println!("\n"),
             Err(t) => {
                 return Err(t);
