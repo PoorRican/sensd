@@ -1,7 +1,7 @@
 use crate::errors::ErrorType;
 use crate::helpers::check_results;
 use crate::io::{Device, DeviceContainer, Input, Output, IOEvent, IdType, DeviceGetters};
-use crate::settings::RootPath;
+use crate::settings::{DATA_ROOT, RootPath};
 use crate::storage::{Chronicle, Persistent};
 
 use chrono::{DateTime, Duration, Utc};
@@ -183,11 +183,13 @@ impl Group {
     /// The dedicated directory for [`Group`] is a top-level directory meant for storing
     /// directories and files for any subsidiary objects.
     ///
+    /// If `root_path` is not set, then [`DATA_ROOT`] is used to build path.
+    ///
     /// # Returns
     ///
     /// A `PathBuf` representing the full path to dedicated directory.
     pub fn full_path(&self) -> PathBuf {
-        let root = self.root().unwrap_or(String::new().into());
+        let root = self.root().unwrap_or(String::from(DATA_ROOT).into());
         let path = Path::new(root.as_str());
         path.join(self.name.as_str())
     }
@@ -396,9 +398,7 @@ mod tests {
     #[test]
     /// Test that alternate constructor sets settings
     fn with_root() {
-        let mut settings = Settings::default();
-        settings.version = "blah".into();
-        let settings = Arc::new(settings);
+        let settings = Arc::new(Settings::default());
 
         let group = Group::with_root(
             "",

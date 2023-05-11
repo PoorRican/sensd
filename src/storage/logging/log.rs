@@ -82,11 +82,10 @@ impl Log {
     ///
     /// # Returns
     ///
-    /// `String` of full path *including filename*
-    fn full_path(&self, path: &Option<String>) -> String {
+    /// `String` of full path *including* filename
+    fn full_path(&self) -> String {
         let root = self.root();
-        let prefix = path.as_ref().unwrap_or(&root);
-        let dir = Path::new(prefix);
+        let dir = Path::new(&root);
 
         let full_path = dir.join(self.filename());
         String::from(full_path.to_str().unwrap())
@@ -174,14 +173,14 @@ impl Persistent for Log {
     /// # See Also
     ///
     /// - [`Log::full_path()`] explains usage of `path` parameter.
-    fn save(&self, path: &Option<String>) -> Result<(), ErrorType> {
+    fn save(&self, _path: &Option<String>) -> Result<(), ErrorType> {
         if self.log.is_empty() {
             Err(Error::new(
                 ErrorKind::ContainerEmpty,
                 format!("Log for '{}'. Nothing to save.", self.name).as_str(),
             ))
         } else {
-            let file = writable_or_create(self.full_path(path));
+            let file = writable_or_create(self.full_path());
             let writer = BufWriter::new(file);
 
             match serde_json::to_writer_pretty(writer, &self) {
@@ -217,9 +216,9 @@ impl Persistent for Log {
     /// # See Also
     ///
     /// - [`Log::full_path()`] explains usage of `path` parameter.
-    fn load(&mut self, path: &Option<String>) -> Result<(), ErrorType> {
+    fn load(&mut self, _path: &Option<String>) -> Result<(), ErrorType> {
         if self.log.is_empty() {
-            let file = File::open(self.full_path(path).deref())?;
+            let file = File::open(self.full_path().deref())?;
             let reader = BufReader::new(file);
 
             let buff: Log = match serde_json::from_reader(reader) {
@@ -289,7 +288,7 @@ mod tests {
             _log.save(&None).unwrap();
 
             // save filename for later
-            filename = _log.full_path(&None);
+            filename = _log.full_path();
             // check that file exists
             assert!(Path::new(&filename).exists());
         };
