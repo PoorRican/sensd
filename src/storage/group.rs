@@ -314,8 +314,8 @@ impl Persistent for Group {
     ///
     /// # Errors
     ///
-    /// Returns an error if any single save fails. However, failure does not prevent saving of
-    /// other device logs.
+    /// Returns an error if any single save fails. However, failure is silent and does not prevent
+    /// saving other device logs.
     fn save(&self, path: &Option<String>) -> Result<(), ErrorType> {
         let mut results = Vec::new();
 
@@ -345,8 +345,8 @@ impl Persistent for Group {
     /// Load all device logs
     ///
     /// # Errors
-    /// Returns an error if any single load fails. However, failure does not prevent loading of
-    /// other device logs.
+    /// Returns an error if any single load fails. However, failure is silent and does not prevent
+    /// loading other device logs.
     fn load(&mut self, path: &Option<String>) -> Result<(), ErrorType> {
         let mut results = Vec::new();
 

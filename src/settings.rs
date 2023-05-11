@@ -8,15 +8,25 @@ const VERSION: &str = "0.1.0";
 /// Default Filename Prefixes
 pub const LOG_FN_PREFIX: &str = "log_";
 
+/// Default for top-level directory
 pub const DATA_ROOT: &str = "sensd";
 
+/// Specialized type for representing the root directory.
+///
+/// This type should be used to build paths, not be used to represent any sub-directory.
 pub type RootPath = Arc<String>;
 
 #[derive(PartialEq, Debug)]
-/// Struct containing settings loaded from ".env"
+/// Global runtime settings
 pub struct Settings {
-    pub version: String,
+    /// Version of `sensd`
+    version: String,
 
+    /// Top-level directory
+    ///
+    /// # See Also
+    ///
+    /// [`Settings::set_root()`] for mutability limitations.
     root_path: RootPath,
 }
 
@@ -30,7 +40,14 @@ impl Default for Settings {
 }
 
 impl Settings {
-    /// Read settings from .env file
+    /// Read settings from ".env" file
+    ///
+    /// If values do not exist in ".env" file, then default values are used. However, ".env" is not
+    /// updated.
+    ///
+    /// # Returns
+    ///
+    /// Fully initialized [`Settings`]
     pub fn initialize() -> Self {
         dotenv().ok();
         let version = var("VERSION").unwrap_or_else(|_| String::from(VERSION));
@@ -42,13 +59,37 @@ impl Settings {
         }
     }
 
+    /// Getter for `version`
+    ///
+    /// # Returns
+    ///
+    /// Immutable reference to internal [`String`] representing current version of "sensd"
+    pub fn version(&self) -> &String {
+        &self.version
+    }
+
+    /// Getter for `root_path`
+    ///
+    /// # Returns
+    /// A cloned reference to internal `root_path`. If this reference is not dropped (ie: stored
+    /// as a field in a struct), then [`Settings::set_root()`] will panic.
+    ///
     pub fn root_path(&self) -> RootPath {
         self.root_path.clone()
     }
 
+    /// Setter for `root_path`.
+    ///
+    /// This method can only be called *before* initialization
+    ///
+    /// # Parameters
+    ///
+    /// - `path`: New path of top-level directory. Coerces values into [`String`].
+    ///
     /// # Panics
     ///
-    /// Panics is thrown if any objects are already using this path.
+    /// Panics is thrown if any objects are already using this path. This would
+    /// happen if not called before initialization of [`Group`]'s or [`Log`]'s.
     pub fn set_root<S>(&mut self, path: S)
         where
             S: Into<String>
@@ -82,6 +123,7 @@ mod tests {
 
     #[test]
     #[should_panic]
+    /// Assert that panic is thrown if `root_path` has been used.
     fn set_root_panics() {
         let mut settings = Settings::default();
         let _root = settings.root_path();
