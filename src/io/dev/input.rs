@@ -166,7 +166,6 @@ mod tests {
     use std::sync::Arc;
     use crate::action::{IOCommand};
     use crate::io::{Device, DeviceGetters, Input, IOKind, RawValue};
-    use crate::settings::Settings;
     use crate::storage::Chronicle;
 
     const DUMMY_OUTPUT: RawValue = RawValue::Float(1.2);
@@ -237,19 +236,19 @@ mod tests {
     }
 
     #[test]
-    fn set_settings() {
+    fn set_root() {
         let output = Input::default().init_log();
 
         assert!(output.log()
             .unwrap().try_lock().unwrap()
-            .settings()
+            .root_path()
             .is_none());
 
-        output.set_settings(Arc::new(Settings::default()));
+        output.set_root(Arc::new(String::new()));
 
         assert!(output.log()
             .unwrap().try_lock().unwrap()
-            .settings()
+            .root_path()
             .is_some());
     }
 }

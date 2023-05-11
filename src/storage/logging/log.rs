@@ -5,13 +5,12 @@ use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::ops::Deref;
 use std::path::Path;
-use std::sync::Arc;
 
 use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::writable_or_create;
 use crate::io::{DeviceMetadata, IOEvent, IdType};
 use crate::settings;
-use crate::settings::Settings;
+use crate::settings::RootPath;
 use crate::storage::{EventCollection, Persistent, FILETYPE};
 
 
@@ -23,14 +22,14 @@ use crate::storage::{EventCollection, Persistent, FILETYPE};
 ///
 /// Since log is used in multiple places throughout the input and control action lifecycle, it should be wrapped
 /// behind `Def`.
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct Log {
     // TODO: split logs using ID
     id: IdType,
     #[serde(skip)]
     name: String,
     #[serde(skip)]
-    settings: Option<Arc<Settings>>,
+    root_path: Option<RootPath>,
 
     log: EventCollection,
 }
@@ -51,19 +50,20 @@ impl Log {
         let id = metadata.id;
         let name = metadata.name.clone();
         let log = EventCollection::default();
-        let settings = None;
+        let root_path = None;
 
         Self {
             id,
             name,
             log,
-            settings,
+            root_path,
         }
     }
 
+    /// Helper method which returns internal `root_path` or default
     fn root(&self) -> String {
-        if self.settings.is_some() {
-            self.settings.as_ref().unwrap().root_path().deref().into()
+        if self.root_path.is_some() {
+            self.root_path.as_ref().unwrap().to_string()
         } else {
             settings::DATA_ROOT.to_string()
         }
@@ -142,12 +142,12 @@ impl Log {
         }
     }
 
-    pub fn settings(&self) -> Option<Arc<Settings>> {
-        self.settings.clone()
+    pub fn root_path(&self) -> Option<RootPath> {
+        self.root_path.clone()
     }
 
-    pub fn set_settings(&mut self, settings: Arc<Settings>) {
-        self.settings = Some(settings)
+    pub fn set_root(&mut self, root: RootPath) {
+        self.root_path = Some(root)
     }
 }
 
@@ -252,6 +252,8 @@ mod tests {
     use std::path::Path;
     use std::time::Duration;
     use std::{fs, thread};
+    use std::sync::Arc;
+    use crate::settings::RootPath;
 
     fn add_to_log<D>(device: &D, log: &Def<Log>, count: usize)
     where
@@ -308,5 +310,17 @@ mod tests {
         };
 
         fs::remove_file(filename).unwrap();
+    }
+
+    #[test]
+    fn set_root_path() {
+        let mut log = Log::default();
+
+        assert!(log.root_path().is_none());
+
+        let root: RootPath = Arc::new(String::new());
+        log.set_root(root);
+
+        assert!(log.root_path().is_some())
     }
 }

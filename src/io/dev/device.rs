@@ -1,10 +1,9 @@
 use crate::action::IOCommand;
 use crate::helpers::Def;
 use crate::io::{DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue};
-use crate::settings::Settings;
+use crate::settings::RootPath;
 use crate::storage::{Chronicle, Log};
 use chrono::Utc;
-use std::sync::Arc;
 
 /// Defines a minimum interface for interacting with GPIO devices.
 ///
@@ -67,18 +66,18 @@ pub trait Device: Chronicle + DeviceGetters + DeviceSetters {
         self
     }
 
-    /// Setter for settings
+    /// Setter for root
     ///
-    /// Updates any internal field that uses settings (ie: [`Log`])
+    /// Updates any internal field that needs a root path (ie: [`Log`])
     ///
     /// # Parameters
     ///
-    /// - `settings`: Updated version of [`Settings`] to give to fields
-    fn set_settings(&self, settings: Arc<Settings>) {
+    /// - `root`: New [`RootPath`] to store
+    fn set_root(&self, root: RootPath) {
         if self.has_log() {
             let binding = self.log().unwrap();
             let mut log = binding.try_lock().unwrap();
-            log.set_settings(settings)
+            log.set_root(root)
         }
     }
 

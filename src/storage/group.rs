@@ -1,13 +1,12 @@
 use crate::errors::ErrorType;
 use crate::helpers::check_results;
 use crate::io::{Device, DeviceContainer, Input, Output, IOEvent, IdType, DeviceGetters};
-use crate::settings::Settings;
+use crate::settings::RootPath;
 use crate::storage::{Chronicle, Persistent};
 
 use chrono::{DateTime, Duration, Utc};
 use std::fs::create_dir_all;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 /// High-level container to manage multiple [`Device`] objects, logging, and actions.
 ///
@@ -28,7 +27,7 @@ pub struct Group {
     last_execution: DateTime<Utc>,
 
     /// Immutable storage of runtime settings
-    settings: Arc<Settings>,
+    root: Option<RootPath>,
 
     interval: Duration,
 
@@ -67,8 +66,7 @@ impl Group {
 
     /// Primary constructor.
     ///
-    /// Since `settings` represents individual runtime settings, default is used. Setter functions may be
-    /// used to manipulate settings and populate containers.
+    /// [`Group::set_root_ref()`] should be used to set root path
     ///
     /// # Parameters
     ///
@@ -77,16 +75,11 @@ impl Group {
     /// # Returns
     ///
     /// Initialized `Group` with `name, default settings, and empty containers.
-    ///
-    /// # See Also
-    ///
-    /// [`Settings] for runtime settings options.
     pub fn new<N>(name: N) -> Self
     where
         N: Into<String>
     {
         let interval = Duration::seconds(5);
-        let settings = Arc::new(Settings::default());
         let last_execution = Utc::now() - interval;
 
         let inputs = <DeviceContainer<IdType, Input>>::default();
@@ -95,21 +88,19 @@ impl Group {
         Self {
             name: name.into(),
             interval,
-            settings,
+            root: None,
             last_execution,
             inputs,
             outputs,
         }
     }
 
-    /// Alternate constructor with `settings` parameter
-    ///
-    /// Setter methods should be used to populate containers and manipulate `settings`.
+    /// Alternate constructor with `root` parameter
     ///
     /// # Parameters
     ///
     /// - `name`: Name of group used for directory/file naming.
-    /// - `settings`: Pre-existing runtime settings
+    /// - `root`: Root path
     ///
     /// # Returns
     ///
@@ -118,15 +109,14 @@ impl Group {
     /// # See Also
     ///
     /// [`Settings] for runtime settings options.
-    pub fn with_settings<N, S>(name: N, settings: S) -> Self
+    pub fn with_root<N>(name: N, root: RootPath) -> Self
         where
             N: Into<String>,
-            S: Into<Option<Arc<Settings>>>
     {
         let mut group = Self::new(name.into());
-        if let Some(inner) = settings.into() {
-            group.set_settings(inner)
-        }
+
+        group.set_root_ref(root);
+
         group
     }
 
@@ -142,7 +132,7 @@ impl Group {
 
     /// Builder method to store [`Input`] in internal collection
     ///
-    /// [`Device::set_settings()`] is called to pass settings to device.
+    /// [`Device::set_root()`] is called to pass settings to device.
     ///
     /// # Parameters
     ///
@@ -154,7 +144,9 @@ impl Group {
     pub fn push_input(&mut self, device: Input) -> &mut Self {
         let id = device.id();
 
-        device.set_settings(self.settings.clone());
+        if self.root.is_some() {
+            device.set_root(self.root.as_ref().unwrap().clone());
+        }
 
         self.inputs.insert(id, device.into_deferred())
             .unwrap();
@@ -164,7 +156,7 @@ impl Group {
 
     /// Store [`Output`] in internal collection
     ///
-    /// [`Device::set_settings()`] is called to pass settings to device.
+    /// [`Device::set_root()`] is called to pass settings to device.
     ///
     /// # Parameters
     ///
@@ -176,7 +168,9 @@ impl Group {
     pub fn push_output(&mut self, device: Output) -> &mut Self {
         let id = device.id();
 
-        device.set_settings(self.settings.clone());
+        if self.root.is_some() {
+            device.set_root(self.root.as_ref().unwrap().clone());
+        }
 
         self.outputs.insert(id, device.into_deferred())
             .unwrap();
@@ -186,16 +180,28 @@ impl Group {
 
     /// Dedicated directory for [`Group`]
     ///
-    /// The dedicated directory for a [`Group`] is simply a sub-directory in the global path.
-    pub fn dir(&self) -> PathBuf {
-        let root = self.settings.root_path();
+    /// The dedicated directory for [`Group`] is a top-level directory meant for storing
+    /// directories and files for any subsidiary objects.
+    ///
+    /// # Returns
+    ///
+    /// A `PathBuf` representing the full path to dedicated directory.
+    pub fn full_path(&self) -> PathBuf {
+        let root = self.root().unwrap_or(String::new().into());
         let path = Path::new(root.as_str());
         path.join(self.name.as_str())
     }
 
-    /// Attempt to create root data directory
-    pub fn init_root(self) -> Self {
-        let path = self.dir();
+    /// Attempt to create dedicated directory for this `Group`
+    ///
+    /// If directory already exists, then this method silently fails.
+    ///
+    /// # Panics
+    ///
+    /// This method panics if an error occurs when creating directory (other than directory
+    /// already existing). This could happen if write permissions are misconfigured.
+    pub fn init_dir(self) -> Self {
+        let path = self.full_path();
         match path.exists() {
             true => (),
             false => {
@@ -240,18 +246,22 @@ impl Group {
     ///
     /// # Parameters
     ///
-    /// - `interval`: any value that can be coerced into `Interval`
+    /// - `interval`: any value that can be coerced into [`Duration`]
     pub fn set_interval(&mut self, interval: Duration) {
         self.interval = interval
     }
 
-    /// Getter for `settings`
+    /// Getter for `root_path`
+    ///
+    /// This field represents the top-most directory and is where all dedicated directories
+    /// for [`Group`]'s are located. For retrieving a path to save or retrieve data,
+    /// use [`Group::full_path()`].
     ///
     /// # Returns
     ///
-    /// An `Arc` reference to `Settings`
-    pub fn settings(&self) -> Arc<Settings> {
-        self.settings.clone()
+    /// `Option` of [`RootPath`] representing root data path of [`Group`] if set.
+    pub fn root(&self) -> Option<RootPath> {
+        self.root.clone()
     }
 
     //
@@ -269,18 +279,31 @@ impl Group {
         self.name = name.into();
     }
 
-    /// Setter for settings
+    /// Setter for `root_path` that can be used as a builder function.
     ///
-    /// Propagates changes to internal device containers using [`DeviceContainer::set_settings()`]
+    /// # Returns
+    ///
+    /// Ownership of `Self`. This is to be used as a builder function using method chaining.
+    pub fn set_root(mut self, root: RootPath) -> Self {
+        self.set_root_ref(root);
+
+        self
+    }
+
+    /// Setter for `root_path`
+    ///
+    /// This does not take ownership of `self`, unlike [`Group::set_root()`].
+    ///
+    /// Propagates changes to internal device containers using [`DeviceContainer::set_root()`]
     ///
     /// # Parameters
     ///
     /// - `settings`: `Arc` reference to new settings.
-    pub fn set_settings(&mut self, settings: Arc<Settings>) {
-        self.settings = settings.clone();
+    pub fn set_root_ref(&mut self, root: RootPath) {
+        self.root = Some(root.clone());
 
-        self.inputs.set_settings(settings.clone());
-        self.outputs.set_settings(settings.clone());
+        self.inputs.set_root(root.clone());
+        self.outputs.set_root(root.clone());
     }
 }
 
@@ -356,7 +379,7 @@ mod tests {
     use std::path::Path;
     use std::sync::Arc;
 
-    use crate::settings::Settings;
+    use crate::settings::{RootPath, Settings};
     use crate::storage::Group;
 
     use std::fs::remove_dir_all;
@@ -372,15 +395,15 @@ mod tests {
 
     #[test]
     /// Test that alternate constructor sets settings
-    fn with_settings() {
+    fn with_root() {
         let mut settings = Settings::default();
         settings.version = "blah".into();
         let settings = Arc::new(settings);
 
-        let group = Group::with_settings(
+        let group = Group::with_root(
             "",
-            settings.clone());
-        assert_eq!(settings, group.settings());
+            settings.root_path());
+        assert_eq!(settings.root_path(), group.root().unwrap());
     }
 
     #[test]
@@ -441,39 +464,37 @@ mod tests {
         group.push_output(Output::new("", 0, None));
     }
 
-    /// Test [`Group::dir()`]
+    /// Test [`Group::full_path()`]
     #[test]
     fn test_dir() {
         const DIR_NAME: &str = "test_root";
         const GROUP_NAME: &str = "main";
 
         // init `Group` and settings
-        let dir_name = String::from(DIR_NAME);
-        let mut _settings = Settings::default();
-        _settings.set_root(dir_name.clone());
+        let dir_name = Arc::from(String::from(DIR_NAME));
 
         let expected = Path::new(DIR_NAME).join(GROUP_NAME);
-        let group = Group::with_settings(GROUP_NAME, Arc::new(_settings));
+        let group = Group::with_root(GROUP_NAME, dir_name);
 
         // assert directory path is correct
-        assert_eq!(expected.to_str().unwrap(), group.dir().to_str().unwrap());
+        assert_eq!(expected.to_str().unwrap(), group.full_path().to_str().unwrap());
     }
 
-    /// Test [`Group::init_root()`]
+    /// Test [`Group::init_dir()`]
     #[test]
     fn test_init_root() {
         const DIR_NAME: &str = "test_root";
         const GROUP_NAME: &str = "main";
 
         // init `Group` and settings
-        let dir_name = String::from(DIR_NAME);
-        let mut _settings = Settings::default();
-        _settings.set_root(dir_name.clone());
+        let dir_name: RootPath = Arc::new(String::from(DIR_NAME));
 
         let group = Group::new(GROUP_NAME)
-            .init_root();
-        assert!(group.dir().exists());
+            .set_root(dir_name)
+            .init_dir();
 
-        remove_dir_all(group.dir().parent().unwrap()).unwrap();
+        assert!(group.full_path().exists());
+
+        remove_dir_all(group.full_path().parent().unwrap()).unwrap();
     }
 }
