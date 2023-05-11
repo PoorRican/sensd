@@ -2,8 +2,9 @@ use crate::action::IOCommand;
 use crate::helpers::Def;
 use crate::io::{DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue};
 use crate::settings::RootPath;
-use crate::storage::{Chronicle, Log};
+use crate::storage::{Chronicle, Log, Persistent};
 use chrono::Utc;
+use crate::errors::ErrorType;
 
 /// Defines a minimum interface for interacting with GPIO devices.
 ///
@@ -11,7 +12,7 @@ use chrono::Utc;
 /// Additionally, an accessor, `metadata()` is defined to provide for the facade methods to access
 /// device name, id, direction, and kind. Therefore, implementing structs shall implement a field
 /// `metadata` that is mutably accessed through the reciprocal getter method.
-pub trait Device: Chronicle + DeviceGetters + DeviceSetters {
+pub trait Device: Chronicle + DeviceGetters + DeviceSetters + Persistent {
     /// Creates a new instance of the device with the given parameters.
     ///
     /// # Parameters
@@ -142,4 +143,20 @@ pub trait DeviceSetters {
 
     /// Setter for `log` field
     fn set_log(&mut self, log: Def<Log>);
+}
+
+impl<T: Device> Persistent for T {
+    fn save(&self) -> Result<(), ErrorType> {
+        match self.log() {
+            Some(log) => log.try_lock().unwrap().save(),
+            None => Ok(())
+        }
+    }
+
+    fn load(&mut self) -> Result<(), ErrorType> {
+        match self.log() {
+            Some(log) => log.try_lock().unwrap().load(),
+            None => Ok(())
+        }
+    }
 }

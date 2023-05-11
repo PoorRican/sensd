@@ -2,11 +2,10 @@ use crate::errors::ErrorType;
 use crate::helpers::check_results;
 use crate::io::{Device, DeviceContainer, Input, Output, IOEvent, IdType, DeviceGetters};
 use crate::settings::{DATA_ROOT, RootPath};
-use crate::storage::{Chronicle, Persistent};
+use crate::storage::Persistent;
 
 use chrono::{DateTime, Duration, Utc};
 use std::fs::create_dir_all;
-use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
 
 /// High-level container to manage multiple [`Device`] objects, logging, and actions.
@@ -324,22 +323,14 @@ impl Persistent for Group {
 
         for device in self.inputs.values() {
             let binding = device.try_lock().unwrap();
-            if binding.has_log() {
-                let result = binding.log().unwrap()
-                    .try_lock().unwrap().deref()
-                    .save();
-                results.push(result);
-            }
+            results.push(
+                binding.save());
         }
 
         for device in self.outputs.values() {
             let binding = device.try_lock().unwrap();
-            if binding.has_log() {
-                let result = binding.log().unwrap()
-                    .try_lock().unwrap().deref()
-                    .save();
-                results.push(result);
-            }
+            results.push(
+                binding.save());
         }
 
         check_results(&results)
@@ -354,23 +345,15 @@ impl Persistent for Group {
         let mut results = Vec::new();
 
         for device in self.outputs.values() {
-            let binding = device.try_lock().unwrap();
-            if binding.has_log() {
-                let result = binding.log().unwrap()
-                    .try_lock().unwrap().deref_mut()
-                    .load();
-                results.push(result);
-            }
+            let mut binding = device.try_lock().unwrap();
+            results.push(
+                binding.load());
         }
 
         for device in self.inputs.values() {
-            let binding = device.try_lock().unwrap();
-            if binding.has_log() {
-                let result = binding.log().unwrap()
-                    .try_lock().unwrap().deref_mut()
-                    .load();
-                results.push(result);
-            }
+            let mut binding = device.try_lock().unwrap();
+            results.push(
+                binding.load());
         }
 
         check_results(&results)
