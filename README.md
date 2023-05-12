@@ -1,49 +1,35 @@
 # sensd - _The Ultimate Sensor Logging and Control System_
 
 
+## █▓▒░ Purpose
+
+`sensd` aims to be a multipurpose robust framework for sensor logging and a control system for mission-critical
+and high reliability environments. Originally designed for the needs of an aquaponics system, `sensd` is being made
+highly adaptable by implementing generic architectural design patterns. The goal is to create a library suitable for a
+wide range of applications, from wild-life tracking and bioreactors to access control and beyond using pre-packaged
+generic I/O devices and triggers. With a focus on reliability, safety, and ease of use, `sensd` aims to empower scientists, 
+engineers, and makers to build monitoring and control systems by reducing boilerplate code.
+
+
 ## █▓▒░ Features
 
 - Straight-forward, simple initialization and configuration.
+- Data logging capabilities to store and retrieve information for later analysis.
 - Generic I/O devices for classification of various device types such as switches, motors, manifold valves, etc.
 - Robust error handling for safe and reliable operation.
-- Data logging capabilities to store and retrieve information for later analysis.
-- Support for multiple sensor types and data inputs.
-
-
-## █▓▒░ Purpose
-
-`sensd` is a multipurpose robust framework for sensor logging and a control system for mission-critical 
-or high reliability environments. Originally designed for the needs of an aquaponics system, `sensd` has been made
-highly adaptable with generic design and agnostic approach which make it suitable for a wide range of applications,
-from wild-life tracking and bioreactors to access control and beyond using pre-packaged generic I/O devices.
-With a focus on reliability, safety, and ease of use, `sensd` aims to empower both engineers and makers
-to build sophisticated monitoring and control systems with ease.
+- Hardware agnostic.
 
 
 ## █▓▒░ Hardware
 
-The library is built with version 1.66.0 of the Rust programming language, but should be reverse compatible 
-with recent versions. While the library has been designed to decrease low-overhead, `no_std` is not implemented and the
-library on `std` implementations at the moment. Therefore, for embedded applications, a POSIX based host is required
-(such as the Raspberry Pi).
+The library is built with version 1.66.1 of the Rust programming language, but should be reverse compatible 
+with recent versions. A Unix based host is required (ie: Raspberry Pi). While the library has been designed
+to decrease low-overhead, `no_std` has not implemented (yet) for compiling on bare-metal MCU's such as Atmel chips.
 
 
 ## █▓▒░ Getting Started
 
-To use the library, simply add the following to your Cargo.toml file:
-
-```toml
-[dependencies]
-sensd = "0.1.0"
-```
-
-Then remember to include the following:
-
-```rust
-extern crate sensd;
-
-use sensd;
-```
+Since this library is still in early development, it has not yet been uploaded to [crates.io](https://crates.io).
 
 The binaries in the `/examples` directory are designed to be comprehensive to demonstrate potential use cases and are
 highly documented. For further documentation, please refer to the docs.
@@ -66,5 +52,7 @@ to the scientific community!
 ## █▓▒░ Features Forthcoming
 
 The following features are planned for the next major releases (in order of priority):
-    - Incorporate `no_std` feature flag
-    - Partitioning of logs (both by size and date)
+- PID controller
+- Partitioning of logs (both by size and date)
+- Incorporate `no_std` feature flag
+- Async operation
