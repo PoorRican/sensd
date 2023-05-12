@@ -19,11 +19,9 @@ extern crate serde;
 use sensd::action::{Action, actions, IOCommand, Trigger};
 use sensd::errors::ErrorType;
 use sensd::io::{Device, IdType, Input, IOKind, Output, RawValue};
-use sensd::settings::Settings;
 use sensd::storage::{Group, Persistent};
 
 use std::ops::DerefMut;
-use std::sync::Arc;
 
 const INPUT_ID: IdType = 0;
 const OUTPUT_ID: IdType = 1;
@@ -48,10 +46,7 @@ static mut EXTERNAL_VALUE: RawValue = RawValue::Int8(0);
 /// # Returns
 /// Single initialized Group
 fn init(name: &str) -> Group {
-    let settings: Arc<Settings> = Arc::new(Settings::initialize());
-    println!("Initialized settings");
-
-    let group = Group::new(name.clone(), Some(settings));
+    let group = Group::new(name.clone());
     println!("Initialized poll group: \"{}\"", name);
     group
 }
@@ -88,7 +83,7 @@ fn build_actions(poller: &mut Group) {
 /// █▓▒░ Handle polling of all devices in `Group`
 fn poll(poller: &mut Group) -> Result<(), ErrorType> {
     match poller.poll() {
-        Ok(_) => match poller.save(&None) {
+        Ok(_) => match poller.save() {
             Ok(_) => println!("\n"),
             Err(t) => {
                 return Err(t);
@@ -111,7 +106,7 @@ fn main() {
                 IOKind::Temperature,
             ).set_command(
                 IOCommand::Input(|| EXTERNAL_VALUE)
-            ).init_log(None)
+            ).init_log()
         }
     );
 
@@ -123,7 +118,7 @@ fn main() {
             IOKind::Temperature,
         ).set_command(
             IOCommand::Output(|val| Ok(println!("\nSimulated HW Output: {}\n", val)))
-        ).init_log(None)
+        ).init_log()
     );
 
     build_actions(&mut poller);

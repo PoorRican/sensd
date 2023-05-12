@@ -166,7 +166,6 @@ mod tests {
     use std::sync::Arc;
     use crate::action::{IOCommand};
     use crate::io::{Device, DeviceGetters, Input, IOKind, RawValue};
-    use crate::settings::Settings;
     use crate::storage::Chronicle;
 
     const DUMMY_OUTPUT: RawValue = RawValue::Float(1.2);
@@ -198,7 +197,7 @@ mod tests {
 
     #[test]
     fn test_read() {
-        let mut input = Input::default().init_log(None);
+        let mut input = Input::default().init_log();
         let log = input.log();
 
         input.command = Some(COMMAND);
@@ -227,38 +226,30 @@ mod tests {
 
     #[test]
     fn test_init_log() {
-        // test w/ None
-        {
-            let mut input = Input::default();
+        let mut input = Input::default();
 
-            assert_eq!(false, input.has_log());
+        assert_eq!(false, input.has_log());
 
-            input = input.init_log(None);
+        input = input.init_log();
 
-            assert_eq!(true, input.has_log());
-        }
+        assert_eq!(true, input.has_log());
+    }
 
-        // test `Into<_>` conversion
-        {
-            let mut input = Input::default();
+    #[test]
+    fn set_root() {
+        let output = Input::default().init_log();
 
-            assert_eq!(false, input.has_log());
+        assert!(output.log()
+            .unwrap().try_lock().unwrap()
+            .root_path()
+            .is_none());
 
-            input = input.init_log(Arc::new(Settings::default()));
+        output.set_root(Arc::new(String::new()));
 
-            assert_eq!(true, input.has_log());
-        }
-
-        // test wrapping in `Some(_)`
-        {
-            let mut input = Input::default();
-
-            assert_eq!(false, input.has_log());
-
-            input = input.init_log(Some(Arc::new(Settings::default())));
-
-            assert_eq!(true, input.has_log());
-        }
+        assert!(output.log()
+            .unwrap().try_lock().unwrap()
+            .root_path()
+            .is_some());
     }
 }
 

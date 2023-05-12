@@ -2,16 +2,14 @@
 use chrono::Duration;
 use sensd::action::IOCommand;
 use sensd::io::{Device, Input, IOKind, Output, RawValue};
-use sensd::settings::Settings;
 use sensd::storage::{Chronicle, Group};
-use std::sync::Arc;
 
 #[test]
 /// Test builder pattern for adding devices
 fn test_builder_pattern() {
     let command = IOCommand::Input(move || RawValue::default());
 
-    let mut group = Group::new("main", None);
+    let mut group = Group::new("main");
     group
         .push_input(
             Input::new(
@@ -33,19 +31,15 @@ fn test_builder_pattern() {
             ).set_command(IOCommand::Output(|_| Ok(())))
         );
 
-    assert_eq!(group.inputs.iter().count(), 2);
-    assert_eq!(group.outputs.iter().count(), 1);
+    assert_eq!(group.inputs.len(), 2);
+    assert_eq!(group.outputs.len(), 1);
 }
 
 #[test]
 fn test_poll() {
-    let mut _settings = Settings::default();
-    _settings.interval = Duration::nanoseconds(1);
-    let settings = Arc::new(_settings);
-
     let command = IOCommand::Input(move || RawValue::default());
 
-    let mut group = Group::new("main", Some(settings.clone()));
+    let mut group = Group::with_interval("main", Duration::nanoseconds(1));
     group
         .push_input(
 
@@ -55,7 +49,7 @@ fn test_poll() {
                 IOKind::PH,
             ).set_command(
                 command.clone()
-            ).init_log(settings.clone())
+            ).init_log()
 
         ).push_input(
 
@@ -65,9 +59,7 @@ fn test_poll() {
                 IOKind::EC,
             ).set_command(
                 command.clone()
-            ).init_log(
-                settings.clone()
-            )
+            ).init_log()
 
         );
 

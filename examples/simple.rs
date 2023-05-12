@@ -21,12 +21,9 @@ extern crate chrono;
 extern crate sensd;
 extern crate serde;
 
-use std::sync::Arc;
-
 use sensd::action::{Action, actions, IOCommand, Trigger};
 use sensd::errors::ErrorType;
 use sensd::io::{IOKind, RawValue, Input, Device};
-use sensd::settings::Settings;
 use sensd::storage::{Group, Persistent};
 
 /// █▓▒░ Event Loop Operating frequency
@@ -46,10 +43,7 @@ const FREQUENCY: std::time::Duration = std::time::Duration::from_secs(1);
 /// # Returns
 /// Single initialized Group
 fn init(name: &str) -> Group {
-    let settings: Arc<Settings> = Arc::new(Settings::initialize());
-    println!("Initialized settings");
-
-    let group = Group::new(name.clone(), Some(settings));
+    let group = Group::new(name.clone());
     println!("Initialized poll group: \"{}\"", name);
     group
 }
@@ -57,7 +51,7 @@ fn init(name: &str) -> Group {
 /// █▓▒░ Handle polling of all devices in `Group`
 fn poll(poller: &mut Group) -> Result<(), ErrorType> {
     match poller.poll() {
-        Ok(_) => match poller.save(&None) {
+        Ok(_) => match poller.save() {
             Ok(_) => println!("\n"),
             Err(t) => {
                 return Err(t);
@@ -87,7 +81,6 @@ fn main() {
             ).set_command(
                 command
             ).init_log(
-                poller.settings()
             ).init_publisher();
 
         // setup publisher/action
@@ -116,7 +109,7 @@ fn main() {
             kind,
         )
             .set_command(command)
-            .init_log(poller.settings())
+            .init_log()
             .init_publisher();
 
         // setup publisher/action

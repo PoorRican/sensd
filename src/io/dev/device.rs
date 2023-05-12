@@ -1,15 +1,10 @@
 use crate::action::IOCommand;
 use crate::helpers::Def;
 use crate::io::{DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue};
-use crate::settings::Settings;
-use crate::storage::{Chronicle, Log};
+use crate::settings::RootPath;
+use crate::storage::{Chronicle, Log, Persistent};
 use chrono::Utc;
-use std::collections::HashMap;
-use std::sync::Arc;
-
-
-/// Alias for using a deferred devices in `Container`, indexed by `K`
-pub type DeviceContainer<K, D> = HashMap<K, Def<D>>;
+use crate::errors::ErrorType;
 
 /// Defines a minimum interface for interacting with GPIO devices.
 ///
@@ -17,7 +12,7 @@ pub type DeviceContainer<K, D> = HashMap<K, Def<D>>;
 /// Additionally, an accessor, `metadata()` is defined to provide for the facade methods to access
 /// device name, id, direction, and kind. Therefore, implementing structs shall implement a field
 /// `metadata` that is mutably accessed through the reciprocal getter method.
-pub trait Device: Chronicle + DeviceGetters + DeviceSetters {
+pub trait Device: Chronicle + DeviceGetters + DeviceSetters + Persistent {
     /// Creates a new instance of the device with the given parameters.
     ///
     /// # Parameters
@@ -63,14 +58,28 @@ pub trait Device: Chronicle + DeviceGetters + DeviceSetters {
         Self: Sized;
 
     /// Initialize, set, and return log.
-    fn init_log<S>(mut self, settings: S) -> Self
+    fn init_log(mut self) -> Self
     where
         Self: Sized,
-        S: Into<Option<Arc<Settings>>>,
     {
-        let log = Def::new(Log::new(&self.metadata(), settings));
+        let log = Def::new(Log::new(&self.metadata()));
         self.set_log(log);
         self
+    }
+
+    /// Setter for root
+    ///
+    /// Updates any internal field that needs a root path (ie: [`Log`])
+    ///
+    /// # Parameters
+    ///
+    /// - `root`: New [`RootPath`] to store
+    fn set_root(&self, root: RootPath) {
+        if self.has_log() {
+            let binding = self.log().unwrap();
+            let mut log = binding.try_lock().unwrap();
+            log.set_root(root)
+        }
     }
 
     fn into_deferred(self) -> Def<Self>
@@ -134,4 +143,20 @@ pub trait DeviceSetters {
 
     /// Setter for `log` field
     fn set_log(&mut self, log: Def<Log>);
+}
+
+impl<T: Device> Persistent for T {
+    fn save(&self) -> Result<(), ErrorType> {
+        match self.log() {
+            Some(log) => log.try_lock().unwrap().save(),
+            None => Ok(())
+        }
+    }
+
+    fn load(&mut self) -> Result<(), ErrorType> {
+        match self.log() {
+            Some(log) => log.try_lock().unwrap().load(),
+            None => Ok(())
+        }
+    }
 }
