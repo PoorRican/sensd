@@ -9,5 +9,6 @@ edition = "2021"
 float-cmp = "0.9.0"
 chrono = { version = "0.4.23", features = ["serde"] }
 dotenv = "0.15"
+pid = "4.0.0"
 serde = { version = "1.0.152", features = ["derive"] }
 serde_json = { version = "1.0.91" }

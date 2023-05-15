@@ -1,5 +1,6 @@
 use std::fmt::Formatter;
-use crate::action::{Command, IOCommand};
+use chrono::{Duration, Utc};
+use crate::action::{Command, IOCommand, Routine};
 use crate::errors::{ErrorType, no_internal_closure};
 use crate::helpers::Def;
 use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue, DeviceGetters, DeviceSetters};
@@ -110,6 +111,35 @@ impl Output {
         self.push_to_log(event);
 
         Ok(event)
+    }
+
+    /// Create a [`Routine`] given a value to write and a duration
+    ///
+    /// # Parameters
+    ///
+    /// - `value`: Value to write to device
+    /// - `duration`: Duration to wait before executing action.
+    ///
+    /// # Returns
+    ///
+    /// [`Routine`] ready to be added to [`SchedRoutineHandler`]
+    pub fn create_routine(&self, value: RawValue, duration: Duration) -> Routine {
+        let timestamp = Utc::now() + duration;
+        let log = self.log.as_ref()
+            .expect("Output device does not have log")
+            .to_owned()
+            .clone();
+        let command = self.command.as_ref()
+            .expect("Output device does not have command")
+            .to_owned()
+            .clone();
+        Routine::new(
+            timestamp,
+            self.metadata.clone(),
+            value,
+            log,
+            command,
+        )
     }
 }
 
