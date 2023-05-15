@@ -136,7 +136,12 @@ impl Log {
         self.root_path.clone()
     }
 
-    pub fn set_root(&mut self, root: RootPath) {
+    pub fn set_root(mut self, root: RootPath) -> Self {
+        self.set_root_ref(root);
+        self
+    }
+
+    pub fn set_root_ref(&mut self, root: RootPath) {
         self.root_path = Some(root)
     }
 }
@@ -305,7 +310,7 @@ mod tests {
         assert!(log.root_path().is_none());
 
         let root: RootPath = Arc::new(String::new());
-        log.set_root(root);
+        log.set_root_ref(root);
 
         assert!(log.root_path().is_some())
     }
