@@ -40,7 +40,7 @@ pub trait Device: Chronicle + DeviceGetters + DeviceSetters + Persistent {
     /// device trait objects and any of it's owners (i.e.: `PollGroup`).
     fn generate_event(&self, value: RawValue) -> IOEvent {
         let timestamp = Utc::now();
-        IOEvent::new(timestamp, value)
+        IOEvent::with_timestamp(timestamp, value)
     }
 
     /// Setter for `command` field as builder method

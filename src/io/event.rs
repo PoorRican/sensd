@@ -27,11 +27,16 @@ impl IOEvent {
     /// ```
     ///
     /// ```
-    pub fn new(timestamp: DateTime<Utc>, value: RawValue) -> Self {
+    pub fn with_timestamp(timestamp: DateTime<Utc>, value: RawValue) -> Self {
         IOEvent {
             timestamp,
             value,
         }
+    }
+
+    pub fn generate(value: RawValue) -> Self {
+        let timestamp = Utc::now();
+        IOEvent::with_timestamp(timestamp, value)
     }
 }
 

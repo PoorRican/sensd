@@ -101,7 +101,7 @@ impl Command<IOEvent> for Routine {
         let value = value.into();
         match self.command.execute(value) {
             Ok(_) => {
-                let event = IOEvent::new(self.timestamp, value.unwrap());
+                let event = IOEvent::with_timestamp(self.timestamp, value.unwrap());
                 Ok(Some(event))
             }
             Err(e) => Err(e),
