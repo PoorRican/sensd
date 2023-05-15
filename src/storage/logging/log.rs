@@ -25,7 +25,7 @@ use crate::storage::{EventCollection, Persistent, FILETYPE};
 #[derive(Serialize, Deserialize, Default)]
 pub struct Log {
     /// Retain a copy of source metadata for verification and recovery
-    metadata: DeviceMetadata,
+    metadata: Option<DeviceMetadata>,
     #[serde(skip)]
     root_path: Option<RootPath>,
 
@@ -43,17 +43,65 @@ impl Log {
     /// # Returns
     ///
     /// Empty log with identity attributes belonging to given device.
-    pub fn new(metadata: &DeviceMetadata) -> Self
+    pub fn with_metadata(metadata: DeviceMetadata) -> Self
     {
-        let metadata = metadata.clone();
-        let log = EventCollection::default();
-        let root_path = None;
+        Self::default()
+            .set_metadata(metadata)
+    }
 
-        Self {
-            metadata,
-            log,
-            root_path,
-        }
+    /// Getter for device metadata
+    ///
+    /// # Returns
+    ///
+    /// An `Option` with:
+    /// - `None` if no device is associated
+    /// - `Some` containing a reference to internal device metadata
+    pub fn metadata(&self) -> Option<&DeviceMetadata> {
+        self.metadata.as_ref()
+    }
+
+    /// Getter for `name`
+    ///
+    /// # Returns
+    ///
+    /// Reference to `String` in local copy of `DeviceMetadata`
+    ///
+    /// # Panics
+    ///
+    /// If there is no associated device, a panic is thrown.
+    pub fn name(&self) -> &String {
+        &self.metadata()
+            .expect("No associated device metadata")
+            .name
+    }
+
+    /// Getter for `id`
+    ///
+    /// # Returns
+    ///
+    /// Reference to `IdType` in local copy of `DeviceMetadata`
+    ///
+    /// # Panics
+    ///
+    /// If there is no associated device, a panic is thrown.
+    pub fn id(&self) -> &IdType {
+        &self.metadata()
+            .expect("No associated device metadata")
+            .id
+    }
+
+    /// Setter for `metadata`
+    ///
+    /// # Parameters
+    ///
+    /// - `metadata`: Device metadata to store internally
+    ///
+    /// # Returns
+    ///
+    /// Ownership of `self` with updated metadata. This is meant to be used by method
+    pub fn set_metadata(mut self, metadata: DeviceMetadata) -> Self {
+        self.metadata = Some(metadata);
+        self
     }
 
     /// Helper method which returns internal `root_path` or default
@@ -95,8 +143,8 @@ impl Log {
         format!(
             "{}_{}_{}{}",
             settings::LOG_FN_PREFIX,
-            self.metadata.name,
-            self.metadata.id.to_string().as_str(),
+            self.name(),
+            self.id().to_string().as_str(),
             FILETYPE
         )
     }
@@ -169,7 +217,7 @@ impl Persistent for Log {
         if self.log.is_empty() {
             Err(Error::new(
                 ErrorKind::ContainerEmpty,
-                format!("Log for '{}'. Nothing to save.", self.metadata.name).as_str(),
+                format!("Log for '{}'. Nothing to save.", self.name()).as_str(),
             ))
         } else {
             let file = writable_or_create(self.full_path());
