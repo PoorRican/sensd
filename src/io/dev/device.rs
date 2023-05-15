@@ -62,7 +62,7 @@ pub trait Device: Chronicle + DeviceGetters + DeviceSetters + Persistent {
     where
         Self: Sized,
     {
-        let log = Def::new(Log::new(&self.metadata()));
+        let log = Def::new(Log::with_metadata(&self.metadata()));
         self.set_log(log);
         self
     }

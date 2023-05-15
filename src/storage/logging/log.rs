@@ -8,7 +8,7 @@ use std::path::Path;
 
 use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::writable_or_create;
-use crate::io::{DeviceMetadata, IOEvent};
+use crate::io::{DeviceMetadata, IdType, IOEvent};
 use crate::settings;
 use crate::settings::RootPath;
 use crate::storage::{EventCollection, Persistent, FILETYPE};
@@ -43,10 +43,10 @@ impl Log {
     /// # Returns
     ///
     /// Empty log with identity attributes belonging to given device.
-    pub fn with_metadata(metadata: DeviceMetadata) -> Self
+    pub fn with_metadata(metadata: &DeviceMetadata) -> Self
     {
         Self::default()
-            .set_metadata(metadata)
+            .set_metadata(metadata.clone())
     }
 
     /// Getter for device metadata

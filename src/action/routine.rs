@@ -146,7 +146,7 @@ mod functionality_tests {
         }
         let metadata = DeviceMetadata::default();
 
-        let log = Def::new(Log::new(&metadata));
+        let log = Def::new(Log::with_metadata(&metadata));
 
         let command = IOCommand::Output(move |val| unsafe {
             set_register(val);
@@ -198,7 +198,7 @@ mod meta_tests {
     fn test_constructor_w_log() {
         let metadata = DeviceMetadata::default();
 
-        let log = Def::new(Log::new(&metadata));
+        let log = Def::new(Log::with_metadata(&metadata));
 
         let timestamp = Utc::now();
         let value = RawValue::Binary(true);
