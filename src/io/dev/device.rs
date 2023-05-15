@@ -78,7 +78,7 @@ pub trait Device: Chronicle + DeviceGetters + DeviceSetters + Persistent {
         if self.has_log() {
             let binding = self.log().unwrap();
             let mut log = binding.try_lock().unwrap();
-            log.set_root(root)
+            log.set_root_ref(root)
         }
     }
 

@@ -61,7 +61,7 @@ mod tests {
     #[test]
     fn test_push() {
         let metadata = DeviceMetadata::default();
-        let log = Def::new(Log::new(&metadata));
+        let log = Def::new(Log::with_metadata(&metadata));
 
         let command = IOCommand::Output(|_| Ok(()));
 
@@ -78,7 +78,7 @@ mod tests {
 
         // Add second routine
         let metadata = DeviceMetadata::default();
-        let log = Def::new(Log::new(&metadata));
+        let log = Def::new(Log::with_metadata(&metadata));
 
         let command = IOCommand::Output(|_| Ok(()));
 
@@ -96,7 +96,7 @@ mod tests {
     /// running the tests again should pass.
     fn test_attempt() {
         let metadata = DeviceMetadata::default();
-        let log = Def::new(Log::new(&metadata));
+        let log = Def::new(Log::with_metadata(&metadata));
 
         let command = IOCommand::Output(|_| Ok(()));
 
@@ -111,7 +111,7 @@ mod tests {
 
         // Add second routine
         let metadata = DeviceMetadata::default();
-        let log = Def::new(Log::new(&metadata));
+        let log = Def::new(Log::with_metadata(&metadata));
 
         let command = IOCommand::Output(|_| Ok(()));
 
