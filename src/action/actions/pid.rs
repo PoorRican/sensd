@@ -305,7 +305,7 @@ impl Action for PID {
     }
 
     fn evaluate(&mut self, data: &IOEvent) {
-        let measurement = data.data.value;
+        let measurement = data.value;
         if let RawValue::Float(value) = measurement {
 
             let duration =

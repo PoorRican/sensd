@@ -68,7 +68,7 @@ mod tests {
         let timestamp = Utc::now() + Duration::microseconds(5);
         let value = RawValue::Binary(true);
 
-        let routine = Routine::new(timestamp, metadata.clone(), value, log, command);
+        let routine = Routine::new(timestamp, value, log, command);
 
         let mut scheduled = SchedRoutineHandler::default();
         assert_eq!(0, scheduled.scheduled().into_iter().count());
@@ -85,7 +85,7 @@ mod tests {
         let timestamp = Utc::now() + Duration::microseconds(5);
         let value = RawValue::Binary(true);
 
-        let routine = Routine::new(timestamp, metadata.clone(), value, log, command);
+        let routine = Routine::new(timestamp, value, log, command);
 
         scheduled.push(routine);
         assert_eq!(2, scheduled.scheduled().into_iter().count());
@@ -103,7 +103,7 @@ mod tests {
         let timestamp = Utc::now() + Duration::microseconds(30);
         let value = RawValue::Binary(true);
 
-        let routine = Routine::new(timestamp, metadata.clone(), value, log.clone(), command);
+        let routine = Routine::new(timestamp, value, log.clone(), command);
 
         let mut scheduled = SchedRoutineHandler::default();
 
@@ -120,7 +120,7 @@ mod tests {
         let ts2 = Utc::now() + Duration::microseconds(120);
         let value = RawValue::Binary(true);
 
-        let routine = Routine::new(ts2, metadata.clone(), value, log.clone(), command);
+        let routine = Routine::new(ts2, value, log.clone(), command);
         scheduled.push(routine);
 
         while Utc::now() < timestamp {

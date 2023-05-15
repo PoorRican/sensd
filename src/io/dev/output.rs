@@ -106,7 +106,7 @@ impl Output {
         let event = self.tx(value).expect("Error returned by `tx()`");
 
         // update cached state
-        self.state = Some(event.data.value);
+        self.state = Some(event.value);
 
         self.push_to_log(event);
 
@@ -135,7 +135,6 @@ impl Output {
             .clone();
         Routine::new(
             timestamp,
-            self.metadata.clone(),
             value,
             log,
             command,
@@ -182,9 +181,7 @@ mod tests {
         let value = RawValue::Binary(true);
         let event = output.tx(value).expect("Unknown error occurred in `tx()`");
 
-        assert_eq!(value, event.data.value);
-        assert_eq!(output.kind(), event.data.kind);
-        assert_eq!(output.direction(), event.direction);
+        assert_eq!(value, event.value);
     }
 
     #[test]
@@ -209,9 +206,7 @@ mod tests {
         assert_eq!(value, output.state().unwrap());
 
         // check returned `IOEvent`
-        assert_eq!(value, event.data.value);
-        assert_eq!(output.kind(), event.data.kind);
-        assert_eq!(output.direction(), event.direction);
+        assert_eq!(value, event.value);
 
         // assert that event was added to log
         assert_eq!(log.try_lock().unwrap().iter().count(), 1);

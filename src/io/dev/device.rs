@@ -39,8 +39,8 @@ pub trait Device: Chronicle + DeviceGetters + DeviceSetters + Persistent {
     /// Additionally, internally generating timestamp adds a layer of separation between
     /// device trait objects and any of it's owners (i.e.: `PollGroup`).
     fn generate_event(&self, value: RawValue) -> IOEvent {
-        let dt = Utc::now();
-        IOEvent::new(self.metadata(), dt, value)
+        let timestamp = Utc::now();
+        IOEvent::new(timestamp, value)
     }
 
     /// Setter for `command` field as builder method

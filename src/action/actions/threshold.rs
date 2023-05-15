@@ -123,7 +123,7 @@ impl Action for Threshold {
     /// - Any error returned by [`Self::write()`] is dropped by [`Self::on_unchecked()`] and
     ///   [`Self::off_unchecked()`]
     fn evaluate(&mut self, data: &IOEvent) {
-        let input = data.data.value;
+        let input = data.value;
         let exceeded = self.trigger.exceeded(input, self.threshold);
 
         match exceeded {

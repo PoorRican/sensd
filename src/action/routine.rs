@@ -2,7 +2,7 @@ use std::ops::Not;
 use crate::action::{Command, IOCommand};
 use crate::errors::ErrorType;
 use crate::helpers::Def;
-use crate::io::{DeviceMetadata, IOEvent, RawValue};
+use crate::io::{IOEvent, RawValue};
 use crate::storage::{Chronicle, Log};
 use chrono::{DateTime, Utc};
 use std::sync::{Arc, Mutex, Weak};
@@ -24,14 +24,6 @@ pub struct Routine {
     /// Scheduled time to execute function
     timestamp: DateTime<Utc>,
 
-    /// Copy of owning device metadata
-    ///
-    /// A copy of metadata avoids possible locking issues from deferred [`DeviceMetadata`] types.
-    /// Avoidance of locking issues is crucial to since execution of [`Routine`] is assumed to be
-    /// critical and should be executed in real-time.
-    // TODO: create as optional once issue #96 has been implemented
-    metadata: DeviceMetadata,
-
     /// Value to pass to `IOCommand`
     value: RawValue,
 
@@ -42,15 +34,13 @@ pub struct Routine {
 }
 
 impl Routine {
-    pub fn new<M, L>(
+    pub fn new<L>(
         timestamp: DateTime<Utc>,
-        metadata: M,
         value: RawValue,
         log: L,
         command: IOCommand,
     ) -> Self
     where
-        M: Into<Option<DeviceMetadata>>,
         L: Into<Option<Def<Log>>>,
     {
         // downgrade `Def` reference to `sync::Weak` reference
@@ -65,11 +55,8 @@ impl Routine {
             panic!("Command is not Output");
         }
 
-        let metadata: DeviceMetadata = metadata.into().unwrap_or_default();
-
         Self {
             timestamp,
-            metadata,
             value,
             log: weak_log,
             command,
@@ -114,7 +101,7 @@ impl Command<IOEvent> for Routine {
         let value = value.into();
         match self.command.execute(value) {
             Ok(_) => {
-                let event = IOEvent::new(&self.metadata, self.timestamp, value.unwrap());
+                let event = IOEvent::new(self.timestamp, value.unwrap());
                 Ok(Some(event))
             }
             Err(e) => Err(e),
@@ -168,7 +155,7 @@ mod functionality_tests {
 
         let timestamp = Utc::now() + Duration::microseconds(10);
         let value = RawValue::Binary(true);
-        let routine = Routine::new(timestamp, metadata, value, log.clone(), command);
+        let routine = Routine::new(timestamp, value, log.clone(), command);
 
         unsafe {
             assert_ne!(REGISTER, value);
@@ -202,20 +189,7 @@ mod meta_tests {
         let value = RawValue::Binary(true);
         let command = IOCommand::Output(|_| Ok(()));
 
-        let routine = Routine::new(timestamp, None, value, None, command);
-
-        assert!(routine.attempt());
-    }
-
-    #[test]
-    fn test_constructor_w_device() {
-        let metadata = DeviceMetadata::default();
-
-        let timestamp = Utc::now();
-        let value = RawValue::Binary(true);
-        let command = IOCommand::Output(|_| Ok(()));
-
-        let routine = Routine::new(timestamp, metadata, value, None, command);
+        let routine = Routine::new(timestamp, value, None, command);
 
         assert!(routine.attempt());
     }
@@ -230,21 +204,7 @@ mod meta_tests {
         let value = RawValue::Binary(true);
         let command = IOCommand::Output(|_| Ok(()));
 
-        let routine = Routine::new(timestamp, None, value, log.clone(), command);
-        assert!(routine.attempt());
-    }
-
-    #[test]
-    fn test_constructor_w_both() {
-        let metadata = DeviceMetadata::default();
-
-        let log = Def::new(Log::new(&metadata));
-
-        let timestamp = Utc::now();
-        let value = RawValue::Binary(true);
-        let command = IOCommand::Output(|_| Ok(()));
-
-        let routine = Routine::new(timestamp, metadata, value, log.clone(), command);
+        let routine = Routine::new(timestamp, value, log.clone(), command);
         assert!(routine.attempt());
     }
 
@@ -255,7 +215,7 @@ mod meta_tests {
         let value = RawValue::Binary(true);
         let command = IOCommand::Input(|| RawValue::default());
 
-        let routine = Routine::new(timestamp, None, value, None, command);
+        let routine = Routine::new(timestamp, value, None, command);
         assert!(routine.attempt());
     }
 }

@@ -165,7 +165,7 @@ impl Chronicle for Input {
 mod tests {
     use std::sync::Arc;
     use crate::action::{IOCommand};
-    use crate::io::{Device, DeviceGetters, Input, IOKind, RawValue};
+    use crate::io::{Device, Input, IOKind, RawValue};
     use crate::storage::Chronicle;
 
     const DUMMY_OUTPUT: RawValue = RawValue::Float(1.2);
@@ -192,7 +192,7 @@ mod tests {
         input.command = Some(COMMAND);
 
         let event = input.rx().unwrap();
-        assert_eq!(event.data.value, DUMMY_OUTPUT);
+        assert_eq!(event.value, DUMMY_OUTPUT);
     }
 
     #[test]
@@ -205,8 +205,7 @@ mod tests {
         assert_eq!(log.clone().unwrap().try_lock().unwrap().iter().count(), 0);
 
         let event = input.read().unwrap();
-        assert_eq!(event.data.value, DUMMY_OUTPUT);
-        assert_eq!(event.data.kind, input.kind());
+        assert_eq!(event.value, DUMMY_OUTPUT);
 
         // assert that event was added to log
         assert_eq!(log.unwrap().try_lock().unwrap().iter().count(), 1);
