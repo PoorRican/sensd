@@ -8,7 +8,7 @@ use std::path::Path;
 
 use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::writable_or_create;
-use crate::io::{DeviceMetadata, IOEvent, IdType};
+use crate::io::{DeviceMetadata, IOEvent};
 use crate::settings;
 use crate::settings::RootPath;
 use crate::storage::{EventCollection, Persistent, FILETYPE};
@@ -24,10 +24,8 @@ use crate::storage::{EventCollection, Persistent, FILETYPE};
 /// behind `Def`.
 #[derive(Serialize, Deserialize, Default)]
 pub struct Log {
-    // TODO: split logs using ID
-    id: IdType,
-    #[serde(skip)]
-    name: String,
+    /// Retain a copy of source metadata for verification and recovery
+    metadata: DeviceMetadata,
     #[serde(skip)]
     root_path: Option<RootPath>,
 
@@ -47,14 +45,12 @@ impl Log {
     /// Empty log with identity attributes belonging to given device.
     pub fn new(metadata: &DeviceMetadata) -> Self
     {
-        let id = metadata.id;
-        let name = metadata.name.clone();
+        let metadata = metadata.clone();
         let log = EventCollection::default();
         let root_path = None;
 
         Self {
-            id,
-            name,
+            metadata,
             log,
             root_path,
         }
@@ -99,8 +95,8 @@ impl Log {
         format!(
             "{}_{}_{}{}",
             settings::LOG_FN_PREFIX,
-            self.name,
-            self.id.to_string().as_str(),
+            self.metadata.name,
+            self.metadata.id.to_string().as_str(),
             FILETYPE
         )
     }
@@ -168,7 +164,7 @@ impl Persistent for Log {
         if self.log.is_empty() {
             Err(Error::new(
                 ErrorKind::ContainerEmpty,
-                format!("Log for '{}'. Nothing to save.", self.name).as_str(),
+                format!("Log for '{}'. Nothing to save.", self.metadata.name).as_str(),
             ))
         } else {
             let file = writable_or_create(self.full_path());
