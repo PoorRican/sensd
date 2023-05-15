@@ -1,6 +1,7 @@
 //! Implements a control system based off of evaluating incoming data.
 
 use crate::action::{BoxedAction, SchedRoutineHandler};
+use crate::helpers::Def;
 use crate::io::IOEvent;
 
 /// Collection of actions for propagating single device input.
@@ -17,7 +18,7 @@ use crate::io::IOEvent;
 #[derive(Default)]
 pub struct Publisher {
     actions: Vec<BoxedAction>,
-    scheduled: SchedRoutineHandler,
+    scheduled: Def<SchedRoutineHandler>,
 }
 
 impl Publisher {
@@ -30,7 +31,7 @@ impl Publisher {
     /// # See Also
     /// This is a facade for [`SchedRoutineHandler::attempt_routines()`], which contains more detailed notes.
     pub fn attempt_routines(&mut self) {
-        self.scheduled.attempt_routines()
+        self.scheduled.try_lock().unwrap().attempt_routines()
     }
 
     /// Get collection of subscribed [`Actions`] (stored as [`BoxedAction`]).
@@ -59,5 +60,16 @@ impl Publisher {
             // TODO: results should be aggregated
             subscriber.evaluate(data);
         }
+    }
+
+    /// Method to get passable reference to internal handler
+    ///
+    /// This is used when an [`Action`] needs to schedule [`Routine`] (ie: in the case of [`PID`])
+    ///
+    /// # Returns
+    ///
+    /// Reference to [`SchedRoutineHandler`] guarded by [`Def`]
+    pub fn handler_ref(&self) -> Def<SchedRoutineHandler> {
+        self.scheduled.clone()
     }
 }

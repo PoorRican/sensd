@@ -56,6 +56,12 @@ impl<T> Def<T> {
     }
 }
 
+impl<T: Default> Default for Def<T> {
+    fn default() -> Self {
+        Self::new(T::default())
+    }
+}
+
 impl<T> Clone for Def<T> {
     fn clone(&self) -> Self {
         Self(self.0.clone())
