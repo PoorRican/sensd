@@ -27,8 +27,12 @@ pub struct Log {
     /// Retain a copy of source metadata for verification and recovery
     metadata: Option<DeviceMetadata>,
     #[serde(skip)]
+    /// Store a reference to local root
+    ///
+    /// This field is not serialized
     root_path: Option<RootPath>,
 
+    /// Collection of `IOEvent` objects
     log: EventCollection,
 }
 
@@ -192,6 +196,25 @@ impl Log {
     pub fn set_root_ref(&mut self, root: RootPath) {
         self.root_path = Some(root)
     }
+
+    /// Extend current [`Log`] with [`EventCollection`] from another [`Log`]
+    ///
+    /// This is used for loading archived logs into memory.
+    ///
+    /// # Parameters
+    ///
+    /// - `other`: [`Log`] to pull [`EventCollection`] from
+    ///
+    /// # Panics
+    ///
+    /// If both `metadata` fields do not match, then program panics.
+    pub fn extend(&mut self, other: &mut Log) {
+        if self.metadata != other.metadata {
+            panic!("Metadata does not match. Cannot extend");
+        }
+
+        self.log.extend(other.log.clone());
+    }
 }
 
 // Implement save/load operations for `Log`
@@ -286,13 +309,25 @@ impl Persistent for Log {
 mod tests {
     use crate::action::IOCommand;
     use crate::helpers::Def;
-    use crate::io::{Device, Input, IOKind, IdType, RawValue};
+    use crate::io::{Device, Input, IOKind, IdType, RawValue, IOEvent};
     use crate::storage::{Chronicle, Log, Persistent};
     use std::path::Path;
     use std::time::Duration;
     use std::{fs, thread};
     use std::sync::Arc;
     use crate::settings::RootPath;
+
+    fn generate_log(count: usize) -> Log {
+        let mut log = Log::default();
+
+        for _ in 0..count {
+            let event = IOEvent::generate(RawValue::default());
+            log.push(event).unwrap();
+            thread::sleep(Duration::from_nanos(1));
+        }
+
+        log
+    }
 
     fn add_to_log<D>(device: &D, log: &Def<Log>, count: usize)
     where
@@ -361,5 +396,17 @@ mod tests {
         log.set_root_ref(root);
 
         assert!(log.root_path().is_some())
+    }
+
+    #[test]
+    fn test_extend() {
+        let mut orig = generate_log(50);
+        let mut new = generate_log(50);
+
+        assert_eq!(50, orig.iter().count());
+
+        orig.extend(&mut new);
+
+        assert_eq!(100, orig.iter().count())
     }
 }
