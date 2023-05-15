@@ -1,5 +1,6 @@
 extern crate chrono;
 extern crate float_cmp;
+extern crate pid as ext_pid;
 
 pub mod action;
 pub mod errors;
