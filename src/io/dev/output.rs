@@ -7,6 +7,44 @@ use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, Ra
 use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
+/// This is the generic implementation for any external output device.
+///
+/// # Getting Started
+///
+/// While [`Output`] derives a [`Default`] implementation, `name` and `id`
+/// should be passed to [`Device::new()`] constructor to differentiate it
+/// from other [`Output`] objects.
+///
+/// ```
+/// use sensd::io::{Device, DeviceGetters, Output, IOKind};
+/// let id = 777;
+/// let name = "our new output device";
+/// let kind = IOKind::default();
+///
+/// let device = Output::new(name, id, kind);
+///
+/// assert_eq!(device.name(), name);
+/// assert_eq!(device.id(), id);
+///
+/// assert_ne!(device, Output::default());
+/// ```
+///
+/// Now that we are able to set device metadata, constructor methods still don't
+/// provide any way to interact with hardware. The builder method [`Device::set_command()`]
+/// is used to add low-level code. In this example, we return a static value:
+///
+/// ```
+/// use sensd::action::IOCommand;
+/// use sensd::io::{Device, Output, RawValue};
+///
+/// let command = IOCommand::Output(|_| Ok(()));
+/// let device =
+///     Output::default()
+///         .set_command(command);
+/// ```
+///
+/// With a `command` set, [`Output::write()`] can be used to actuate or send data
+/// to devices.
 pub struct Output {
     metadata: DeviceMetadata,
     // cached state
@@ -42,7 +80,7 @@ impl DeviceSetters for Output {
     }
 }
 
-// Implement traits
+/// Implement unique constructors and builder methods
 impl Device for Output {
     /// Creates a generic output device
     ///
@@ -85,7 +123,22 @@ impl Device for Output {
 }
 
 impl Output {
-    /// Execute low-level GPIO command
+    /// Execute low-level GPIO command to write data
+    ///
+    /// # Parameters
+    ///
+    /// - `value`: [`RawValue`] to send to device
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing:
+    ///
+    /// - `Ok` with [`IOEvent`] if low-level operation occurred successfully.
+    /// - `Err` with [`ErrorType`] if no `command` is set or there device command failed
+    ///
+    /// # Issues
+    ///
+    /// [Low level error type](https://github.com/PoorRican/sensd/issues/192)
     fn tx(&self, value: RawValue) -> Result<IOEvent, ErrorType> {
         if let Some(command) = &self.command {
             command.execute(Some(value))?;
@@ -96,14 +149,50 @@ impl Output {
         Ok(self.generate_event(value))
     }
 
-    /// Primary interface method during polling.
+    /// Get [`IOEvent`], add to log and update cache.
     ///
-    /// Calls `tx()`, updates cached state, and saves to log.
+    /// Primary interface method called during polling,
+    /// and by [`crate::action::Action::evaluate()`] and [`Routine::execute()`].
+    ///
+    /// # Parameters
+    ///
+    /// - `value`: [`RawValue`] to write to device. There is no check on value.
     ///
     /// # Notes
-    /// This method will fail if there is no associated log
+    ///
+    /// A panic is not thrown if there is no log associated.
+    ///
+    /// # Panics
+    ///
+    /// - If there is an error when writing to device on a low-level
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use sensd::action::IOCommand;
+    /// use sensd::io::{Device, DeviceGetters, Output, RawValue};
+    ///
+    /// let value = RawValue::default();
+    /// let command = IOCommand::Output(|_| Ok(()));
+    /// let mut output = Output::default().set_command(command);
+    ///
+    /// let event = output.write(value).unwrap();
+    ///
+    /// assert_eq!(event.value, value);
+    ///
+    /// // cached state is updated
+    /// assert_eq!(output.state().unwrap(), value);
+    /// ```
+    ///
+    /// # Issues
+    ///
+    /// [Low level error type](https://github.com/PoorRican/sensd/issues/192)
+    ///
+    /// # See Also
+    ///
+    /// - [`Input::push_to_log()`] for adding [`IOEvent`] to [`Log`]
     pub fn write(&mut self, value: RawValue) -> Result<IOEvent, ErrorType> {
-        let event = self.tx(value).expect("Error returned by `tx()`");
+        let event = self.tx(value).expect("Low level device error while writing");
 
         // update cached state
         self.state = Some(event.value);
@@ -122,7 +211,7 @@ impl Output {
     ///
     /// # Returns
     ///
-    /// [`Routine`] ready to be added to [`SchedRoutineHandler`]
+    /// [`Routine`] ready to be added to [`crate::action::SchedRoutineHandler`]
     pub fn create_routine(&self, value: RawValue, duration: Duration) -> Routine {
         let timestamp = Utc::now() + duration;
         let log = self.log.as_ref()
@@ -250,5 +339,11 @@ impl std::fmt::Debug for Output {
             self.id(),
             self.metadata().kind
         )
+    }
+}
+
+impl PartialEq for Output {
+    fn eq(&self, other: &Self) -> bool {
+        self.metadata == other.metadata && self.command == other.command
     }
 }

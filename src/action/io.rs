@@ -5,7 +5,7 @@ use crate::io::{IODirection, RawValue};
 /// Command design pattern for storing low-level I/O code
 ///
 /// Should be used as an interface for HAL code and otherwise perform no other logic.
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum IOCommand {
     /// Low-level code to read HW input
     Input(fn() -> RawValue),

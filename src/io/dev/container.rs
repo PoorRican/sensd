@@ -5,7 +5,7 @@ use std::collections::hash_map::{Entry, Iter, Values, ValuesMut};
 use std::collections::HashMap;
 use crate::settings::RootPath;
 
-/// Alias for using a deferred devices in `Container`, indexed by `K`
+/// Generic mapped container for storing [`Device`] objects
 #[derive(Default)]
 pub struct DeviceContainer<K: IdTraits, D: Device>(HashMap<K, Def<D>>);
 

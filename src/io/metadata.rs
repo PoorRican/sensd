@@ -1,5 +1,5 @@
 use crate::io;
-use crate::io::IdType;
+use crate::io::{IdType, IOKind, IODirection};
 use serde::{Deserialize, Serialize};
 use std::fmt::Formatter;
 
@@ -10,10 +10,17 @@ use std::fmt::Formatter;
 /// must be minimal and remain universal and agnostic to device type.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceMetadata {
+    /// User given name of device
     pub name: String,
+
+    /// User given device id
     pub id: IdType,
-    pub kind: io::IOKind,
-    pub direction: io::IODirection,
+
+    /// Sensor/device type
+    pub kind: IOKind,
+
+    /// I/O direction
+    pub direction: IODirection,
 }
 
 impl DeviceMetadata {
@@ -21,26 +28,31 @@ impl DeviceMetadata {
     ///
     /// # Arguments
     ///
-    /// * `name`: name of device
-    /// * `id`: ID of the device (user provided)
-    /// * `kind`: IOKind representing device type
-    /// * `direction`: IODirection representing device type
+    /// - `name`: name of device
+    /// - `id`: ID of the device (user provided)
+    /// - `kind`: IOKind representing device type
+    /// - `direction`: IODirection representing device type
     ///
     /// # Returns
     ///
-    /// A new instance with given specified parameters
+    /// A new [`DeviceMetadata`] instance with given parameters
     ///
     /// # Example
     ///
     /// ```
-    /// use sensd::io::{IOKind, DeviceMetadata, IODirection};
+    /// use sensd::io::{IOKind, DeviceMetadata, IODirection, IdType};
     ///
     /// let name = "Device";
     /// let id = 1;
     /// let kind = IOKind::PH;
     /// let direction = IODirection::default();
     ///
-    /// let info = DeviceMetadata::new(name, id, kind, direction);
+    /// let metadata = DeviceMetadata::new(name, id, kind, direction);
+    ///
+    /// assert_eq!(metadata.name, name);
+    /// assert_eq!(metadata.id, id);
+    /// assert_eq!(metadata.kind, kind);
+    /// assert_eq!(metadata.direction, direction);
     /// ```
     pub fn new<N>(name: N, id: IdType, kind: io::IOKind, direction: io::IODirection) -> Self
     where

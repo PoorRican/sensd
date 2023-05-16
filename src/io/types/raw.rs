@@ -6,10 +6,11 @@ use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
 
 /// Type used for passing between IO abstractions.
 ///
-/// An enum is used to avoid a generic implementation of [`crate::storage::Log`] caused by
-/// a generic implementation of [`crate::io::IOEvent`].
+/// An enum is used to avoid a generic implementations of [`crate::io::IOEvent`]
+/// and [`crate::io::Device`].
 ///
-/// # Notes
+/// # Contribution
+///
 /// The implemented types have been chosen as a good fit for GPIO. However,
 /// if a type is needed that is not here, feel free to initiate a pull request.
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialOrd)]

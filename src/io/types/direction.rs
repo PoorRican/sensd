@@ -3,8 +3,11 @@ use serde::{Deserialize, Serialize};
 
 /// Enum used to classify direction of data flow in relation to system.
 ///
-/// Input objects generate data from the outside world;
-/// output objects accept data, and manipulate the outside.
+/// # Variants
+///
+/// - `In`: indicates that data came from the outside world. This is the default.
+/// - `Out`: indicates that accept data was sent to manipulate and represents
+///   physical/tangible change.
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, Default, PartialEq)]
 pub enum IODirection {
     #[default]

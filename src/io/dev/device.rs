@@ -1,3 +1,13 @@
+//! Defines common interfaces for interacting with GPIO devices.
+//!
+//! There are two device types: [`crate::io::Input`] and [`crate::io::Output`].
+//! Both share the same constructors and builder methods, and share the
+//! super-traits [`DeviceGetters`] and [`DeviceSetters`].
+//!
+//! # See Also
+//!
+//! - [`DeviceMetadata`] for user defined metadata and field descriptions
+
 use crate::action::IOCommand;
 use crate::helpers::Def;
 use crate::io::{DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue};
@@ -6,26 +16,22 @@ use crate::storage::{Chronicle, Log, Persistent};
 use chrono::Utc;
 use crate::errors::ErrorType;
 
-/// Defines a minimum interface for interacting with GPIO devices.
-///
-/// A universal constructor is provided that can be shared between any implementing structs.
-/// Additionally, an accessor, `metadata()` is defined to provide for the facade methods to access
-/// device name, id, direction, and kind. Therefore, implementing structs shall implement a field
-/// `metadata` that is mutably accessed through the reciprocal getter method.
+/// Common constructors and builder methods for all device types
 pub trait Device: Chronicle + DeviceGetters + DeviceSetters + Persistent {
     /// Creates a new instance of the device with the given parameters.
     ///
     /// # Parameters
-    /// `name`: name of device.
-    /// `id`: device ID.
-    /// `kind`: kind of I/O device. Optional argument.
-    /// `log`: Optional deferred owned log for the device.
+    ///
+    /// - `name`: name of device.
+    /// - `id`: device ID.
+    /// - `kind`: kind of I/O device. Optional argument.
     fn new<N, K>(name: N, id: IdType, kind: K) -> Self
     where
         Self: Sized,
         N: Into<String>,
         K: Into<Option<IOKind>>;
 
+    #[deprecated]
     /// Generate an `IOEvent` instance from provided value
     ///
     /// This is used by internal `command` for building events from given data.
@@ -90,6 +96,7 @@ pub trait Device: Chronicle + DeviceGetters + DeviceSetters + Persistent {
     }
 }
 
+/// Common getter methods shared by all device types
 pub trait DeviceGetters {
     /// Reference to device metadata
     ///
@@ -134,6 +141,7 @@ pub trait DeviceGetters {
     fn state(&self) -> &Option<RawValue>;
 }
 
+/// Command setter methods share by all device types
 pub trait DeviceSetters {
     fn set_name<N>(&mut self, name: N)
         where

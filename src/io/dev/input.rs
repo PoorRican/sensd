@@ -359,3 +359,9 @@ impl std::fmt::Debug for Input {
         )
     }
 }
+
+impl PartialEq for Input {
+    fn eq(&self, other: &Self) -> bool {
+        self.metadata == other.metadata && self.command == other.command
+    }
+}
