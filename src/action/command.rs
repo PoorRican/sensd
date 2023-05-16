@@ -9,8 +9,8 @@ pub trait Command<T> {
     ///
     /// # Parameters
     /// - `value`: Arbitrary value to be passed to command.
-    ///            This is used by [`IOCommand::Output`]. A warning is printed to
-    ///            stderr if `value` is not `None` when called from [`IOCommand::Input`].
+    ///            This is used by [`crate::action::IOCommand::Output`]. A warning is printed to
+    ///            stderr if `value` is not `None` when called from [`crate::action::IOCommand::Input`].
     ///
     /// # Returns
     /// - `Ok(T)`: returned when execution completes without error.

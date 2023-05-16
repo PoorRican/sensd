@@ -11,18 +11,22 @@ use crate::storage::Group;
 pub struct SchedRoutineHandler(Vec<Routine>);
 
 impl SchedRoutineHandler {
-    /// Add a [`Routine`] to the back of internal collection
+    /// Push a new [`Routine`] to internal collection
+    ///
+    /// # Parameters
+    ///
+    /// - `routine`: `Routine` to add to internal collection
     pub fn push(&mut self, routine: Routine) {
         self.0.push(routine)
     }
 
     /// Attempt to execute scheduled routines.
     ///
-    /// Even though [`Routine`] instances are usually scheduled during normal polling cycles by
-    /// [`Group`], the assumption is that their scheduled execution time does not correlate with a
-    /// polling interval. Therefore, [`SchedRoutineHandler::attempt_routines()`] should be called
-    /// as often as possible, outside of normal polling cycle, and as often as possible to produce
-    /// real-time response.
+    /// Even though [`Routine`] instances are scheduled during normal polling cycles
+    /// by [`Group`], the assumption is that their scheduled execution time does not
+    /// correlate with polling interval. Therefore, [`SchedRoutineHandler::attempt_routines()`]
+    /// should be called as often as possible, and outside of normal polling cycle,
+    /// to produce a real-time response.
     ///
     /// Any routines executed by [`Routine::attempt()`] are cleared from the internal container.
     pub fn attempt_routines(&mut self) {
@@ -41,6 +45,7 @@ impl SchedRoutineHandler {
     /// Getter function for internal collection
     ///
     /// # Returns
+    ///
     /// Slice of [`Routine`]
     pub fn scheduled(&self) -> &[Routine] {
         &self.0

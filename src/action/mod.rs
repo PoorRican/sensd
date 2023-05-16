@@ -1,4 +1,4 @@
-//! Cybernetic abstractions
+//! Perform actions based in sensor data
 mod action;
 mod command;
 mod trigger;
