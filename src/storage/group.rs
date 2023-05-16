@@ -8,16 +8,66 @@ use chrono::{DateTime, Duration, Utc};
 use std::fs::create_dir_all;
 use std::path::{Path, PathBuf};
 
-/// High-level container to manage multiple [`Device`] objects, logging, and actions.
+/// High-level container to manage multiple [`Device`] objects, logging, and
+/// actions.
+///
+/// # Getting Started
+///
+/// ## Initialization
+///
+/// To establish a root directory for storing logs and other data, the
+/// builder method [`Group::set_root()`] is used to set path to directory.
+/// Then, [`Group::init_dir()`] ensures that directory exists and is valid:
+///
+/// ```
+/// use std::sync::Arc;
+/// use sensd::storage::Group;
+///
+/// let root_dir = Arc::new(String::from("/tmp/root_dir/"));
+/// let group =
+///     Group::new("")
+///         .set_root(root_dir.clone())
+///         .init_dir();
+///
+/// assert_eq!(root_dir, group.root().unwrap());
+/// ```
+///
+/// Similarly, the [`Group::with_root()`] alternate constructor allows
+/// [`RootPath`] to be passed as
+/// a parameter. However, the builder method [`Group::init_dir()`] still
+/// needs to be explicitly chained.
+///
+/// ## Adding Devices
+///
+/// Using and adding devices to [`Group`] is most easily accomplished
+/// via the builder pattern:
+///
+/// ```
+/// use sensd::io::{Input, Output};
+/// use sensd::storage::Group;
+///
+/// let input = Input::default();
+/// let output = Output::default();
+///
+/// let mut group = Group::new("");
+/// group.push_input(input);
+/// group.push_output(output);
+/// ```
+///
+/// ## Main Operation / Polling
 ///
 /// [`Group::poll()`] and [`Group::attempt_routines()`] are the primary callables for function. Both functions are
-/// called on different intervals. The execution of `[poll()`] is dictated by the interval stored in
+/// called on different intervals. The execution of [`Group::poll()`] is dictated by the interval stored in
 /// runtime settings. Conversely, [`Group::attempt_routines()`] should be executed as often as possible to
 /// maintain timing accuracy.
 ///
 /// Both [`Group::poll()`] and [`Group::attempt_routines()`] are high-level functions whose returned values
 /// can mainly be ignored. Future revisions will add failure log functionality in the event of failure or
 /// misconfiguration.
+///
+/// In order to set `interval`, either the alternate constructor [`Group::with_interval()`] can be utilized,
+/// or the builder method [`Group::set_interval()`] both result in user configured `interval`:
+///
 pub struct Group {
     /// Name used to identify this specific device grouping.
     ///
@@ -38,20 +88,20 @@ pub struct Group {
 impl Group {
     /// Primary callable to iterate through input device container once.
     ///
-    /// [`Input::read()`] is called on each input device at a frequency of
-    /// [`Group::interval()`]. Generated [`IOEvent`] instances are handled by [`Input::read()`].
+    /// [`Input::read()`] is called once on each input device at a frequency of
+    /// [`Group::interval()`]. Generated [`crate::io::IOEvent`] instances are
+    /// handled by [`Input::read()`].
     ///
-    /// Failure of any individual read does not halt execution. Instead, errors from
-    /// [`Input::read()`] are returned as a [`Vec`].
+    /// Failure of any individual read does not halt execution. Instead, errors
+    /// from [`Input::read()`] are returned as a [`Vec`].
     ///
     /// # Returns
     ///
     /// A `Result` containing:
     ///
-    /// - `Ok` when poll has been executed. `Ok` value will contain any errors that arose.
+    /// - `Ok` when poll has been executed. `Ok` value will contain any errors
+    ///   that arose.
     /// - `Err` when poll was not executed
-    ///
-    // TODO: custom `ErrorType` for failed read. Should include device metadata.
     pub fn poll(&mut self) -> Result<Vec<ErrorType>, ()> {
         let mut errors = Vec::new();
         let next_execution = self.last_execution + *self.interval();
@@ -83,7 +133,18 @@ impl Group {
     ///
     /// # Returns
     ///
-    /// Initialized `Group` with `name, default settings, and empty containers.
+    /// Initialized [`Group`] with `name`, no root directory, and empty containers.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use sensd::storage::Group;
+    ///
+    /// let name = "name";
+    /// let group = Group::new(name);
+    ///
+    /// assert_eq!(name, group.name());
+    /// ```
     pub fn new<N>(name: N) -> Self
     where
         N: Into<String>
@@ -109,15 +170,24 @@ impl Group {
     /// # Parameters
     ///
     /// - `name`: Name of group used for directory/file naming.
-    /// - `root`: Root path
+    /// - `root`: Desired root path
     ///
     /// # Returns
     ///
-    /// Initialized `Group` using given `name` and `settings`, with empty containers
+    /// Initialized [`Group`] with `name`, a `root` directory, and empty containers
     ///
-    /// # See Also
+    /// # Example
     ///
-    /// [`Settings] for runtime settings options.
+    /// ```
+    /// use std::sync::Arc;
+    /// use sensd::storage::Group;
+    ///
+    /// let root_dir = Arc::new(String::from("/tmp/root_dir/"));
+    /// let group =
+    ///     Group::with_root("", root_dir.clone());
+    ///
+    /// assert_eq!(root_dir, group.root().unwrap());
+    /// ```
     pub fn with_root<N>(name: N, root: RootPath) -> Self
         where
             N: Into<String>,
@@ -150,6 +220,21 @@ impl Group {
     /// # Returns
     ///
     /// Mutable reference to `self`
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use sensd::io::Input;
+    /// use sensd::storage::Group;
+    ///
+    /// let input = Input::default();
+    ///
+    /// let mut group = Group::new("");
+    /// group.push_input(input);
+    ///
+    /// assert_eq!(group.inputs.len(), 1);
+    /// assert_eq!(group.outputs.len(), 0);
+    /// ```
     pub fn push_input(&mut self, device: Input) -> &mut Self {
         let id = device.id();
 
@@ -169,11 +254,22 @@ impl Group {
     ///
     /// # Parameters
     ///
-    /// - `device`: [`Output`] device guarded by [`Def`]
+    /// - `device`: [`Output`] device guarded by [`crate::helpers::Def`]
     ///
-    /// # Panics
+    /// # Example
     ///
-    /// Panic is raised if `device` can't be locked.
+    /// ```
+    /// use sensd::io::Output;
+    /// use sensd::storage::Group;
+    ///
+    /// let output = Output::default();
+    ///
+    /// let mut group = Group::new("");
+    /// group.push_output(output);
+    ///
+    /// assert_eq!(group.outputs.len(), 1);
+    /// assert_eq!(group.inputs.len(), 0);
+    /// ```
     pub fn push_output(&mut self, device: Output) -> &mut Self {
         let id = device.id();
 
@@ -245,6 +341,11 @@ impl Group {
 
     #[inline]
     /// Getter for `interval`
+    ///
+    /// # Notes
+    ///
+    /// Since this is frequently used in iterators and polling, this
+    /// method is marked inline to avoiding jumping in memory.
     ///
     /// # Returns
     ///
@@ -325,8 +426,20 @@ impl Persistent for Group {
     ///
     /// # Errors
     ///
-    /// Returns an error if any single save fails. However, failure is silent and does not prevent
-    /// saving other device logs.
+    /// Returns an error if any single save fails. However, failure is silent and
+    /// does not prevent saving other device logs.
+    ///
+    /// # Panics
+    ///
+    /// Panics when any single input or output device cannot be locked.
+    ///
+    /// # Returns
+    ///
+    /// A [`Result`] containing:
+    ///
+    /// - `Ok` that is empty when saving occurred without error.
+    /// - `Err` containing the first error stored. There may be more errors that were
+    ///   not returned. An error occurring does not halt saving other logs.
     fn save(&self) -> Result<(), ErrorType> {
         let mut results = Vec::new();
 
@@ -348,8 +461,21 @@ impl Persistent for Group {
     /// Load all device logs
     ///
     /// # Errors
+    ///
     /// Returns an error if any single load fails. However, failure is silent and does not prevent
     /// loading other device logs.
+    ///
+    /// # Panics
+    ///
+    /// Panics when any single input or output device cannot be locked.
+    ///
+    /// # Returns
+    ///
+    /// A [`Result`] containing:
+    ///
+    /// - `Ok` that is empty when loading occurred without error.
+    /// - `Err` containing the first error stored. There may be more errors that were
+    ///   not returned. An error occurring does not halt loading other logs.
     fn load(&mut self) -> Result<(), ErrorType> {
         let mut results = Vec::new();
 

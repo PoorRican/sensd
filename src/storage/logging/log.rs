@@ -126,7 +126,7 @@ impl Log {
     /// # Returns
     ///
     /// `String` of full path *including* filename
-    fn full_path(&self) -> String {
+    pub fn full_path(&self) -> String {
         let root = self.root();
         let dir = Path::new(&root);
 
@@ -321,7 +321,7 @@ mod tests {
         let mut log = Log::default();
 
         for _ in 0..count {
-            let event = IOEvent::generate(RawValue::default());
+            let event = IOEvent::new(RawValue::default());
             log.push(event).unwrap();
             thread::sleep(Duration::from_nanos(1));
         }
