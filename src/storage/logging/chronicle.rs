@@ -17,16 +17,18 @@ pub trait Chronicle {
 
     /// Appends [`IOEvent`] to collection
     ///
+    /// If there is no associated `Log`, method silently fails.
+    ///
     /// # Panics
     ///
-    /// - If underlying [`std::sync::Arc`] reference is poisoned and cannot be locked.
+    /// - If underlying [`Def<Log>`] reference is poisoned and cannot be locked.
     /// - When an error occurs during [`Log::push()`]
-    fn push_to_log(&self, event: IOEvent) {
+    fn push_to_log(&self, event: &IOEvent) {
         if let Some(log) = self.log() {
             log.try_lock()
-                .unwrap()
-                .push(event)
-                .expect("Unknown error when adding event to log");
+                .expect("Could not lock `Log`")
+                .push(event.clone())
+                .expect("Error when adding event to log");
         }
     }
 

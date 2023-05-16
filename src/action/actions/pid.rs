@@ -316,7 +316,7 @@ impl Action for PID {
                     panic!("Handler has not been set!");
                 }
 
-                self.write(RawValue::Binary(true)).expect("Error when writing to device");
+                self.write(RawValue::Binary(true));
 
                 let output = self.output.as_ref()
                     .expect("Output has not been set!")

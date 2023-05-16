@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::io::{IdTraits, RawValue};
 
 /// Record value at a specific timestamp
-#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct IOEvent {
     pub timestamp: DateTime<Utc>,
     pub value: RawValue,

@@ -19,8 +19,9 @@ impl Device for Input {
     /// Creates a mock sensor which returns a value
     ///
     /// # Arguments
-    /// * `name`: arbitrary name of sensor
-    /// * `id`: arbitrary, numeric ID to differentiate from other sensors
+    ///
+    /// - `name`: arbitrary name of sensor
+    /// - `id`: arbitrary, numeric ID to differentiate from other sensors
     ///
     /// returns: MockPhSensor
     fn new<N, K>(name: N, id: IdType, kind: K) -> Self
@@ -118,7 +119,7 @@ impl Input {
 
         self.propagate(&event);
 
-        self.push_to_log(event);
+        self.push_to_log(&event);
 
         Ok(event)
     }

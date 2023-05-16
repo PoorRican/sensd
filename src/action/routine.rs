@@ -79,7 +79,7 @@ impl Routine {
             match result {
                 Ok(event) => {
                     let event = event.unwrap();
-                    let _ = self.push_to_log(event);
+                    let _ = self.push_to_log(&event);
                     return true;
                 }
                 Err(e) => {

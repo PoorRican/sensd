@@ -108,7 +108,7 @@ impl Output {
         // update cached state
         self.state = Some(event.value);
 
-        self.push_to_log(event);
+        self.push_to_log(&event);
 
         Ok(event)
     }

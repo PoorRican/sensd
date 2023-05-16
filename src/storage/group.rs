@@ -1,6 +1,6 @@
 use crate::errors::ErrorType;
 use crate::helpers::check_results;
-use crate::io::{Device, DeviceContainer, Input, Output, IOEvent, IdType, DeviceGetters};
+use crate::io::{Device, DeviceContainer, Input, Output, IdType, DeviceGetters};
 use crate::settings::{DATA_ROOT, RootPath};
 use crate::storage::Persistent;
 
@@ -38,27 +38,36 @@ pub struct Group {
 impl Group {
     /// Primary callable to iterate through input device container once.
     ///
-    /// [`Input::read()`] is called on each input device at the frequency dictated by
+    /// [`Input::read()`] is called on each input device at a frequency of
     /// [`Group::interval()`]. Generated [`IOEvent`] instances are handled by [`Input::read()`].
-    /// Failure does not halt execution. Instead, failed calls to [`Input::read()`] are returned as an
-    /// array of [`Result`] objects. [`check_results()`] should be used to catch and handle any errors
+    ///
+    /// Failure of any individual read does not halt execution. Instead, errors from
+    /// [`Input::read()`] are returned as a [`Vec`].
     ///
     /// # Returns
-    /// [`Ok`] when poll has successfully executed. The wrapped value is a vector of [`Result`]
-    /// values. Otherwise, [`Err`] is returned when function has been called out of sync with
-    /// interval.
+    ///
+    /// A `Result` containing:
+    ///
+    /// - `Ok` when poll has been executed. `Ok` value will contain any errors that arose.
+    /// - `Err` when poll was not executed
+    ///
     // TODO: custom `ErrorType` for failed read. Should include device metadata.
-    pub fn poll(&mut self) -> Result<Vec<Result<IOEvent, ErrorType>>, ()> {
-        let mut results: Vec<Result<IOEvent, ErrorType>> = Vec::new();
+    pub fn poll(&mut self) -> Result<Vec<ErrorType>, ()> {
+        let mut errors = Vec::new();
         let next_execution = self.last_execution + *self.interval();
 
         if next_execution <= Utc::now() {
             for input in self.inputs.values_mut() {
                 let mut binding = input.try_lock().unwrap();
-                results.push(binding.read());
+                let result = binding.read();
+
+                // Add errors to array
+                if result.is_err() {
+                    errors.push(result.err().unwrap());
+                }
             }
             self.last_execution = next_execution;
-            Ok(results)
+            Ok(errors)
         } else {
             Err(())
         }
@@ -66,7 +75,7 @@ impl Group {
 
     /// Primary constructor.
     ///
-    /// [`Group::set_root_ref()`] should be used to set root path
+    /// [`Group::set_root()`] or [`Group::set_root_ref()`] should be used to set root path
     ///
     /// # Parameters
     ///

@@ -1,4 +1,3 @@
-use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::io::{IOEvent, Output, RawValue};
 use std::ops::DerefMut;
 use crate::helpers::Def;
@@ -12,18 +11,22 @@ pub trait Action {
     /// Evaluate incoming data and perform action if necessary.
     ///
     /// # Parameters
+    ///
     /// - `data`: Raw incoming data from input device.
     fn evaluate(&mut self, data: &IOEvent);
 
     /// Builder function for setting `output` field.
     ///
     /// # Parameters
+    ///
     /// - `device`: `DeferredDevice` to set as output
     ///
     /// # Panics
+    ///
     /// Panic is raised if device is not [`DeviceType::Output`]
     ///
     /// # Returns
+    ///
     /// - `&mut self`: enables builder pattern
     fn set_output(self, device: Def<Output>) -> Self
     where
@@ -35,21 +38,20 @@ pub trait Action {
     /// Setter function for output device field
     ///
     /// # Parameters
+    ///
     /// - `value`: Binary value to send to device
     ///
-    /// # Returns
-    /// - `Ok(IOEvent)`: when I/O operation completes successfully.
-    /// - `Err(ErrorType)`: when an error occurs during I/O operation
-    fn write(&self, value: RawValue) -> Result<IOEvent, ErrorType> {
+    /// # Panics
+    ///
+    /// - If error occurs when writing to device
+    /// - If output has no associated output
+    fn write(&self, value: RawValue) {
         if let Some(inner) = self.output() {
             let mut binding = inner.try_lock().unwrap();
             let device = binding.deref_mut();
-            device.write(value)
+            device.write(value).expect("Unexpected error when writing to output device.");
         } else {
-            Err(Error::new(
-                ErrorKind::DeviceError,
-                "ThresholdAction has no device associated as output.",
-            ))
+            panic!("ThresholdAction has no device associated as output.")
         }
     }
 
