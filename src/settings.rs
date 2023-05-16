@@ -1,6 +1,7 @@
 use dotenv::dotenv;
 use std::env::var;
 use std::sync::Arc;
+use crate::storage::RootPath;
 
 /// Default values
 const VERSION: &str = "0.1.0";
@@ -10,11 +11,6 @@ pub const LOG_FN_PREFIX: &str = "log_";
 
 /// Default for top-level directory
 pub const DATA_ROOT: &str = "sensd";
-
-/// Specialized type for representing the root directory.
-///
-/// This type should be used to build paths, not be used to represent any sub-directory.
-pub type RootPath = Arc<String>;
 
 #[derive(PartialEq, Debug)]
 /// Global runtime settings

@@ -11,7 +11,7 @@
 use crate::action::IOCommand;
 use crate::helpers::Def;
 use crate::io::{DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue};
-use crate::settings::RootPath;
+use crate::storage::RootPath;
 use crate::storage::{Chronicle, Log, Persistent};
 use chrono::Utc;
 use crate::errors::ErrorType;

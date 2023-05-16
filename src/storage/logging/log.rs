@@ -10,7 +10,7 @@ use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::writable_or_create;
 use crate::io::{DeviceMetadata, IdType, IOEvent};
 use crate::settings;
-use crate::settings::RootPath;
+use crate::storage::directory::RootPath;
 use crate::storage::{EventCollection, Persistent, FILETYPE};
 
 
@@ -315,7 +315,7 @@ mod tests {
     use std::time::Duration;
     use std::{fs, thread};
     use std::sync::Arc;
-    use crate::settings::RootPath;
+    use crate::storage::directory::RootPath;
 
     fn generate_log(count: usize) -> Log {
         let mut log = Log::default();

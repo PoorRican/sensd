@@ -1,12 +1,12 @@
 use crate::errors::ErrorType;
 use crate::helpers::check_results;
-use crate::io::{Device, DeviceContainer, Input, Output, IdType, DeviceGetters};
-use crate::settings::{DATA_ROOT, RootPath};
-use crate::storage::Persistent;
+use crate::io::{Device, DeviceContainer, DeviceGetters, IdType, Input, Output};
+use crate::settings::DATA_ROOT;
+use crate::storage::{Directory, Persistent};
 
 use chrono::{DateTime, Duration, Utc};
 use std::fs::create_dir_all;
-use std::path::{Path, PathBuf};
+use crate::storage::directory::RootPath;
 
 /// High-level container to manage multiple [`Device`] objects, logging, and
 /// actions.
@@ -21,7 +21,7 @@ use std::path::{Path, PathBuf};
 ///
 /// ```
 /// use std::sync::Arc;
-/// use sensd::storage::Group;
+/// use sensd::storage::{Directory, Group};
 ///
 /// let root_dir = Arc::new(String::from("/tmp/root_dir/"));
 /// let group =
@@ -29,7 +29,7 @@ use std::path::{Path, PathBuf};
 ///         .set_root(root_dir.clone())
 ///         .init_dir();
 ///
-/// assert_eq!(root_dir, group.root().unwrap());
+/// assert_eq!(root_dir, group.root_dir());
 /// ```
 ///
 /// Similarly, the [`Group::with_root()`] alternate constructor allows
@@ -77,7 +77,7 @@ pub struct Group {
     last_execution: DateTime<Utc>,
 
     /// Immutable storage of runtime settings
-    root: Option<RootPath>,
+    root: RootPath,
 
     interval: Duration,
 
@@ -133,7 +133,7 @@ impl Group {
     ///
     /// # Returns
     ///
-    /// Initialized [`Group`] with `name`, no root directory, and empty containers.
+    /// Initialized [`Group`] with `name`, default root directory, and empty containers.
     ///
     /// # Example
     ///
@@ -155,10 +155,12 @@ impl Group {
         let inputs = <DeviceContainer<IdType, Input>>::default();
         let outputs = <DeviceContainer<IdType, Output>>::default();
 
+        let root = String::from(DATA_ROOT).into();
+
         Self {
             name: name.into(),
             interval,
-            root: None,
+            root,
             last_execution,
             inputs,
             outputs,
@@ -170,7 +172,7 @@ impl Group {
     /// # Parameters
     ///
     /// - `name`: Name of group used for directory/file naming.
-    /// - `root`: Desired root path
+    /// - `root`: Desired root path to override default
     ///
     /// # Returns
     ///
@@ -180,13 +182,13 @@ impl Group {
     ///
     /// ```
     /// use std::sync::Arc;
-    /// use sensd::storage::Group;
+    /// use sensd::storage::{Group, Directory};
     ///
     /// let root_dir = Arc::new(String::from("/tmp/root_dir/"));
     /// let group =
     ///     Group::with_root("", root_dir.clone());
     ///
-    /// assert_eq!(root_dir, group.root().unwrap());
+    /// assert_eq!(root_dir, group.root_dir());
     /// ```
     pub fn with_root<N>(name: N, root: RootPath) -> Self
         where
@@ -238,9 +240,7 @@ impl Group {
     pub fn push_input(&mut self, device: Input) -> &mut Self {
         let id = device.id();
 
-        if self.root.is_some() {
-            device.set_root(self.root.as_ref().unwrap().clone());
-        }
+        device.set_root(self.root.clone());
 
         self.inputs.insert(id, device.into_deferred())
             .unwrap();
@@ -273,30 +273,12 @@ impl Group {
     pub fn push_output(&mut self, device: Output) -> &mut Self {
         let id = device.id();
 
-        if self.root.is_some() {
-            device.set_root(self.root.as_ref().unwrap().clone());
-        }
+        device.set_root(self.root.clone());
 
         self.outputs.insert(id, device.into_deferred())
             .unwrap();
 
         self
-    }
-
-    /// Dedicated directory for [`Group`]
-    ///
-    /// The dedicated directory for [`Group`] is a top-level directory meant for storing
-    /// directories and files for any subsidiary objects.
-    ///
-    /// If `root_path` is not set, then [`DATA_ROOT`] is used to build path.
-    ///
-    /// # Returns
-    ///
-    /// A `PathBuf` representing the full path to dedicated directory.
-    pub fn full_path(&self) -> PathBuf {
-        let root = self.root().unwrap_or(String::from(DATA_ROOT).into());
-        let path = Path::new(root.as_str());
-        path.join(self.name.as_str())
     }
 
     /// Attempt to create dedicated directory for this `Group`
@@ -363,19 +345,6 @@ impl Group {
         self.interval = interval
     }
 
-    /// Getter for `root_path`
-    ///
-    /// This field represents the top-most directory and is where all dedicated directories
-    /// for [`Group`]'s are located. For retrieving a path to save or retrieve data,
-    /// use [`Group::full_path()`].
-    ///
-    /// # Returns
-    ///
-    /// `Option` of [`RootPath`] representing root data path of [`Group`] if set.
-    pub fn root(&self) -> Option<RootPath> {
-        self.root.clone()
-    }
-
     //
     // Setters
 
@@ -392,6 +361,10 @@ impl Group {
     }
 
     /// Setter for `root_path` that can be used as a builder function.
+    ///
+    /// # Parameters
+    ///
+    /// - `root`: New path to global root dir
     ///
     /// # Returns
     ///
@@ -410,9 +383,9 @@ impl Group {
     ///
     /// # Parameters
     ///
-    /// - `settings`: `Arc` reference to new settings.
+    /// - `root`: New path to global root dir
     pub fn set_root_ref(&mut self, root: RootPath) {
-        self.root = Some(root.clone());
+        self.root = root.clone();
 
         self.inputs.set_root(root.clone());
         self.outputs.set_root(root.clone());
@@ -495,17 +468,37 @@ impl Persistent for Group {
     }
 }
 
+impl Directory for Group {
+    /// Getter for `root_path`
+    ///
+    /// This field represents the top-most directory and is where all dedicated directories
+    /// for [`Group`]'s are located. For retrieving a path to save or retrieve data,
+    /// use [`Group::full_path()`].
+    ///
+    /// # Returns
+    ///
+    /// `Option` of [`RootPath`] representing root data path of [`Group`] if set.
+    fn root_dir(&self) -> RootPath {
+        self.root.clone()
+    }
+
+    fn dir_name(&self) -> &String {
+        self.name()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::Path;
     use std::sync::Arc;
 
-    use crate::settings::{RootPath, Settings};
-    use crate::storage::Group;
+    use crate::settings::Settings;
+    use crate::storage::{Directory, Group};
 
     use std::fs::remove_dir_all;
     use chrono::Duration;
     use crate::io::{Device, Input, Output};
+    use crate::storage::directory::RootPath;
 
     #[test]
     /// Test that constructor accepts `name` as `&str` or `String`
@@ -522,7 +515,7 @@ mod tests {
         let group = Group::with_root(
             "",
             settings.root_path());
-        assert_eq!(settings.root_path(), group.root().unwrap());
+        assert_eq!(settings.root_path(), group.root_dir());
     }
 
     #[test]

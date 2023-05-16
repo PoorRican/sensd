@@ -3,7 +3,7 @@ use crate::helpers::Def;
 use crate::io::{Device, IdTraits};
 use std::collections::hash_map::{Entry, Iter, Values, ValuesMut};
 use std::collections::HashMap;
-use crate::settings::RootPath;
+use crate::storage::RootPath;
 
 /// Generic mapped container for storing [`Device`] objects
 #[derive(Default)]
@@ -138,8 +138,8 @@ mod tests {
         let input = Input::new("", 0, None)
             .init_log();
         assert!(
-            input.log()
-                .unwrap().try_lock().unwrap().deref()
+            input.log().unwrap()
+                .try_lock().unwrap().deref()
                 .root_path().is_none());
 
         let mut container = DeviceContainer::default();
