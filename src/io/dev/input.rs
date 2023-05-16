@@ -6,6 +6,44 @@ use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, Ra
 use crate::storage::{Chronicle, Log};
 
 #[derive(Default)]
+/// This is the generic implementation for any external input device.
+///
+/// # Getting Started
+///
+/// While [`Input`] derives a [`Default`] implementation, `name` and `id`
+/// should be passed to [`Device::new()`] constructor to differentiate it
+/// from other [`Input`] objects.
+///
+/// ```
+/// use sensd::io::{Device, DeviceGetters, Input, IOKind};
+/// let id = 777;
+/// let name = "our new input sensor";
+/// let kind = IOKind::default();
+///
+/// let input = Input::new(name, id, kind);
+///
+/// assert_eq!(input.name(), name);
+/// assert_eq!(input.id(), id);
+///
+/// assert_ne!(input, Input::default());
+/// ```
+///
+/// Now that we are able to set device metadata, constructor methods still don't
+/// provide any way to interact with hardware. The builder method [`Device::set_command()`]
+/// is used to add low-level code. In this example, we return a static value:
+///
+/// ```
+/// use sensd::action::IOCommand;
+/// use sensd::io::{Device, Input, RawValue};
+///
+/// let command = IOCommand::Input(|| RawValue::Binary(true));
+/// let input =
+///     Input::default()
+///         .set_command(command);
+/// ```
+///
+/// With a `command` set, [`Input::read()`] can be used to generate [`IOEvent`] objects
+/// from input data.
 pub struct Input {
     metadata: DeviceMetadata,
     log: Option<Def<Log>>,
@@ -14,7 +52,7 @@ pub struct Input {
     state: Option<RawValue>,
 }
 
-// Implement traits
+/// Implement unique constructors and builder methods
 impl Device for Input {
     /// Creates a mock sensor which returns a value
     ///
@@ -23,7 +61,10 @@ impl Device for Input {
     /// - `name`: arbitrary name of sensor
     /// - `id`: arbitrary, numeric ID to differentiate from other sensors
     ///
-    /// returns: MockPhSensor
+    /// # Returns
+    ///
+    /// Partially initialized [`Input`]. The builder method [`Device::set_command()`]
+    /// needs to be called to assign an [`IOCommand`] to interact with hardware.
     fn new<N, K>(name: N, id: IdType, kind: K) -> Self
     where
         Self: Sized,
@@ -87,10 +128,23 @@ impl DeviceSetters for Input {
 }
 
 impl Input {
-    /// Execute low-level GPIO command
+    /// Execute low-level GPIO command to read data
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing:
+    ///
+    /// - `Ok` with [`IOEvent`] if low-level operation occurred successfully.
+    /// - `Err` with [`ErrorType`] if no `command` is set or there device command failed
+    ///
+    /// # Issues
+    ///
+    /// [Low level error type](https://github.com/PoorRican/sensd/issues/192)
     fn rx(&self) -> Result<IOEvent, ErrorType> {
+
+        // TODO: see issue #192 regarding
         let read_value = if let Some(command) = &self.command {
-            let result = command.execute(None).unwrap();
+            let result = command.execute(None)?;
             result.unwrap()
         } else {
             return Err(no_internal_closure());
@@ -101,7 +155,11 @@ impl Input {
 
     /// Propagate `IOEvent` to all subscribers.
     ///
-    /// No error is raised when there is no associated publisher.
+    /// Silently fails when there is no associated publisher.
+    ///
+    /// # Parameters
+    ///
+    /// - `event`: A reference to [`IOEvent`] to propagate to subscribed [`Action`]'s
     fn propagate(&mut self, event: &IOEvent) {
         if let Some(publisher) = &mut self.publisher {
             publisher.propagate(&event);
@@ -113,12 +171,49 @@ impl Input {
     /// Primary interface method during polling.
     ///
     /// # Notes
-    /// This method will fail if there is no associated log
+    ///
+    /// A panic is not thrown if there is no log associated.
+    ///
+    /// # Panics
+    ///
+    /// - If there is an error when reading from sensor on a low-level
+    ///
+    /// # Returns
+    ///
+    /// A [`Result`] containing:
+    ///
+    /// - `Ok` with [`IOEvent`] if read was successful
+    /// - `Err` with [`ErrorType`] if read failed
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use sensd::action::IOCommand;
+    /// use sensd::io::{Device, DeviceGetters, Input, RawValue};
+    ///
+    /// let value = RawValue::default();
+    /// let command = IOCommand::Input(|| RawValue::default());
+    /// let mut input = Input::default().set_command(command);
+    ///
+    /// let event = input.read().unwrap();
+    ///
+    /// assert_eq!(event.value, value);
+    ///
+    /// // cached state is updated
+    /// assert_eq!(input.state().unwrap(), value);
+    /// ```
+    ///
+    /// # See Also
+    ///
+    /// - [`Publisher::propagate()`] for how [`IOEvent`] is given to subscribing [`Action`]'s
+    /// - [`Input::push_to_log()`] for adding [`IOEvent`] to [`Log`]
     pub fn read(&mut self) -> Result<IOEvent, ErrorType> {
-        let event = self.rx().expect("Error returned by `rx()`");
+        let event = self.rx().expect("Low-level device error while reading");
+
+        // Update cached state
+        self.state = Some(event.value);
 
         self.propagate(&event);
-
         self.push_to_log(&event);
 
         Ok(event)
