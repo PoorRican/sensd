@@ -89,7 +89,8 @@ impl Settings {
     /// # Panics
     ///
     /// Panics is thrown if any objects are already using this path. This would
-    /// happen if not called before initialization of [`Group`]'s or [`Log`]'s.
+    /// happen if not called before initialization of [`crate::storage::Group`]'s or
+    /// [`crate::storage::Log`]'s.
     pub fn set_root<S>(&mut self, path: S)
         where
             S: Into<String>
