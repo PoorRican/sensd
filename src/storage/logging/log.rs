@@ -4,7 +4,7 @@ use std::collections::hash_map::{Entry, Iter};
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::ops::Deref;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::writable_or_create;
@@ -109,11 +109,11 @@ impl Log {
     }
 
     /// Helper method which returns internal `root_path` or default
-    fn root(&self) -> String {
+    fn root(&self) -> PathBuf {
         if self.root_path.is_some() {
-            self.root_path.as_ref().unwrap().to_string()
+            self.root_path.as_ref().unwrap().deref().clone()
         } else {
-            settings::DATA_ROOT.to_string()
+            PathBuf::from(settings::DATA_ROOT)
         }
     }
 
@@ -126,12 +126,11 @@ impl Log {
     /// # Returns
     ///
     /// `String` of full path *including* filename
-    pub fn full_path(&self) -> String {
+    pub fn full_path(&self) -> PathBuf {
         let root = self.root();
         let dir = Path::new(&root);
 
-        let full_path = dir.join(self.filename());
-        String::from(full_path.to_str().unwrap())
+        dir.join(self.filename())
     }
 
     /// Generate generic filename based on settings, owner, and id
@@ -243,7 +242,7 @@ impl Persistent for Log {
                 format!("Log for '{}'. Nothing to save.", self.name()).as_str(),
             ))
         } else {
-            let file = writable_or_create(self.full_path());
+            let file = writable_or_create(self.full_path().to_str().unwrap().to_string());
             let writer = BufWriter::new(file);
 
             match serde_json::to_writer_pretty(writer, &self) {
@@ -311,7 +310,7 @@ mod tests {
     use crate::helpers::Def;
     use crate::io::{Device, Input, IOKind, IdType, RawValue, IOEvent};
     use crate::storage::{Chronicle, Log, Persistent};
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
     use std::time::Duration;
     use std::{fs, thread};
     use std::sync::Arc;
@@ -392,7 +391,7 @@ mod tests {
 
         assert!(log.root_path().is_none());
 
-        let root: RootPath = Arc::new(String::new());
+        let root: RootPath = Arc::new(PathBuf::new());
         log.set_root_ref(root);
 
         assert!(log.root_path().is_some())

@@ -6,6 +6,7 @@ use crate::storage::{Directory, Persistent};
 
 use chrono::{DateTime, Duration, Utc};
 use std::fs::create_dir_all;
+use std::path::PathBuf;
 use crate::storage::directory::RootPath;
 
 /// High-level container to manage multiple [`Device`] objects, logging, and
@@ -20,10 +21,11 @@ use crate::storage::directory::RootPath;
 /// Then, [`Group::init_dir()`] ensures that directory exists and is valid:
 ///
 /// ```
+/// use std::path::PathBuf;
 /// use std::sync::Arc;
 /// use sensd::storage::{Directory, Group};
 ///
-/// let root_dir = Arc::new(String::from("/tmp/root_dir/"));
+/// let root_dir = Arc::new(PathBuf::from("/tmp/root_dir/"));
 /// let group =
 ///     Group::new("")
 ///         .set_root(root_dir.clone())
@@ -155,7 +157,7 @@ impl Group {
         let inputs = <DeviceContainer<IdType, Input>>::default();
         let outputs = <DeviceContainer<IdType, Output>>::default();
 
-        let root = String::from(DATA_ROOT).into();
+        let root = PathBuf::from(DATA_ROOT).into();
 
         Self {
             name: name.into(),
@@ -181,10 +183,11 @@ impl Group {
     /// # Example
     ///
     /// ```
+    /// use std::path::PathBuf;
     /// use std::sync::Arc;
     /// use sensd::storage::{Group, Directory};
     ///
-    /// let root_dir = Arc::new(String::from("/tmp/root_dir/"));
+    /// let root_dir = Arc::new(PathBuf::from("/tmp/root_dir/"));
     /// let group =
     ///     Group::with_root("", root_dir.clone());
     ///
@@ -485,11 +488,16 @@ impl Directory for Group {
     fn dir_name(&self) -> &String {
         self.name()
     }
+
+    fn full_path(&self) -> PathBuf {
+        self.root_dir()
+            .join(self.dir_name())
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
     use std::sync::Arc;
 
     use crate::settings::Settings;
@@ -583,7 +591,7 @@ mod tests {
         const GROUP_NAME: &str = "main";
 
         // init `Group` and settings
-        let dir_name = Arc::from(String::from(DIR_NAME));
+        let dir_name = Arc::from(PathBuf::from(DIR_NAME));
 
         let expected = Path::new(DIR_NAME).join(GROUP_NAME);
         let group = Group::with_root(GROUP_NAME, dir_name);
@@ -599,7 +607,7 @@ mod tests {
         const GROUP_NAME: &str = "main";
 
         // init `Group` and settings
-        let dir_name: RootPath = Arc::new(String::from(DIR_NAME));
+        let dir_name: RootPath = Arc::new(PathBuf::from(DIR_NAME));
 
         let group = Group::new(GROUP_NAME)
             .set_root(dir_name)

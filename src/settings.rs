@@ -1,5 +1,6 @@
 use dotenv::dotenv;
 use std::env::var;
+use std::path::PathBuf;
 use std::sync::Arc;
 use crate::storage::RootPath;
 
@@ -30,7 +31,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             version: VERSION.to_string(),
-            root_path: Arc::new(DATA_ROOT.to_string()),
+            root_path: Arc::new(PathBuf::from(DATA_ROOT)),
         }
     }
 }
@@ -51,7 +52,7 @@ impl Settings {
 
         Settings {
             version,
-            root_path: Arc::new(data_root),
+            root_path: Arc::new(PathBuf::from(data_root)),
         }
     }
 
@@ -87,9 +88,9 @@ impl Settings {
     /// Panics is thrown if any objects are already using this path. This would
     /// happen if not called before initialization of [`crate::storage::Group`]'s or
     /// [`crate::storage::Log`]'s.
-    pub fn set_root<S>(&mut self, path: S)
+    pub fn set_root<P>(&mut self, path: P)
         where
-            S: Into<String>
+            P: Into<PathBuf>
     {
         if Arc::strong_count(&self.root_path) > 1 {
             panic!("Cannot change `root` while in use")
@@ -101,6 +102,7 @@ impl Settings {
 #[cfg(test)]
 mod tests {
     use std::ops::Deref;
+    use std::path::PathBuf;
     use crate::settings::Settings;
 
     #[test]
@@ -108,14 +110,16 @@ mod tests {
     fn set_root_into() {
         let mut settings = Settings::default();
         let new_str = "new path";
+        let new_path = PathBuf::from(new_str);
 
-        assert_eq!(false, settings.root_path().deref().eq(new_str));
+        assert_eq!(false, settings.root_path().deref()
+            .eq(&new_path));
 
         settings.set_root(new_str);
-        assert!(settings.root_path().deref().eq(new_str));
+        assert!(settings.root_path().deref().eq(&new_path));
 
         settings.set_root(new_str.to_string());
-        assert!(settings.root_path().deref().eq(new_str));
+        assert!(settings.root_path().deref().eq(&new_path));
     }
 
     #[test]

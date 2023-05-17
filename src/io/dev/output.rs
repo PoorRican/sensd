@@ -239,6 +239,7 @@ impl Chronicle for Output {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
     use std::sync::Arc;
     use crate::action::IOCommand;
     use crate::io::{Device, DeviceGetters, IOKind, Output, RawValue};
@@ -321,7 +322,7 @@ mod tests {
             .root_path()
             .is_none());
 
-        output.set_root(Arc::new(String::new()));
+        output.set_root(Arc::new(PathBuf::new()));
 
         assert!(output.log()
             .unwrap().try_lock().unwrap()

@@ -1,11 +1,11 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 /// Specialized type for representing the root directory.
 ///
 /// This type should be used to build root, not be used to represent any
 /// sub-directory.
-pub type RootPath = Arc<String>;
+pub type RootPath = Arc<PathBuf>;
 
 /// Interface for an object with a dedicated directory
 ///
@@ -19,10 +19,5 @@ pub trait Directory {
     fn dir_name(&self) -> &String;
 
     /// Get full path to dedicated directory
-    fn full_path(&self) -> PathBuf {
-        let root = self.root_dir();
-        let path = Path::new(root.as_str());
-
-        path.join(self.dir_name().as_str())
-    }
+    fn full_path(&self) -> PathBuf;
 }
