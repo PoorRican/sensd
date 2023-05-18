@@ -1,7 +1,5 @@
 use dotenv::dotenv;
 use std::env::var;
-use std::path::PathBuf;
-use std::sync::Arc;
 use crate::storage::RootPath;
 
 /// Default values
@@ -31,7 +29,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             version: VERSION.to_string(),
-            root_path: Arc::new(PathBuf::from(DATA_ROOT)),
+            root_path: RootPath::from(DATA_ROOT),
         }
     }
 }
@@ -52,7 +50,7 @@ impl Settings {
 
         Settings {
             version,
-            root_path: Arc::new(PathBuf::from(data_root)),
+            root_path: RootPath::from(data_root),
         }
     }
 
@@ -90,36 +88,40 @@ impl Settings {
     /// [`crate::storage::Log`]'s.
     pub fn set_root<P>(&mut self, path: P)
         where
-            P: Into<PathBuf>
+            P: Into<RootPath>
     {
-        if Arc::strong_count(&self.root_path) > 1 {
+        if self.root_path.strong_count() > 1 {
             panic!("Cannot change `root` while in use")
         }
-        self.root_path = Arc::new(path.into())
+        self.root_path = path.into()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::ops::Deref;
-    use std::path::PathBuf;
     use crate::settings::Settings;
+    use crate::storage::RootPath;
 
     #[test]
     /// Asserts that `Settings::set_root()` properly converts using `Into<_>`
     fn set_root_into() {
         let mut settings = Settings::default();
         let new_str = "new path";
-        let new_path = PathBuf::from(new_str);
+        let expected = RootPath::from(new_str);
 
-        assert_eq!(false, settings.root_path().deref()
-            .eq(&new_path));
+        assert_eq!(false,
+                   settings.root_path()
+                       .eq(&expected));
 
         settings.set_root(new_str);
-        assert!(settings.root_path().deref().eq(&new_path));
+        assert!(
+            settings.root_path()
+                .eq(&expected));
 
         settings.set_root(new_str.to_string());
-        assert!(settings.root_path().deref().eq(&new_path));
+        assert!(
+            settings.root_path()
+                .eq(&expected));
     }
 
     #[test]

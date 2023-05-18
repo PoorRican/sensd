@@ -259,11 +259,9 @@ impl Chronicle for Input {
 // Testing
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-    use std::sync::Arc;
     use crate::action::{IOCommand};
     use crate::io::{Device, Input, IOKind, RawValue};
-    use crate::storage::Chronicle;
+    use crate::storage::{Chronicle, RootPath};
 
     const DUMMY_OUTPUT: RawValue = RawValue::Float(1.2);
     const COMMAND: IOCommand = IOCommand::Input(move || DUMMY_OUTPUT);
@@ -340,7 +338,7 @@ mod tests {
             .root_path()
             .is_none());
 
-        output.set_root(Arc::new(PathBuf::new()));
+        output.set_root(RootPath::new());
 
         assert!(output.log()
             .unwrap().try_lock().unwrap()

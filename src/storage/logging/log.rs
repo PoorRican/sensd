@@ -111,7 +111,8 @@ impl Log {
     /// Helper method which returns internal `root_path` or default
     fn root(&self) -> PathBuf {
         if self.root_path.is_some() {
-            self.root_path.as_ref().unwrap().deref().clone()
+            self.root_path.as_ref().unwrap()
+                .deref().clone()
         } else {
             PathBuf::from(settings::DATA_ROOT)
         }
@@ -310,10 +311,9 @@ mod tests {
     use crate::helpers::Def;
     use crate::io::{Device, Input, IOKind, IdType, RawValue, IOEvent};
     use crate::storage::{Chronicle, Log, Persistent};
-    use std::path::{Path, PathBuf};
+    use std::path::Path;
     use std::time::Duration;
     use std::{fs, thread};
-    use std::sync::Arc;
     use crate::storage::directory::RootPath;
 
     fn generate_log(count: usize) -> Log {
@@ -391,7 +391,7 @@ mod tests {
 
         assert!(log.root_path().is_none());
 
-        let root: RootPath = Arc::new(PathBuf::new());
+        let root: RootPath = RootPath::new();
         log.set_root_ref(root);
 
         assert!(log.root_path().is_some())
