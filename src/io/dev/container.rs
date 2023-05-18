@@ -3,7 +3,8 @@ use crate::helpers::Def;
 use crate::io::{Device, IdTraits};
 use std::collections::hash_map::{Entry, Iter, Values, ValuesMut};
 use std::collections::HashMap;
-use crate::storage::RootPath;
+use std::ops::DerefMut;
+use crate::storage::{RootPath, Directory};
 
 /// Generic mapped container for storing [`Device`] objects
 #[derive(Default)]
@@ -12,7 +13,7 @@ pub struct DeviceContainer<K: IdTraits, D: Device>(HashMap<K, Def<D>>);
 impl<K, D> DeviceContainer<K, D>
 where
     K: IdTraits,
-    D: Device,
+    D: Device + Directory,
 {
     pub fn values(&self) -> Values<K, Def<D>> {
         self.0.values()
@@ -45,10 +46,11 @@ where
     }
 
     /// Call [`Device::set_root()`] on all stored device objects
-    pub fn set_root(&mut self, root: RootPath) {
+    pub fn set_parent_dir(&mut self, root: RootPath) {
         for binding in self.values_mut() {
-            let device = binding.try_lock().unwrap();
-            device.set_root(root.clone());
+            let mut device = binding.try_lock().unwrap();
+            let device = device.deref_mut();
+            device.set_parent_dir_ref(root.clone().deref());
         }
     }
 }
@@ -57,8 +59,7 @@ where
 mod tests {
     use std::ops::Deref;
     use crate::io::{Device, DeviceContainer, Output, Input};
-    use crate::settings::Settings;
-    use crate::storage::Chronicle;
+    use crate::storage::{Chronicle, Directory, Document};
 
     #[test]
     fn insert_output() {
@@ -132,28 +133,27 @@ mod tests {
     #[test]
     /// Ensure that [`Device::set_root()`] is called on each device
     fn set_root() {
-        let mut settings = Settings::default();
-        settings.set_root("New Root");
+        const PATH: &str = "New Root";
 
         let input = Input::new("", 0, None)
             .init_log();
         assert!(
             input.log().unwrap()
                 .try_lock().unwrap().deref()
-                .root_path().is_none());
+                .dir().is_none());
 
         let mut container = DeviceContainer::default();
         container.insert(0, input.into_deferred()).unwrap();
 
-        let input = container.get(&0).unwrap()
+        let mut input = container.get(&0).unwrap()
                 .try_lock().unwrap();
-        input.set_root(settings.root_path());
+        input.set_parent_dir_ref(PATH);
 
         assert!(
             input
                 .log()
                 .unwrap().try_lock().unwrap().deref()
-                .root_path().is_some());
+                .dir().is_some());
     }
 
 }

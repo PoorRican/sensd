@@ -2,11 +2,11 @@ use crate::errors::ErrorType;
 use crate::helpers::check_results;
 use crate::io::{Device, DeviceContainer, DeviceGetters, IdType, Input, Output};
 use crate::settings::DATA_ROOT;
-use crate::storage::{Directory, Persistent, RootPath};
+use crate::storage::{Directory, Persistent, RootDirectory, RootPath};
 
 use chrono::{DateTime, Duration, Utc};
-use std::fs::create_dir_all;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use crate::name::Name;
 
 /// High-level container to manage multiple [`Device`] objects, logging, and
 /// actions.
@@ -20,15 +20,15 @@ use std::path::PathBuf;
 /// Then, [`Group::init_dir()`] ensures that directory exists and is valid:
 ///
 /// ```
-/// use sensd::storage::{Directory, Group, RootPath};
+/// use sensd::storage::{Directory, Group, RootDirectory, RootPath};
 ///
-/// let root_dir = RootPath::from("/tmp/root_dir/");
+/// let root_dir = "/tmp/root_dir/";
 /// let group =
 ///     Group::new("")
-///         .set_root(root_dir.clone())
+///         .set_root(root_dir)
 ///         .init_dir();
 ///
-/// assert_eq!(root_dir, group.root_dir());
+/// assert_eq!(RootPath::from(root_dir), group.root_dir());
 /// ```
 ///
 /// Similarly, the [`Group::with_root()`] alternate constructor allows
@@ -137,6 +137,7 @@ impl Group {
     /// # Example
     ///
     /// ```
+    /// use sensd::name::Name;
     /// use sensd::storage::Group;
     ///
     /// let name = "name";
@@ -180,17 +181,18 @@ impl Group {
     /// # Example
     ///
     /// ```
-    /// use sensd::storage::{Group, Directory, RootPath};
+    /// use sensd::storage::{Group, Directory, RootPath, RootDirectory};
     ///
-    /// let root_dir = RootPath::from("/tmp/root_dir/");
+    /// let path = "/tmp/root_dir/";
     /// let group =
-    ///     Group::with_root("", root_dir.clone());
+    ///     Group::with_root("", path.clone());
     ///
-    /// assert_eq!(root_dir, group.root_dir());
+    /// assert_eq!(RootPath::from(path), group.root_dir());
     /// ```
-    pub fn with_root<N>(name: N, root: RootPath) -> Self
+    pub fn with_root<S, P>(name: S, root: P) -> Self
         where
-            N: Into<String>,
+            S: Into<String>,
+            P: AsRef<Path>,
     {
         let mut group = Self::new(name.into());
 
@@ -235,10 +237,10 @@ impl Group {
     /// assert_eq!(group.inputs.len(), 1);
     /// assert_eq!(group.outputs.len(), 0);
     /// ```
-    pub fn push_input(&mut self, device: Input) -> &mut Self {
+    pub fn push_input(&mut self, mut device: Input) -> &mut Self {
         let id = device.id();
 
-        device.set_root(self.root.clone());
+        device.set_parent_dir_ref(self.root.clone().deref());
 
         self.inputs.insert(id, device.into_deferred())
             .unwrap();
@@ -268,33 +270,14 @@ impl Group {
     /// assert_eq!(group.outputs.len(), 1);
     /// assert_eq!(group.inputs.len(), 0);
     /// ```
-    pub fn push_output(&mut self, device: Output) -> &mut Self {
+    pub fn push_output(&mut self, mut device: Output) -> &mut Self {
         let id = device.id();
 
-        device.set_root(self.root.clone());
+        device.set_parent_dir_ref(self.root.clone().deref());
 
         self.outputs.insert(id, device.into_deferred())
             .unwrap();
 
-        self
-    }
-
-    /// Attempt to create dedicated directory for this `Group`
-    ///
-    /// If directory already exists, then this method silently fails.
-    ///
-    /// # Panics
-    ///
-    /// This method panics if an error occurs when creating directory (other than directory
-    /// already existing). This could happen if write permissions are misconfigured.
-    pub fn init_dir(self) -> Self {
-        let path = self.full_path();
-        match path.exists() {
-            true => (),
-            false => {
-                create_dir_all(path).expect("Could not create root data directory");
-            }
-        };
         self
     }
 
@@ -310,14 +293,6 @@ impl Group {
     //
     // Getters
 
-    /// Getter for `name`
-    ///
-    /// # Returns
-    ///
-    /// Immutable reference to `name`
-    pub fn name(&self) -> &String {
-        &self.name
-    }
 
     #[inline]
     /// Getter for `interval`
@@ -341,52 +316,6 @@ impl Group {
     /// - `interval`: any value that can be coerced into [`Duration`]
     pub fn set_interval(&mut self, interval: Duration) {
         self.interval = interval
-    }
-
-    //
-    // Setters
-
-    /// Setter for `name`
-    ///
-    /// # Parameters
-    ///
-    /// - `name`: new name for group. Uses `Into<_>` to coerce into `String`.
-    pub fn set_name<N>(&mut self, name: N)
-        where
-            N: Into<String>
-    {
-        self.name = name.into();
-    }
-
-    /// Setter for `root_path` that can be used as a builder function.
-    ///
-    /// # Parameters
-    ///
-    /// - `root`: New path to global root dir
-    ///
-    /// # Returns
-    ///
-    /// Ownership of `Self`. This is to be used as a builder function using method chaining.
-    pub fn set_root(mut self, root: RootPath) -> Self {
-        self.set_root_ref(root);
-
-        self
-    }
-
-    /// Setter for `root_path`
-    ///
-    /// This does not take ownership of `self`, unlike [`Group::set_root()`].
-    ///
-    /// Propagates changes to internal device containers using [`DeviceContainer::set_root()`]
-    ///
-    /// # Parameters
-    ///
-    /// - `root`: New path to global root dir
-    pub fn set_root_ref(&mut self, root: RootPath) {
-        self.root = root.clone();
-
-        self.inputs.set_root(root.clone());
-        self.outputs.set_root(root.clone());
     }
 }
 
@@ -466,7 +395,44 @@ impl Persistent for Group {
     }
 }
 
+impl Name for Group {
+    /// Getter for `name`
+    ///
+    /// # Returns
+    ///
+    /// Immutable reference to `name`
+    fn name(&self) -> &String {
+        &self.name
+    }
+
+    /// Setter for `name`
+    ///
+    /// # Parameters
+    ///
+    /// - `name`: new name for group. Uses `Into<_>` to coerce into `String`.
+    fn set_name<S>(&mut self, name: S)
+        where
+            S: Into<String>
+    {
+        self.name = name.into();
+    }
+}
+
 impl Directory for Group {
+    fn parent_dir(&self) -> Option<PathBuf> {
+        Some(self.root_dir().clone().deref())
+    }
+
+    fn set_parent_dir_ref<P>(&mut self, path: P) -> &mut Self
+        where
+            Self: Sized,
+            P: AsRef<Path>,
+    {
+        self.set_root_ref(path)
+    }
+}
+
+impl RootDirectory for Group {
     /// Getter for `root_path`
     ///
     /// This field represents the top-most directory and is where all dedicated directories
@@ -480,13 +446,26 @@ impl Directory for Group {
         self.root.clone()
     }
 
-    fn dir_name(&self) -> &String {
-        self.name()
-    }
+    /// Setter for `root_path`
+    ///
+    /// This does not take ownership of `self`, unlike [`Group::set_root()`].
+    ///
+    /// Propagates changes to internal device containers using [`DeviceContainer::set_parent_dir()`]
+    ///
+    /// # Parameters
+    ///
+    /// - `root`: New path to global root dir
+    fn set_root_ref<P>(&mut self, path: P) -> &mut Self
+        where
+            P: AsRef<Path>
+    {
+        let root = RootPath::from(path);
+        self.root = root.clone();
 
-    fn full_path(&self) -> PathBuf {
-        self.root_dir()
-            .join(self.dir_name())
+        self.inputs.set_parent_dir(root.clone());
+        self.outputs.set_parent_dir(root.clone());
+
+        self
     }
 }
 
@@ -497,8 +476,7 @@ mod tests {
     use std::path::Path;
 
     use crate::io::{Device, Input, Output};
-    use crate::settings::Settings;
-    use crate::storage::{Directory, Group, RootPath};
+    use crate::storage::{Directory, Group, RootDirectory, RootPath};
 
     #[test]
     /// Test that constructor accepts `name` as `&str` or `String`
@@ -508,14 +486,14 @@ mod tests {
     }
 
     #[test]
-    /// Test that alternate constructor sets settings
+    /// Test that alternate constructor sets root
     fn with_root() {
-        let settings = Settings::default();
+        let root = "global root path";
 
         let group = Group::with_root(
             "",
-            settings.root_path());
-        assert_eq!(settings.root_path(), group.root_dir());
+            root);
+        assert_eq!(RootPath::from(root), group.root_dir());
     }
 
     #[test]
@@ -582,11 +560,9 @@ mod tests {
         const DIR_NAME: &str = "test_root";
         const GROUP_NAME: &str = "main";
 
-        // init `Group` and settings
-        let dir_name = RootPath::from(DIR_NAME);
 
         let expected = Path::new(DIR_NAME).join(GROUP_NAME);
-        let group = Group::with_root(GROUP_NAME, dir_name);
+        let group = Group::with_root(GROUP_NAME, DIR_NAME);
 
         // assert directory path is correct
         assert_eq!(expected.to_str().unwrap(), group.full_path().to_str().unwrap());
@@ -599,10 +575,8 @@ mod tests {
         const GROUP_NAME: &str = "main";
 
         // init `Group` and settings
-        let dir_name: RootPath = RootPath::from(DIR_NAME);
-
         let group = Group::new(GROUP_NAME)
-            .set_root(dir_name)
+            .set_root(DIR_NAME)
             .init_dir();
 
         assert!(group.full_path().exists());

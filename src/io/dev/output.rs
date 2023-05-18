@@ -1,10 +1,13 @@
 use std::fmt::Formatter;
+use std::path::{Path, PathBuf};
 use chrono::{Duration, Utc};
 use crate::action::{Command, IOCommand, Routine};
 use crate::errors::{ErrorType, no_internal_closure};
 use crate::helpers::Def;
 use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue, DeviceGetters, DeviceSetters};
-use crate::storage::{Chronicle, Log};
+use crate::io::dev::device::set_log_dir;
+use crate::name::Name;
+use crate::storage::{Chronicle, Directory, Log};
 
 #[derive(Default)]
 /// This is the generic implementation for any external output device.
@@ -17,6 +20,7 @@ use crate::storage::{Chronicle, Log};
 ///
 /// ```
 /// use sensd::io::{Device, DeviceGetters, Output, IOKind};
+/// use sensd::name::Name;
 /// let id = 777;
 /// let name = "our new output device";
 /// let kind = IOKind::default();
@@ -51,6 +55,40 @@ pub struct Output {
     state: Option<RawValue>,
     log: Option<Def<Log>>,
     command: Option<IOCommand>,
+
+    dir: Option<PathBuf>,
+}
+
+impl Name for Output {
+    fn name(&self) -> &String {
+        &self.metadata().name
+    }
+
+    fn set_name<N>(&mut self, name: N) where N: Into<String> {
+        self.metadata.name = name.into();
+    }
+}
+
+impl Directory for Output {
+    fn parent_dir(&self) -> Option<PathBuf> {
+        self.dir.clone()
+    }
+
+    /// Setter for parent directory
+    ///
+    /// Updates any internal field that needs a parent directory (ie: [`Log`])
+    ///
+    /// # Parameters
+    ///
+    /// - `path`: New [`PathBuf`] to store
+    fn set_parent_dir_ref<P>(&mut self, path: P) -> &mut Self where Self: Sized, P: AsRef<Path> {
+        let path = path.as_ref();
+        self.dir = Some(PathBuf::from(path.clone()));
+
+        set_log_dir(self.log(), path);
+
+        self
+    }
 }
 
 impl DeviceGetters for Output {
@@ -67,16 +105,16 @@ impl DeviceGetters for Output {
 }
 
 impl DeviceSetters for Output {
-    fn set_name<N>(&mut self, name: N) where N: Into<String> {
-        self.metadata.name = name.into();
-    }
-
     fn set_id(&mut self, id: IdType) {
         self.metadata.id = id;
     }
 
     fn set_log(&mut self, log: Def<Log>) {
-        self.log = Some(log);
+        self.log = Some(log.clone());
+
+        if let Some(dir) = &self.dir {
+            set_log_dir(Some(log), dir)
+        }
     }
 }
 
@@ -102,12 +140,14 @@ impl Device for Output {
 
         let command = None;
         let log = None;
+        let dir = None;
 
         Self {
             metadata,
             state,
             log,
             command,
+            dir,
         }
     }
 
@@ -241,7 +281,7 @@ impl Chronicle for Output {
 mod tests {
     use crate::action::IOCommand;
     use crate::io::{Device, DeviceGetters, IOKind, Output, RawValue};
-    use crate::storage::{Chronicle, RootPath};
+    use crate::storage::{Chronicle, Directory, Document};
 
     /// Dummy output command for testing.
     /// Accepts value and returns `Ok(())`
@@ -312,19 +352,19 @@ mod tests {
     }
 
     #[test]
-    fn set_root() {
-        let output = Output::default().init_log();
+    fn set_dir() {
+        let mut output = Output::default().init_log();
 
         assert!(output.log()
             .unwrap().try_lock().unwrap()
-            .root_path()
+            .dir()
             .is_none());
 
-        output.set_root(RootPath::new());
+        output = output.set_parent_dir("");
 
         assert!(output.log()
             .unwrap().try_lock().unwrap()
-            .root_path()
+            .dir()
             .is_some());
     }
 }

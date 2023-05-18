@@ -8,16 +8,18 @@
 //!
 //! - [`DeviceMetadata`] for user defined metadata and field descriptions
 
+use std::path::{Path};
 use crate::action::IOCommand;
 use crate::helpers::Def;
 use crate::io::{DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue};
-use crate::storage::RootPath;
+use crate::storage::Document;
 use crate::storage::{Chronicle, Log, Persistent};
 use chrono::Utc;
 use crate::errors::ErrorType;
+use crate::name::Name;
 
 /// Common constructors and builder methods for all device types
-pub trait Device: Chronicle + DeviceGetters + DeviceSetters + Persistent {
+pub trait Device: Name + Chronicle + DeviceGetters + DeviceSetters + Persistent {
     /// Creates a new instance of the device with the given parameters.
     ///
     /// # Parameters
@@ -73,21 +75,6 @@ pub trait Device: Chronicle + DeviceGetters + DeviceSetters + Persistent {
         self
     }
 
-    /// Setter for root
-    ///
-    /// Updates any internal field that needs a root path (ie: [`Log`])
-    ///
-    /// # Parameters
-    ///
-    /// - `root`: New [`RootPath`] to store
-    fn set_root(&self, root: RootPath) {
-        if self.has_log() {
-            let binding = self.log().unwrap();
-            let mut log = binding.try_lock().unwrap();
-            log.set_root_ref(root)
-        }
-    }
-
     fn into_deferred(self) -> Def<Self>
     where
         Self: Sized
@@ -110,11 +97,6 @@ pub trait DeviceGetters {
     ///
     /// - [`DeviceMetadata`]
     fn metadata(&self) -> &DeviceMetadata;
-
-    /// Returns the name of the device.
-    fn name(&self) -> String {
-        self.metadata().name.clone()
-    }
 
     /// Returns the ID of the device.
     fn id(&self) -> IdType {
@@ -143,10 +125,6 @@ pub trait DeviceGetters {
 
 /// Command setter methods share by all device types
 pub trait DeviceSetters {
-    fn set_name<N>(&mut self, name: N)
-        where
-            N: Into<String>;
-
     fn set_id(&mut self, id: IdType);
 
     /// Setter for `log` field
@@ -166,5 +144,21 @@ impl<T: Device> Persistent for T {
             Some(log) => log.try_lock().unwrap().load(),
             None => Ok(())
         }
+    }
+}
+
+/// Helper for setting log directory
+pub fn set_log_dir<S>(log: Option<Def<Log>>, path: S)
+    where
+        S: AsRef<Path>
+{
+    match log {
+        Some(inner) => {
+            let mut log =
+                inner.try_lock()
+                    .expect("Log is poisoned");
+            log.set_dir_ref(path);
+        },
+        None => ()
     }
 }

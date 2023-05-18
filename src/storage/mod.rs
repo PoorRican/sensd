@@ -5,7 +5,9 @@ mod logging;
 mod persistent;
 mod directory;
 mod root;
+mod document;
 
+pub use document::*;
 pub use group::Group;
 pub use logging::*;
 pub use persistent::{Persistent, FILETYPE};

@@ -1,9 +1,12 @@
 use std::fmt::Formatter;
+use std::path::{Path, PathBuf};
 use crate::action::{Command, IOCommand, Publisher};
 use crate::errors::{ErrorType, no_internal_closure};
 use crate::helpers::Def;
 use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue, DeviceGetters, DeviceSetters};
-use crate::storage::{Chronicle, Log};
+use crate::io::dev::device::set_log_dir;
+use crate::name::Name;
+use crate::storage::{Chronicle, Directory, Log};
 
 #[derive(Default)]
 /// This is the generic implementation for any external input device.
@@ -16,6 +19,7 @@ use crate::storage::{Chronicle, Log};
 ///
 /// ```
 /// use sensd::io::{Device, DeviceGetters, Input, IOKind};
+/// use sensd::name::Name;
 /// let id = 777;
 /// let name = "our new input sensor";
 /// let kind = IOKind::default();
@@ -50,6 +54,8 @@ pub struct Input {
     publisher: Option<Publisher>,
     command: Option<IOCommand>,
     state: Option<RawValue>,
+
+    dir: Option<PathBuf>,
 }
 
 /// Implement unique constructors and builder methods
@@ -80,12 +86,15 @@ impl Device for Input {
         let log = None;
         let state = None;
 
+        let dir = None;
+
         Self {
             metadata,
             log,
             publisher,
             command,
             state,
+            dir,
         }
     }
 
@@ -96,6 +105,42 @@ impl Device for Input {
         command.agrees(IODirection::In)
             .expect("Command is not input");
         self.command = Some(command);
+        self
+    }
+}
+
+impl Name for Input {
+    fn name(&self) -> &String {
+        &self.metadata().name
+    }
+
+    fn set_name<S>(&mut self, name: S) where S: Into<String> {
+        self.metadata.name = name.into();
+    }
+}
+
+impl Directory for Input {
+    fn parent_dir(&self) -> Option<PathBuf> {
+        self.dir.clone()
+    }
+
+    /// Setter for parent dir
+    ///
+    /// Updates any internal field that needs a parent directory (ie: [`Log`])
+    ///
+    /// # Parameters
+    ///
+    /// - `path`: New path to store as parent dir
+    ///
+    /// # Returns
+    ///
+    /// Ownership of `Self` with `parent_dir` set to allow method chaining.
+    fn set_parent_dir_ref<P>(&mut self, path: P) -> &mut Self where P: AsRef<Path> {
+        let path = path.as_ref();
+        self.dir = PathBuf::from(path).into();
+
+        set_log_dir(self.log(), path);
+
         self
     }
 }
@@ -114,16 +159,16 @@ impl DeviceGetters for Input {
 }
 
 impl DeviceSetters for Input {
-    fn set_name<N>(&mut self, name: N) where N: Into<String> {
-        self.metadata.name = name.into();
-    }
-
     fn set_id(&mut self, id: IdType) {
         self.metadata.id = id;
     }
 
     fn set_log(&mut self, log: Def<Log>) {
-        self.log = Some(log);
+        self.log = Some(log.clone());
+
+        if let Some(dir) = &self.dir {
+            set_log_dir(Some(log), dir)
+        }
     }
 }
 
@@ -259,7 +304,7 @@ impl Chronicle for Input {
 mod tests {
     use crate::action::{IOCommand};
     use crate::io::{Device, Input, IOKind, RawValue};
-    use crate::storage::{Chronicle, RootPath};
+    use crate::storage::{Chronicle, Directory, Document};
 
     const DUMMY_OUTPUT: RawValue = RawValue::Float(1.2);
     const COMMAND: IOCommand = IOCommand::Input(move || DUMMY_OUTPUT);
@@ -329,18 +374,18 @@ mod tests {
 
     #[test]
     fn set_root() {
-        let output = Input::default().init_log();
+        let mut output = Input::default().init_log();
 
         assert!(output.log()
             .unwrap().try_lock().unwrap()
-            .root_path()
+            .dir()
             .is_none());
 
-        output.set_root(RootPath::new());
+        output = output.set_parent_dir("");
 
         assert!(output.log()
             .unwrap().try_lock().unwrap()
-            .root_path()
+            .dir()
             .is_some());
     }
 }

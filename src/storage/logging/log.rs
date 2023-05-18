@@ -10,7 +10,7 @@ use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::writable_or_create;
 use crate::io::{DeviceMetadata, IdType, IOEvent};
 use crate::settings;
-use crate::storage::{EventCollection, Persistent, FILETYPE, RootPath};
+use crate::storage::{EventCollection, Persistent, FILETYPE, Document};
 
 
 /// A record of [`IOEvent`]s from a single device keyed by datetime
@@ -29,7 +29,7 @@ pub struct Log {
     /// Store a reference to local root
     ///
     /// This field is not serialized
-    root_path: Option<RootPath>,
+    dir: Option<PathBuf>,
 
     /// Collection of `IOEvent` objects
     log: EventCollection,
@@ -107,51 +107,6 @@ impl Log {
         self
     }
 
-    /// Helper method which returns internal `root_path` or default
-    fn root(&self) -> PathBuf {
-        if self.root_path.is_some() {
-            self.root_path.as_ref().unwrap()
-                .deref().clone()
-        } else {
-            PathBuf::from(settings::DATA_ROOT)
-        }
-    }
-
-    /// Full path to log file
-    ///
-    /// # Issues
-    ///
-    /// - See [#126](https://github.com/PoorRican/sensd/issues/126) which implements validation of `path`.
-    ///
-    /// # Returns
-    ///
-    /// `String` of full path *including* filename
-    pub fn full_path(&self) -> PathBuf {
-        let root = self.root();
-        let dir = Path::new(&root);
-
-        dir.join(self.filename())
-    }
-
-    /// Generate generic filename based on settings, owner, and id
-    ///
-    /// # Returns
-    ///
-    /// A formatted filename as `String` with JSON filetype prefix.
-    ///
-    /// # See Also
-    ///
-    /// - [`FILETYPE`] for definition of filetype suffix
-    fn filename(&self) -> String {
-        format!(
-            "{}_{}_{}{}",
-            settings::LOG_FN_PREFIX,
-            self.name(),
-            self.id().to_string().as_str(),
-            FILETYPE
-        )
-    }
-
     /// Iterator over keys and values
     ///
     /// # Returns
@@ -181,19 +136,6 @@ impl Log {
             Entry::Occupied(_) => Err(Error::new(ErrorKind::ContainerError, "Key already exists")),
             Entry::Vacant(entry) => Ok(entry.insert(event)),
         }
-    }
-
-    pub fn root_path(&self) -> Option<RootPath> {
-        self.root_path.clone()
-    }
-
-    pub fn set_root(mut self, root: RootPath) -> Self {
-        self.set_root_ref(root);
-        self
-    }
-
-    pub fn set_root_ref(&mut self, root: RootPath) {
-        self.root_path = Some(root)
     }
 
     /// Extend current [`Log`] with [`EventCollection`] from another [`Log`]
@@ -303,19 +245,59 @@ impl Persistent for Log {
     }
 }
 
+/// - See [#126](https://github.com/PoorRican/sensd/issues/126) which implements validation of `path`.
+impl Document for Log {
+    fn dir(&self) -> Option<&PathBuf> {
+        self.dir.as_ref()
+    }
+
+    fn set_dir_ref<P>(&mut self, path: P) -> &mut Self
+        where Self: Sized,
+              P: AsRef<Path>
+    {
+        self.dir = Some(PathBuf::from(path.as_ref()));
+
+        self
+    }
+
+    /// Generate generic filename based on settings, owner, and id
+    ///
+    /// # Returns
+    ///
+    /// A formatted filename as [`String`] with JSON filetype prefix.
+    ///
+    /// # See Also
+    ///
+    /// - [`FILETYPE`] for definition of filetype suffix
+    fn filename(&self) -> String {
+        format!(
+            "{}_{}_{}{}",
+            settings::LOG_FN_PREFIX,
+            self.name(),
+            self.id().to_string().as_str(),
+            FILETYPE
+        )
+    }
+}
+
 // Testing
 #[cfg(test)]
 mod tests {
-    use crate::action::IOCommand;
-    use crate::helpers::Def;
-    use crate::io::{Device, Input, IOKind, IdType, RawValue, IOEvent};
-    use crate::storage::{Chronicle, Log, Persistent, RootPath};
+    use crate::io::{IOKind, RawValue, IOEvent, DeviceMetadata, IODirection};
+    use crate::storage::{Document, Log, Persistent};
     use std::path::Path;
     use std::time::Duration;
     use std::{fs, thread};
 
-    fn generate_log(count: usize) -> Log {
-        let mut log = Log::default();
+    fn generate_log<'meta, M>(count: usize, metadata: M) -> Log
+        where
+            M: Into<Option<&'meta DeviceMetadata>>
+    {
+        let mut log;
+        match metadata.into() {
+            Some(meta) => log = Log::with_metadata(meta),
+            None => log = Log::default(),
+        }
 
         for _ in 0..count {
             let event = IOEvent::new(RawValue::default());
@@ -326,23 +308,17 @@ mod tests {
         log
     }
 
-    fn add_to_log<D>(device: &D, log: &Def<Log>, count: usize)
-    where
-        D: Device
-    {
-        for _ in 0..count {
-            let event = device.generate_event(RawValue::default());
-            log.lock().unwrap().push(event).unwrap();
-            thread::sleep(Duration::from_nanos(1)); // add delay so that we don't finish too quickly
-        }
-    }
-
     #[test]
     fn test_load_save() {
-        const SENSOR_NAME: &str = "test";
-        const ID: IdType = 32;
         const COUNT: usize = 10;
-        const COMMAND: IOCommand = IOCommand::Input(move || RawValue::default());
+        const TMP_DIR: &str = "/tmp/device/";
+
+        let metadata = DeviceMetadata::new(
+            "test",
+            32,
+            IOKind::Unassigned,
+            IODirection::In,
+        );
 
         /* NOTE: More complex `IOEvent` objects *could* be checked, but we are trusting `serde`.
         These tests only count the number of `IOEvent`'s added. */
@@ -350,17 +326,14 @@ mod tests {
         let filename;
         // test save
         {
-            let device = Input::new(String::from(SENSOR_NAME), ID, IOKind::Flow)
-                .set_command(COMMAND)
-                .init_log();
-            let log = device.log().unwrap();
+            let log =
+                generate_log(COUNT, &metadata)
+                    .set_dir(TMP_DIR);
 
-            add_to_log(&device, &log, COUNT);
-            let _log = log.lock().unwrap();
-            _log.save().unwrap();
+            log.save().unwrap();
 
             // save filename for later
-            filename = _log.full_path();
+            filename = log.full_path();
             // check that file exists
             assert!(Path::new(&filename).exists());
         };
@@ -368,37 +341,33 @@ mod tests {
         // test load
         // build back up then load
         {
-            let device = Input::new(SENSOR_NAME, ID, IOKind::Flow)
-                .set_command(COMMAND)
-                .init_log();
-            let log = device.log().unwrap();
+            let mut log = Log::with_metadata(&metadata)
+                .set_dir(TMP_DIR);
 
-            let mut _log = log.lock().unwrap();
-            _log.load().unwrap();
+            log.load().unwrap();
 
             // check count of `IOEvent`
-            assert_eq!(COUNT, _log.iter().count() as usize);
+            assert_eq!(COUNT, log.iter().count() as usize);
         };
 
         fs::remove_file(filename).unwrap();
     }
 
     #[test]
-    fn set_root_path() {
+    fn set_dir() {
         let mut log = Log::default();
 
-        assert!(log.root_path().is_none());
+        assert!(log.dir().is_none());
 
-        let root: RootPath = RootPath::new();
-        log.set_root_ref(root);
+        log.set_dir_ref("");
 
-        assert!(log.root_path().is_some())
+        assert!(log.dir().is_some())
     }
 
     #[test]
     fn test_extend() {
-        let mut orig = generate_log(50);
-        let mut new = generate_log(50);
+        let mut orig = generate_log(50, None);
+        let mut new = generate_log(50, None);
 
         assert_eq!(50, orig.iter().count());
 
