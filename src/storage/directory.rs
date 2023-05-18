@@ -28,6 +28,12 @@ impl RootPath {
     }
 }
 
+impl Into<PathBuf> for RootPath {
+    fn into(self) -> PathBuf {
+        self.deref()
+    }
+}
+
 impl<S> From<S> for RootPath
 where S: Into<String>{
     fn from(value: S) -> Self {

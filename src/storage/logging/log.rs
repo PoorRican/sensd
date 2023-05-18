@@ -243,7 +243,7 @@ impl Persistent for Log {
                 format!("Log for '{}'. Nothing to save.", self.name()).as_str(),
             ))
         } else {
-            let file = writable_or_create(self.full_path().to_str().unwrap().to_string());
+            let file = writable_or_create(self.full_path());
             let writer = BufWriter::new(file);
 
             match serde_json::to_writer_pretty(writer, &self) {

@@ -1,5 +1,4 @@
 use std::fs::{create_dir_all, File};
-use std::ops::Deref;
 use std::path::Path;
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError, TryLockResult};
 
@@ -8,22 +7,23 @@ use crate::errors::ErrorType;
 /// Return a writable `File` from a given path.
 ///
 /// If file or directory structure does not exist, then an attempt is made to create both.
-pub fn writable_or_create(path: String) -> File {
+pub fn writable_or_create<P>(path: P) -> File
+where P: AsRef<Path>
+{
     File::options()
         .write(true)
-        .open(path.deref())
+        .open(path.as_ref())
         // if an error occurs when reading, create file
         .unwrap_or_else(move |_| {
-            match File::create(path.deref()) {
+            match File::create(path.as_ref()) {
                 Ok(_) => (),
                 Err(_) => {
-                    let _path = Path::new(&path);
-                    let parent = _path.parent().unwrap();
+                    let parent = path.as_ref().parent().unwrap();
                     create_dir_all(parent).expect("Could not create root data directory");
-                    File::create(_path).unwrap();
+                    File::create(&path).unwrap();
                 }
             }
-            File::options().write(true).open(path.deref()).unwrap()
+            File::options().write(true).open(path.as_ref()).unwrap()
         })
 }
 
