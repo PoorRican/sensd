@@ -141,8 +141,6 @@ impl Input {
     ///
     /// [Low level error type](https://github.com/PoorRican/sensd/issues/192)
     fn rx(&self) -> Result<IOEvent, ErrorType> {
-
-        // TODO: see issue #192 regarding
         let read_value = if let Some(command) = &self.command {
             let result = command.execute(None)?;
             result.unwrap()
