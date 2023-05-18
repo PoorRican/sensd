@@ -10,8 +10,7 @@ use crate::errors::{Error, ErrorKind, ErrorType};
 use crate::helpers::writable_or_create;
 use crate::io::{DeviceMetadata, IdType, IOEvent};
 use crate::settings;
-use crate::storage::directory::RootPath;
-use crate::storage::{EventCollection, Persistent, FILETYPE};
+use crate::storage::{EventCollection, Persistent, FILETYPE, RootPath};
 
 
 /// A record of [`IOEvent`]s from a single device keyed by datetime
@@ -310,11 +309,10 @@ mod tests {
     use crate::action::IOCommand;
     use crate::helpers::Def;
     use crate::io::{Device, Input, IOKind, IdType, RawValue, IOEvent};
-    use crate::storage::{Chronicle, Log, Persistent};
+    use crate::storage::{Chronicle, Log, Persistent, RootPath};
     use std::path::Path;
     use std::time::Duration;
     use std::{fs, thread};
-    use crate::storage::directory::RootPath;
 
     fn generate_log(count: usize) -> Log {
         let mut log = Log::default();

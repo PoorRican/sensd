@@ -2,12 +2,11 @@ use crate::errors::ErrorType;
 use crate::helpers::check_results;
 use crate::io::{Device, DeviceContainer, DeviceGetters, IdType, Input, Output};
 use crate::settings::DATA_ROOT;
-use crate::storage::{Directory, Persistent};
+use crate::storage::{Directory, Persistent, RootPath};
 
 use chrono::{DateTime, Duration, Utc};
 use std::fs::create_dir_all;
 use std::path::PathBuf;
-use crate::storage::directory::RootPath;
 
 /// High-level container to manage multiple [`Device`] objects, logging, and
 /// actions.
@@ -493,15 +492,13 @@ impl Directory for Group {
 
 #[cfg(test)]
 mod tests {
+    use chrono::Duration;
+    use std::fs::remove_dir_all;
     use std::path::Path;
 
-    use crate::settings::Settings;
-    use crate::storage::{Directory, Group};
-
-    use std::fs::remove_dir_all;
-    use chrono::Duration;
     use crate::io::{Device, Input, Output};
-    use crate::storage::directory::RootPath;
+    use crate::settings::Settings;
+    use crate::storage::{Directory, Group, RootPath};
 
     #[test]
     /// Test that constructor accepts `name` as `&str` or `String`
