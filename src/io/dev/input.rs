@@ -320,12 +320,8 @@ impl PartialEq for Input {
 // Testing
 #[cfg(test)]
 mod tests {
-    use std::fs::remove_dir_all;
-    use std::ops::Not;
-    use std::path::PathBuf;
     use crate::action::{IOCommand};
     use crate::io::{Device, Input, IOKind, RawValue};
-    use crate::name::Name;
     use crate::storage::{Chronicle, Directory, Document};
 
     const DUMMY_OUTPUT: RawValue = RawValue::Float(1.2);

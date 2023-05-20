@@ -277,6 +277,24 @@ impl Chronicle for Output {
     }
 }
 
+impl std::fmt::Debug for Output {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Output Device: - {{ name: {}, id: {}, kind: {}}}",
+            self.name(),
+            self.id(),
+            self.metadata().kind
+        )
+    }
+}
+
+impl PartialEq for Output {
+    fn eq(&self, other: &Self) -> bool {
+        self.metadata == other.metadata && self.command == other.command
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::action::IOCommand;
@@ -367,22 +385,22 @@ mod tests {
             .dir()
             .is_some());
     }
-}
 
-impl std::fmt::Debug for Output {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Output Device: - {{ name: {}, id: {}, kind: {}}}",
-            self.name(),
-            self.id(),
-            self.metadata().kind
-        )
-    }
-}
+    #[test]
+    /// Test that [`Input::set_parent_dir()`] correctly changes [`Log::dir()`]
+    fn set_dir_changes_log_dir() {
+        let mut output = Output::default().init_log();
 
-impl PartialEq for Output {
-    fn eq(&self, other: &Self) -> bool {
-        self.metadata == other.metadata && self.command == other.command
+        assert!(output.log()
+            .unwrap().try_lock().unwrap()
+            .dir()
+            .is_none());
+
+        output = output.set_parent_dir("");
+
+        assert!(output.log()
+            .unwrap().try_lock().unwrap()
+            .dir()
+            .is_some());
     }
 }

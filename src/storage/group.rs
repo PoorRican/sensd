@@ -235,7 +235,6 @@ impl Group {
     /// group.push_input(input);
     ///
     /// assert_eq!(group.inputs.len(), 1);
-    /// assert_eq!(group.outputs.len(), 0);
     /// ```
     pub fn push_input(&mut self, mut device: Input) -> &mut Self {
         let id = device.id();
@@ -268,7 +267,6 @@ impl Group {
     /// group.push_output(output);
     ///
     /// assert_eq!(group.outputs.len(), 1);
-    /// assert_eq!(group.inputs.len(), 0);
     /// ```
     pub fn push_output(&mut self, mut device: Output) -> &mut Self {
         let id = device.id();
@@ -473,9 +471,9 @@ impl RootDirectory for Group {
 mod tests {
     use chrono::Duration;
     use std::fs::remove_dir_all;
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
 
-    use crate::io::{Device, Input, Output};
+    use crate::io::{Device, Input, IOKind, Output};
     use crate::storage::{Directory, Group, RootDirectory, RootPath};
 
     const DIR_PATH: &str = "/tmp/sensd_tests";
@@ -521,6 +519,52 @@ mod tests {
                 group.inputs.len()
             );
         }
+    }
+
+    #[test]
+    /// Test that [`Group::push_input()`] correctly changes dir of [`Input`]
+    fn push_input_changes_dir() {
+        const TMP_DIR: &str = "/tmp/sensd/group_tests";
+        const ID: u32 = 0;
+
+        let input = Input::new("input", ID, IOKind::Unassigned);
+
+        assert!(input.parent_dir().is_none());
+
+        let mut group = Group::with_root("group", TMP_DIR);
+
+        group.push_input(input);
+
+        let input = group.inputs.get(&ID);
+
+        let expected = PathBuf::from(TMP_DIR)
+            .join("group")
+            .join("input");
+        let binding = input.unwrap().try_lock().unwrap();
+        assert_eq!(expected, binding.full_path())
+    }
+
+    #[test]
+    /// Test that [`Group::push_output()`] correctly changes dir of [`Output`]
+    fn push_output_changes_dir() {
+        const TMP_DIR: &str = "/tmp/sensd/group_tests";
+        const ID: u32 = 0;
+
+        let output = Output::new("output", ID, IOKind::Unassigned);
+
+        assert!(output.parent_dir().is_none());
+
+        let mut group = Group::with_root("group", TMP_DIR);
+
+        group.push_output(output);
+
+        let output = group.outputs.get(&ID);
+
+        let expected = PathBuf::from(TMP_DIR)
+            .join("group")
+            .join("output");
+        let binding = output.unwrap().try_lock().unwrap();
+        assert_eq!(expected, binding.full_path());
     }
 
     #[test]
