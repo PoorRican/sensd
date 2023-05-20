@@ -411,26 +411,4 @@ mod tests {
             .dir()
             .is_some());
     }
-
-    #[test]
-    fn init_dir() {
-        const DIR_PATH: &str = "/tmp/sensd_tests";
-        const NAME: &str = "input device";
-
-        let expected = PathBuf::from(DIR_PATH).join(NAME);
-
-        let mut input =
-            Input::default()
-                .set_parent_dir(DIR_PATH);
-        input.set_name(NAME);
-
-        assert!(expected.exists().not());
-
-        assert_eq!(input.full_path(), expected);
-
-        input.init_dir_ref();
-        assert!(expected.exists());
-
-        remove_dir_all(expected).unwrap();
-    }
 }

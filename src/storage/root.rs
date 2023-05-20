@@ -1,3 +1,4 @@
+use std::fs::create_dir_all;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -72,4 +73,47 @@ pub trait RootDirectory: Directory {
     fn set_root_ref<P>(&mut self, path: P) -> &mut Self
         where
             P: AsRef<Path>;
+
+    /// Builder method that creates dedicated directory
+    ///
+    /// If directory already exists, then this method silently fails.
+    ///
+    /// # Panics
+    ///
+    /// This method panics if an error occurs when creating directory (other than directory
+    /// already existing). This could happen if write permissions are misconfigured.
+    ///
+    /// # Returns
+    ///
+    /// Ownership of `Self`, allowing method chaining.
+    fn init_dir(self) -> Self
+        where
+            Self: Sized
+    {
+        self.init_dir_ref();
+        self
+    }
+
+    /// Method that creates dedicated directory without taking ownership of `self`
+    ///
+    /// If directory already exists, then this method silently fails.
+    ///
+    /// # Panics
+    ///
+    /// This method panics if an error occurs when creating directory (other than directory
+    /// already existing). This could happen if write permissions are misconfigured.
+    ///
+    /// # Returns
+    ///
+    /// Immutable reference of `Self`, allowing method chaining.
+    fn init_dir_ref(&self) -> &Self {
+        let path = self.full_path();
+        match path.exists() {
+            true => (),
+            false => {
+                create_dir_all(path).expect("Could not create dedicated directory");
+            }
+        };
+        self
+    }
 }

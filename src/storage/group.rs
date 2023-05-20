@@ -241,7 +241,6 @@ impl Group {
         let id = device.id();
 
         device.set_parent_dir_ref(self.full_path());
-        device.init_dir_ref();
 
         self.inputs.insert(id, device.into_deferred())
             .unwrap();
@@ -275,7 +274,6 @@ impl Group {
         let id = device.id();
 
         device.set_parent_dir_ref(self.full_path());
-        device.init_dir_ref();
 
         self.outputs.insert(id, device.into_deferred())
             .unwrap();
