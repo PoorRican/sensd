@@ -83,6 +83,23 @@ pub trait Directory: Name {
         where
             Self: Sized
     {
+        self.init_dir_ref();
+        self
+    }
+
+    /// Method that creates dedicated directory without taking ownership of `self`
+    ///
+    /// If directory already exists, then this method silently fails.
+    ///
+    /// # Panics
+    ///
+    /// This method panics if an error occurs when creating directory (other than directory
+    /// already existing). This could happen if write permissions are misconfigured.
+    ///
+    /// # Returns
+    ///
+    /// Immutable reference of `Self`, allowing method chaining.
+    fn init_dir_ref(&self) -> &Self {
         let path = self.full_path();
         match path.exists() {
             true => (),

@@ -85,7 +85,7 @@ impl Directory for Output {
         let path = path.as_ref();
         self.dir = Some(PathBuf::from(path.clone()));
 
-        set_log_dir(self.log(), path);
+        set_log_dir(self.log(), self.full_path());
 
         self
     }

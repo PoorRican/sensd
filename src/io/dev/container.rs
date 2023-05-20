@@ -46,6 +46,10 @@ where
     }
 
     /// Call [`Device::set_root()`] on all stored device objects
+    ///
+    /// # Panics
+    ///
+    /// - If device cannot be locked
     pub fn set_parent_dir(&mut self, root: RootPath) {
         for binding in self.values_mut() {
             let mut device = binding.try_lock().unwrap();

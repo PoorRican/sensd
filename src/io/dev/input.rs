@@ -139,7 +139,7 @@ impl Directory for Input {
         let path = path.as_ref();
         self.dir = PathBuf::from(path).into();
 
-        set_log_dir(self.log(), path);
+        set_log_dir(self.log(), self.full_path());
 
         self
     }
@@ -299,11 +299,33 @@ impl Chronicle for Input {
     }
 }
 
+impl std::fmt::Debug for Input {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Input Device - {{ name: {}, id: {}, kind: {}}}",
+            self.name(),
+            self.id(),
+            self.metadata().kind
+        )
+    }
+}
+
+impl PartialEq for Input {
+    fn eq(&self, other: &Self) -> bool {
+        self.metadata == other.metadata && self.command == other.command
+    }
+}
+
 // Testing
 #[cfg(test)]
 mod tests {
+    use std::fs::remove_dir_all;
+    use std::ops::Not;
+    use std::path::PathBuf;
     use crate::action::{IOCommand};
     use crate::io::{Device, Input, IOKind, RawValue};
+    use crate::name::Name;
     use crate::storage::{Chronicle, Directory, Document};
 
     const DUMMY_OUTPUT: RawValue = RawValue::Float(1.2);
@@ -373,37 +395,42 @@ mod tests {
     }
 
     #[test]
-    fn set_root() {
-        let mut output = Input::default().init_log();
+    /// Test that [`Input::set_parent_dir()`] correctly changes [`Log::dir()`]
+    fn set_dir_changes_log_dir() {
+        let mut input = Input::default().init_log();
 
-        assert!(output.log()
+        assert!(input.log()
             .unwrap().try_lock().unwrap()
             .dir()
             .is_none());
 
-        output = output.set_parent_dir("");
+        input = input.set_parent_dir("");
 
-        assert!(output.log()
+        assert!(input.log()
             .unwrap().try_lock().unwrap()
             .dir()
             .is_some());
     }
-}
 
-impl std::fmt::Debug for Input {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Input Device - {{ name: {}, id: {}, kind: {}}}",
-            self.name(),
-            self.id(),
-            self.metadata().kind
-        )
-    }
-}
+    #[test]
+    fn init_dir() {
+        const DIR_PATH: &str = "/tmp/sensd_tests";
+        const NAME: &str = "input device";
 
-impl PartialEq for Input {
-    fn eq(&self, other: &Self) -> bool {
-        self.metadata == other.metadata && self.command == other.command
+        let expected = PathBuf::from(DIR_PATH).join(NAME);
+
+        let mut input =
+            Input::default()
+                .set_parent_dir(DIR_PATH);
+        input.set_name(NAME);
+
+        assert!(expected.exists().not());
+
+        assert_eq!(input.full_path(), expected);
+
+        input.init_dir_ref();
+        assert!(expected.exists());
+
+        remove_dir_all(expected).unwrap();
     }
 }

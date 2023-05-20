@@ -19,7 +19,7 @@ where P: AsRef<Path>
                 Ok(_) => (),
                 Err(_) => {
                     let parent = path.as_ref().parent().unwrap();
-                    create_dir_all(parent).expect("Could not create root data directory");
+                    create_dir_all(parent).expect("Could not create directory");
                     File::create(&path).unwrap();
                 }
             }

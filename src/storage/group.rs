@@ -240,7 +240,8 @@ impl Group {
     pub fn push_input(&mut self, mut device: Input) -> &mut Self {
         let id = device.id();
 
-        device.set_parent_dir_ref(self.root.clone().deref());
+        device.set_parent_dir_ref(self.full_path());
+        device.init_dir_ref();
 
         self.inputs.insert(id, device.into_deferred())
             .unwrap();
@@ -273,7 +274,8 @@ impl Group {
     pub fn push_output(&mut self, mut device: Output) -> &mut Self {
         let id = device.id();
 
-        device.set_parent_dir_ref(self.root.clone().deref());
+        device.set_parent_dir_ref(self.full_path());
+        device.init_dir_ref();
 
         self.outputs.insert(id, device.into_deferred())
             .unwrap();
@@ -478,6 +480,8 @@ mod tests {
     use crate::io::{Device, Input, Output};
     use crate::storage::{Directory, Group, RootDirectory, RootPath};
 
+    const DIR_PATH: &str = "/tmp/sensd_tests";
+
     #[test]
     /// Test that constructor accepts `name` as `&str` or `String`
     fn new_name_parameter() {
@@ -488,12 +492,11 @@ mod tests {
     #[test]
     /// Test that alternate constructor sets root
     fn with_root() {
-        let root = "global root path";
 
         let group = Group::with_root(
             "",
-            root);
-        assert_eq!(RootPath::from(root), group.root_dir());
+            DIR_PATH);
+        assert_eq!(RootPath::from(DIR_PATH), group.root_dir());
     }
 
     #[test]
@@ -557,12 +560,11 @@ mod tests {
     /// Test [`Group::full_path()`]
     #[test]
     fn test_dir() {
-        const DIR_NAME: &str = "test_root";
         const GROUP_NAME: &str = "main";
 
 
-        let expected = Path::new(DIR_NAME).join(GROUP_NAME);
-        let group = Group::with_root(GROUP_NAME, DIR_NAME);
+        let expected = Path::new(DIR_PATH).join(GROUP_NAME);
+        let group = Group::with_root(GROUP_NAME, DIR_PATH);
 
         // assert directory path is correct
         assert_eq!(expected.to_str().unwrap(), group.full_path().to_str().unwrap());
@@ -571,12 +573,11 @@ mod tests {
     /// Test [`Group::init_dir()`]
     #[test]
     fn test_init_root() {
-        const DIR_NAME: &str = "test_root";
         const GROUP_NAME: &str = "main";
 
         // init `Group` and settings
         let group = Group::new(GROUP_NAME)
-            .set_root(DIR_NAME)
+            .set_root(DIR_PATH)
             .init_dir();
 
         assert!(group.full_path().exists());
