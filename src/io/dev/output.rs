@@ -186,7 +186,7 @@ impl Output {
             return Err(no_internal_closure());
         };
 
-        Ok(self.generate_event(value))
+        Ok(IOEvent::new(value))
     }
 
     /// Get [`IOEvent`], add to log and update cache.

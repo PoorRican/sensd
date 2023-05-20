@@ -33,24 +33,6 @@ pub trait Device: Name + Chronicle + DeviceGetters + DeviceSetters + Persistent 
         N: Into<String>,
         K: Into<Option<IOKind>>;
 
-    #[deprecated]
-    /// Generate an `IOEvent` instance from provided value
-    ///
-    /// This is used by internal `command` for building events from given data.
-    /// Input devices pass read value; output devices pass write value.
-    ///
-    /// # Notes
-    /// Utc time is generated within this function. This allows each call to be more accurately
-    /// recorded instead of using a single time when polling. Accurate record keeping is more
-    /// valuable than a slight hit to performance.
-    ///
-    /// Additionally, internally generating timestamp adds a layer of separation between
-    /// device trait objects and any of it's owners (i.e.: `PollGroup`).
-    fn generate_event(&self, value: RawValue) -> IOEvent {
-        let timestamp = Utc::now();
-        IOEvent::with_timestamp(timestamp, value)
-    }
-
     /// Setter for `command` field as builder method
     ///
     /// # Notes

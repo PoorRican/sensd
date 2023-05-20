@@ -193,7 +193,7 @@ impl Input {
             return Err(no_internal_closure());
         };
 
-        Ok(self.generate_event(read_value))
+        Ok(IOEvent::new(read_value))
     }
 
     /// Propagate `IOEvent` to all subscribers.
