@@ -178,25 +178,18 @@ impl Persistent for Log {
     ///
     /// - [`Log::full_path()`] explains usage of `path` parameter.
     fn save(&self) -> Result<(), ErrorType> {
-        if self.log.is_empty() {
-            Err(Error::new(
-                ErrorKind::ContainerEmpty,
-                format!("Log for '{}'. Nothing to save.", self.name()).as_str(),
-            ))
-        } else {
-            let file = writable_or_create(self.full_path());
-            let writer = BufWriter::new(file);
+        let file = writable_or_create(self.full_path());
+        let writer = BufWriter::new(file);
 
-            match serde_json::to_writer_pretty(writer, &self) {
-                Ok(_) => println!("Saved"),
-                Err(e) => {
-                    let msg = e.to_string();
-                    dbg!(msg.clone());
-                    return Err(Error::new(ErrorKind::SerializationError, msg.as_str()));
-                }
+        match serde_json::to_writer_pretty(writer, &self) {
+            Ok(_) => println!("Saved"),
+            Err(e) => {
+                let msg = e.to_string();
+                dbg!(msg.clone());
+                return Err(Error::new(ErrorKind::SerializationError, msg.as_str()));
             }
-            Ok(())
         }
+        Ok(())
     }
 
     /// Load log from JSON file
