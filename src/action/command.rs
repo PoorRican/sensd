@@ -1,4 +1,3 @@
-use crate::errors::ErrorType;
 use crate::io::RawValue;
 
 pub type BoxedCommand<T, E> = Box<dyn Command<T, E>>;
