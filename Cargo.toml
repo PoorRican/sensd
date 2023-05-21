@@ -3,7 +3,7 @@ name = "sensd"
 authors = ["Josué D. Figueroa"]
 description = "The ultimate data logger and control system"
 repository = "https://github.com/PoorRican/sensd/"
-keywords = ["embedded", "control system", "logger", "scientific devices", "logging"]
+keywords = ["embedded", "control-system", "logger", "scientific-devices", "logging"]
 categories = ["embedded", "science"]
 license = "GPL-2.0-only"
 

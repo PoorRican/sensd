@@ -1,9 +1,8 @@
 use std::error::Error as _Error;
-use std::fmt;
 
 use custom_error::custom_error;
 
-use crate::io::{DeviceMetadata, IODirection};
+use crate::io::DeviceMetadata;
 
 pub type ErrorType = Box<dyn _Error>;
 

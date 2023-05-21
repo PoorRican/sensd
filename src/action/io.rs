@@ -1,5 +1,5 @@
 use crate::action::Command;
-use crate::errors::{DeviceError, ErrorType};
+use crate::errors::DeviceError;
 use crate::io::{IODirection, RawValue};
 
 /// Command design pattern for storing low-level I/O code

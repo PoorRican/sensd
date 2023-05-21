@@ -1,7 +1,7 @@
 use std::fmt::Formatter;
 use std::path::{Path, PathBuf};
 use crate::action::{Command, IOCommand, Publisher};
-use crate::errors::{DeviceError, ErrorType};
+use crate::errors::DeviceError;
 use crate::helpers::Def;
 use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue, DeviceGetters, DeviceSetters};
 use crate::io::dev::device::set_log_dir;
