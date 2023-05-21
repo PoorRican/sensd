@@ -1,4 +1,4 @@
-use crate::errors::ErrorType;
+use crate::errors::{DeviceError, ErrorType};
 use crate::helpers::check_results;
 use crate::io::{Device, DeviceContainer, DeviceGetters, IdType, Input, Output};
 use crate::settings::DATA_ROOT;
@@ -101,7 +101,7 @@ impl Group {
     /// - `Ok` when poll has been executed. `Ok` value will contain any errors
     ///   that arose.
     /// - `Err` when poll was not executed
-    pub fn poll(&mut self) -> Result<Vec<ErrorType>, ()> {
+    pub fn poll(&mut self) -> Result<Vec<DeviceError>, ()> {
         let mut errors = Vec::new();
         let next_execution = self.last_execution + *self.interval();
 
@@ -342,13 +342,13 @@ impl Persistent for Group {
         let mut results = Vec::new();
 
         for device in self.inputs.values() {
-            let binding = device.try_lock().unwrap();
+            let binding = device.try_lock().expect("Could not lock input");
             results.push(
                 binding.save());
         }
 
         for device in self.outputs.values() {
-            let binding = device.try_lock().unwrap();
+            let binding = device.try_lock().expect("Could not lock output");
             results.push(
                 binding.save());
         }

@@ -1,8 +1,9 @@
-use crate::errors::{Error, ErrorKind, ErrorType};
+use crate::errors::{ContainerError};
 use crate::helpers::Def;
 use crate::io::{Device, IdTraits};
 use std::collections::hash_map::{Entry, Iter, Values, ValuesMut};
 use std::collections::HashMap;
+use std::fmt::Display;
 use std::ops::DerefMut;
 use crate::storage::{RootPath, Directory};
 
@@ -12,7 +13,7 @@ pub struct DeviceContainer<K: IdTraits, D: Device>(HashMap<K, Def<D>>);
 
 impl<K, D> DeviceContainer<K, D>
 where
-    K: IdTraits,
+    K: IdTraits + Display + Copy,
     D: Device + Directory,
 {
     pub fn values(&self) -> Values<K, Def<D>> {
@@ -27,12 +28,9 @@ where
         self.0.len()
     }
 
-    pub fn insert(&mut self, id: K, device: Def<D>) -> Result<Def<D>, ErrorType> {
+    pub fn insert(&mut self, id: K, device: Def<D>) -> Result<Def<D>, ContainerError> {
         match self.0.entry(id) {
-            Entry::Occupied(_) => Err(Error::new(
-                ErrorKind::ContainerError,
-                "Device entry already exists",
-            )),
+            Entry::Occupied(_) => Err(ContainerError::KeyExists {key: id.to_string()}),
             Entry::Vacant(entry) => Ok(entry.insert(device).clone()),
         }
     }

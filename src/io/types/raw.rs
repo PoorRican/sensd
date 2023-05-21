@@ -1,4 +1,4 @@
-use crate::errors::Error;
+use crate::errors::ErrorType;
 use float_cmp::approx_eq;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
@@ -59,37 +59,37 @@ impl Display for RawValue {
 
 // █▓▒░ Conversion from primitive types
 impl TryFrom<u8> for RawValue {
-    type Error = Error;
+    type Error = ErrorType;
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         Ok(RawValue::PosInt8(value))
     }
 }
 impl TryFrom<i8> for RawValue {
-    type Error = Error;
+    type Error = ErrorType;
     fn try_from(value: i8) -> Result<Self, Self::Error> {
         Ok(RawValue::Int8(value))
     }
 }
 impl TryFrom<u32> for RawValue {
-    type Error = Error;
+    type Error = ErrorType;
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         Ok(RawValue::PosInt(value))
     }
 }
 impl TryFrom<i32> for RawValue {
-    type Error = Error;
+    type Error = ErrorType;
     fn try_from(value: i32) -> Result<Self, Self::Error> {
         Ok(RawValue::Int(value))
     }
 }
 impl TryFrom<f32> for RawValue {
-    type Error = Error;
+    type Error = ErrorType;
     fn try_from(value: f32) -> Result<Self, Self::Error> {
         Ok(RawValue::Float(value))
     }
 }
 impl TryFrom<bool> for RawValue {
-    type Error = Error;
+    type Error = ErrorType;
     fn try_from(value: bool) -> Result<Self, Self::Error> {
         Ok(RawValue::Binary(value))
     }

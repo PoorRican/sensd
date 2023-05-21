@@ -6,7 +6,7 @@ use std::io::{BufReader, BufWriter};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
-use crate::errors::{Error, ErrorKind, ErrorType};
+use crate::errors::{ContainerError, ErrorType, FilesystemError};
 use crate::helpers::writable_or_create;
 use crate::io::{DeviceMetadata, IdType, IOEvent};
 use crate::settings;
@@ -131,9 +131,9 @@ impl Log {
     pub fn push(
         &mut self,
         event: IOEvent,
-    ) -> Result<&mut IOEvent, ErrorType> {
+    ) -> Result<&mut IOEvent, ContainerError> {
         match self.log.entry(event.timestamp) {
-            Entry::Occupied(_) => Err(Error::new(ErrorKind::ContainerError, "Key already exists")),
+            Entry::Occupied(_) => Err(ContainerError::KeyExists { key: event.timestamp.to_string()}),
             Entry::Vacant(entry) => Ok(entry.insert(event)),
         }
     }
@@ -185,8 +185,8 @@ impl Persistent for Log {
             Ok(_) => println!("Saved"),
             Err(e) => {
                 let msg = e.to_string();
-                dbg!(msg.clone());
-                return Err(Error::new(ErrorKind::SerializationError, msg.as_str()));
+                return Err(
+                    Box::new(FilesystemError::SerializationError {msg}));
             }
         }
         Ok(())
@@ -221,19 +221,16 @@ impl Persistent for Log {
             let buff: Log = match serde_json::from_reader(reader) {
                 Ok(data) => data,
                 Err(e) => {
-                    return Err(Error::new(
-                        ErrorKind::SerializationError,
-                        e.to_string().as_str(),
-                    ))
+                    let msg = e.to_string();
+                    return Err(
+                        Box::new(FilesystemError::SerializationError {msg})
+                    )
                 }
             };
             self.log = buff.log;
             Ok(())
         } else {
-            Err(Error::new(
-                ErrorKind::ContainerNotEmpty,
-                "Cannot load objects into non-empty container",
-            ))
+            Err(Box::new(ContainerError::ContainerNotEmpty))
         }
     }
 }

@@ -1,51 +1,26 @@
 use std::error::Error as _Error;
 use std::fmt;
 
+use custom_error::custom_error;
+
+use crate::io::{DeviceMetadata, IODirection};
+
 pub type ErrorType = Box<dyn _Error>;
 
-#[derive(Debug)]
-pub enum ErrorKind {
-    ContainerError,
-    ContainerEmpty,
-    ContainerNotEmpty,
-
-    SerializationError,
-
-    DeviceError, // error originating from device implementation
-
-    CommandError, // error originating from command implementation
+custom_error! { pub ContainerError
+    MiscError{name: String, msg: String} = "Unknown container error from \"{name}\": {msg}",
+    ContainerEmpty = "Container is empty",
+    ContainerNotEmpty = "Container is not empty",
+    KeyExists{key: String} = "Device entry {key} exists",
 }
 
-#[derive(Debug)]
-pub struct Error {
-    kind: ErrorKind,
-    message: String,
+custom_error! { pub DeviceError
+    HWFault{metadata: DeviceMetadata} = "HW fault from {metadata}",
+    NoCommand{metadata: DeviceMetadata} = "No associated command for {metadata}",
+    ValueExpected{metadata: DeviceMetadata} = "Value expected from {metadata}",
 }
 
-impl Error {
-    pub fn new(kind: ErrorKind, msg: &str) -> ErrorType {
-        let message = String::from(msg);
-        Box::new(Error { kind, message })
-    }
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let pretext = match self.kind {
-            ErrorKind::ContainerError => "Error from `Container` method",
-            ErrorKind::ContainerEmpty => "Container is empty",
-            ErrorKind::ContainerNotEmpty => "Container is not empty",
-            ErrorKind::SerializationError => "Error during serialization",
-            ErrorKind::DeviceError => "Wrong type of device passed",
-            ErrorKind::CommandError => "Error in command implementation",
-        };
-
-        write!(f, "{}: {}", pretext, self.message)
-    }
-}
-
-impl _Error for Error {}
-
-pub fn no_internal_closure() -> Box<dyn std::error::Error> {
-    Error::new(ErrorKind::CommandError, "Device has no internal closure")
+custom_error! { pub FilesystemError
+    SerializationError{msg: String} = "Error during serialization: {msg}",
+    PermissionError{path: String} = "Incorrect permissions for {path}",
 }

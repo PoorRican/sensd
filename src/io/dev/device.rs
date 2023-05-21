@@ -11,10 +11,9 @@
 use std::path::{Path};
 use crate::action::IOCommand;
 use crate::helpers::Def;
-use crate::io::{DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue};
+use crate::io::{DeviceMetadata, IODirection, IOKind, IdType, RawValue};
 use crate::storage::Document;
 use crate::storage::{Chronicle, Log, Persistent};
-use chrono::Utc;
 use crate::errors::ErrorType;
 use crate::name::Name;
 

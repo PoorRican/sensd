@@ -2,7 +2,7 @@ use std::fmt::Formatter;
 use std::path::{Path, PathBuf};
 use chrono::{Duration, Utc};
 use crate::action::{Command, IOCommand, Routine};
-use crate::errors::{ErrorType, no_internal_closure};
+use crate::errors::{DeviceError, ErrorType};
 use crate::helpers::Def;
 use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue, DeviceGetters, DeviceSetters};
 use crate::io::dev::device::set_log_dir;
@@ -179,11 +179,11 @@ impl Output {
     /// # Issues
     ///
     /// [Low level error type](https://github.com/PoorRican/sensd/issues/192)
-    fn tx(&self, value: RawValue) -> Result<IOEvent, ErrorType> {
+    fn tx(&self, value: RawValue) -> Result<IOEvent, DeviceError> {
         if let Some(command) = &self.command {
             command.execute(Some(value))?;
         } else {
-            return Err(no_internal_closure());
+            Err(DeviceError::NoCommand {metadata: self.metadata.clone()})?;
         };
 
         Ok(IOEvent::new(value))

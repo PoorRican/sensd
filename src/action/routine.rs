@@ -114,7 +114,7 @@ impl Routine {
     }
 }
 
-impl Command<IOEvent> for Routine {
+impl Command<IOEvent, ErrorType> for Routine {
     fn execute<V>(&self, value: V) -> Result<Option<IOEvent>, ErrorType>
     where
         V: Into<Option<RawValue>>
@@ -125,7 +125,7 @@ impl Command<IOEvent> for Routine {
                 let event = IOEvent::with_timestamp(self.timestamp, value.unwrap());
                 Ok(Some(event))
             }
-            Err(e) => Err(e),
+            Err(e) => Err(e.into()),
         }
     }
 }

@@ -1,10 +1,10 @@
 use crate::errors::ErrorType;
 use crate::io::RawValue;
 
-pub type BoxedCommand<T> = Box<dyn Command<T>>;
+pub type BoxedCommand<T, E> = Box<dyn Command<T, E>>;
 
 /// Interface for executing a single atomic operation
-pub trait Command<T> {
+pub trait Command<T, E> {
     /// Execute arbitrary command
     ///
     /// # Parameters
@@ -15,7 +15,7 @@ pub trait Command<T> {
     /// # Returns
     /// - `Ok(T)`: returned when execution completes without error.
     /// - `Err(ErrorType)`: [`ErrorType`] is returned when an error occurs during operation.
-    fn execute<V>(&self, value: V) -> Result<Option<T>, ErrorType>
+    fn execute<V>(&self, value: V) -> Result<Option<T>, E>
     where
         V: Into<Option<RawValue>>;
 }

@@ -1,4 +1,5 @@
 extern crate chrono;
+extern crate custom_error;
 extern crate float_cmp;
 extern crate pid as ext_pid;
 

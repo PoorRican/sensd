@@ -1,7 +1,7 @@
 use std::fmt::Formatter;
 use std::path::{Path, PathBuf};
 use crate::action::{Command, IOCommand, Publisher};
-use crate::errors::{ErrorType, no_internal_closure};
+use crate::errors::{DeviceError, ErrorType};
 use crate::helpers::Def;
 use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue, DeviceGetters, DeviceSetters};
 use crate::io::dev::device::set_log_dir;
@@ -185,12 +185,17 @@ impl Input {
     /// # Issues
     ///
     /// [Low level error type](https://github.com/PoorRican/sensd/issues/192)
-    fn rx(&self) -> Result<IOEvent, ErrorType> {
+    fn rx(&self) -> Result<IOEvent, DeviceError> {
         let read_value = if let Some(command) = &self.command {
+            // execute command
             let result = command.execute(None)?;
-            result.unwrap()
+            // return error if no value is read from device
+            match result {
+                None => Err(DeviceError::ValueExpected {metadata: self.metadata.clone()})?,
+                Some(inner) => inner,
+            }
         } else {
-            return Err(no_internal_closure());
+            Err(DeviceError::NoCommand {metadata: self.metadata.clone()})?
         };
 
         Ok(IOEvent::new(read_value))
@@ -250,8 +255,8 @@ impl Input {
     ///
     /// - [`Publisher::propagate()`] for how [`IOEvent`] is given to subscribing [`Action`]'s
     /// - [`Input::push_to_log()`] for adding [`IOEvent`] to [`Log`]
-    pub fn read(&mut self) -> Result<IOEvent, ErrorType> {
-        let event = self.rx().expect("Low-level device error while reading");
+    pub fn read(&mut self) -> Result<IOEvent, DeviceError> {
+        let event = self.rx()?;
 
         // Update cached state
         self.state = Some(event.value);

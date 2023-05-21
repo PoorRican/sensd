@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use chrono::Duration;
 use sensd::action::IOCommand;
 use sensd::io::{Device, Input, IOKind, Output, RawValue};
-use sensd::storage::{Chronicle, Directory, Group, Persistent, RootDirectory};
+use sensd::storage::{Chronicle, Group, Persistent, RootDirectory};
 
 #[test]
 /// Test builder pattern for adding devices

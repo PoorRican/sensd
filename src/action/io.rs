@@ -1,5 +1,5 @@
 use crate::action::Command;
-use crate::errors::ErrorType;
+use crate::errors::{DeviceError, ErrorType};
 use crate::io::{IODirection, RawValue};
 
 /// Command design pattern for storing low-level I/O code
@@ -67,7 +67,7 @@ impl Default for IOCommand {
     }
 }
 
-impl Command<RawValue> for IOCommand {
+impl Command<RawValue, DeviceError> for IOCommand {
     /// Execute internally stored function.
     ///
     /// In summary, input command returns a value, output command accepts a value.
@@ -89,7 +89,7 @@ impl Command<RawValue> for IOCommand {
     /// # Panics
     ///
     /// A panic is thrown if no value is passed to [`IOCommand::Output`]
-    fn execute<V>(&self, value: V) -> Result<Option<RawValue>, ErrorType>
+    fn execute<V>(&self, value: V) -> Result<Option<RawValue>, DeviceError>
     where
         V: Into<Option<RawValue>>
     {
