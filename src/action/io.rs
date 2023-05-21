@@ -1,11 +1,11 @@
 use crate::action::Command;
-use crate::errors::ErrorType;
+use crate::errors::{DeviceError, ErrorType};
 use crate::io::{IODirection, RawValue};
 
 /// Command design pattern for storing low-level I/O code
 ///
 /// Should be used as an interface for HAL code and otherwise perform no other logic.
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum IOCommand {
     /// Low-level code to read HW input
     Input(fn() -> RawValue),
@@ -67,18 +67,29 @@ impl Default for IOCommand {
     }
 }
 
-impl Command<RawValue> for IOCommand {
+impl Command<RawValue, DeviceError> for IOCommand {
     /// Execute internally stored function.
     ///
     /// In summary, input command returns a value, output command accepts a value.
     ///
-    /// # Args
-    /// value: Arbitrary value to pass to output. If passed to an input, an error is printed, but no panic occurs.
+    /// # Parameters
+    ///
+    /// - `value`: Arbitrary value to pass to output. If passed to an input, a warning is printed.
     ///
     /// # Returns
-    /// If internal function is `IOCommand::Input`, then the value that is read from device is returned.
-    /// Otherwise, if `IOCommand::Output`, then `None` is returned.
-    fn execute<V>(&self, value: V) -> Result<Option<RawValue>, ErrorType>
+    ///
+    /// A `Result` containing:
+    ///
+    /// - `Ok` containing [`RawValue`] if internal function is [`IOCommand::Input`]. Otherwise, `None`
+    ///   since internal function is [`IOCommand::Output`].
+    ///
+    /// Currently, there is no scenario that returns `Err`. It is set as the return type to match
+    /// [`Input::read()`] and [`Output::write()`].
+    ///
+    /// # Panics
+    ///
+    /// A panic is thrown if no value is passed to [`IOCommand::Output`]
+    fn execute<V>(&self, value: V) -> Result<Option<RawValue>, DeviceError>
     where
         V: Into<Option<RawValue>>
     {

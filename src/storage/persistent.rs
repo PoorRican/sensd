@@ -2,7 +2,7 @@ use crate::errors::ErrorType;
 
 /// Default filetype suffix.
 ///
-/// Used by [`Log::filename()`]
+/// Used to generate filenames.
 pub const FILETYPE: &str = ".json";
 
 /// Expresses an interface to save or load from disk

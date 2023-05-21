@@ -1,18 +1,20 @@
-use crate::errors::{Error, ErrorKind, ErrorType};
+use crate::errors::{ContainerError};
 use crate::helpers::Def;
 use crate::io::{Device, IdTraits};
 use std::collections::hash_map::{Entry, Iter, Values, ValuesMut};
 use std::collections::HashMap;
-use crate::settings::RootPath;
+use std::fmt::Display;
+use std::ops::DerefMut;
+use crate::storage::{RootPath, Directory};
 
-/// Alias for using a deferred devices in `Container`, indexed by `K`
+/// Generic mapped container for storing [`Device`] objects
 #[derive(Default)]
 pub struct DeviceContainer<K: IdTraits, D: Device>(HashMap<K, Def<D>>);
 
 impl<K, D> DeviceContainer<K, D>
 where
-    K: IdTraits,
-    D: Device,
+    K: IdTraits + Display + Copy,
+    D: Device + Directory,
 {
     pub fn values(&self) -> Values<K, Def<D>> {
         self.0.values()
@@ -26,12 +28,9 @@ where
         self.0.len()
     }
 
-    pub fn insert(&mut self, id: K, device: Def<D>) -> Result<Def<D>, ErrorType> {
+    pub fn insert(&mut self, id: K, device: Def<D>) -> Result<Def<D>, ContainerError> {
         match self.0.entry(id) {
-            Entry::Occupied(_) => Err(Error::new(
-                ErrorKind::ContainerError,
-                "Device entry already exists",
-            )),
+            Entry::Occupied(_) => Err(ContainerError::KeyExists {key: id.to_string()}),
             Entry::Vacant(entry) => Ok(entry.insert(device).clone()),
         }
     }
@@ -45,10 +44,15 @@ where
     }
 
     /// Call [`Device::set_root()`] on all stored device objects
-    pub fn set_root(&mut self, root: RootPath) {
+    ///
+    /// # Panics
+    ///
+    /// - If device cannot be locked
+    pub fn set_parent_dir(&mut self, root: RootPath) {
         for binding in self.values_mut() {
-            let device = binding.try_lock().unwrap();
-            device.set_root(root.clone());
+            let mut device = binding.try_lock().unwrap();
+            let device = device.deref_mut();
+            device.set_parent_dir_ref(root.clone().deref());
         }
     }
 }
@@ -57,8 +61,7 @@ where
 mod tests {
     use std::ops::Deref;
     use crate::io::{Device, DeviceContainer, Output, Input};
-    use crate::settings::Settings;
-    use crate::storage::Chronicle;
+    use crate::storage::{Chronicle, Directory, Document};
 
     #[test]
     fn insert_output() {
@@ -132,28 +135,27 @@ mod tests {
     #[test]
     /// Ensure that [`Device::set_root()`] is called on each device
     fn set_root() {
-        let mut settings = Settings::default();
-        settings.set_root("New Root");
+        const PATH: &str = "New Root";
 
         let input = Input::new("", 0, None)
             .init_log();
         assert!(
-            input.log()
-                .unwrap().try_lock().unwrap().deref()
-                .root_path().is_none());
+            input.log().unwrap()
+                .try_lock().unwrap().deref()
+                .dir().is_none());
 
         let mut container = DeviceContainer::default();
         container.insert(0, input.into_deferred()).unwrap();
 
-        let input = container.get(&0).unwrap()
+        let mut input = container.get(&0).unwrap()
                 .try_lock().unwrap();
-        input.set_root(settings.root_path());
+        input.set_parent_dir_ref(PATH);
 
         assert!(
             input
                 .log()
                 .unwrap().try_lock().unwrap().deref()
-                .root_path().is_some());
+                .dir().is_some());
     }
 
 }

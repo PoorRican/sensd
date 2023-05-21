@@ -11,18 +11,22 @@ use crate::storage::Group;
 pub struct SchedRoutineHandler(Vec<Routine>);
 
 impl SchedRoutineHandler {
-    /// Add a [`Routine`] to the back of internal collection
+    /// Push a new [`Routine`] to internal collection
+    ///
+    /// # Parameters
+    ///
+    /// - `routine`: `Routine` to add to internal collection
     pub fn push(&mut self, routine: Routine) {
         self.0.push(routine)
     }
 
     /// Attempt to execute scheduled routines.
     ///
-    /// Even though [`Routine`] instances are usually scheduled during normal polling cycles by
-    /// [`Group`], the assumption is that their scheduled execution time does not correlate with a
-    /// polling interval. Therefore, [`SchedRoutineHandler::attempt_routines()`] should be called
-    /// as often as possible, outside of normal polling cycle, and as often as possible to produce
-    /// real-time response.
+    /// Even though [`Routine`] instances are scheduled during normal polling cycles
+    /// by [`Group`], the assumption is that their scheduled execution time does not
+    /// correlate with polling interval. Therefore, [`SchedRoutineHandler::attempt_routines()`]
+    /// should be called as often as possible, and outside of normal polling cycle,
+    /// to produce a real-time response.
     ///
     /// Any routines executed by [`Routine::attempt()`] are cleared from the internal container.
     pub fn attempt_routines(&mut self) {
@@ -41,6 +45,7 @@ impl SchedRoutineHandler {
     /// Getter function for internal collection
     ///
     /// # Returns
+    ///
     /// Slice of [`Routine`]
     pub fn scheduled(&self) -> &[Routine] {
         &self.0
@@ -61,14 +66,14 @@ mod tests {
     #[test]
     fn test_push() {
         let metadata = DeviceMetadata::default();
-        let log = Def::new(Log::new(&metadata));
+        let log = Def::new(Log::with_metadata(&metadata));
 
         let command = IOCommand::Output(|_| Ok(()));
 
         let timestamp = Utc::now() + Duration::microseconds(5);
         let value = RawValue::Binary(true);
 
-        let routine = Routine::new(timestamp, metadata.clone(), value, log, command);
+        let routine = Routine::new(timestamp, value, log, command);
 
         let mut scheduled = SchedRoutineHandler::default();
         assert_eq!(0, scheduled.scheduled().into_iter().count());
@@ -78,14 +83,14 @@ mod tests {
 
         // Add second routine
         let metadata = DeviceMetadata::default();
-        let log = Def::new(Log::new(&metadata));
+        let log = Def::new(Log::with_metadata(&metadata));
 
         let command = IOCommand::Output(|_| Ok(()));
 
         let timestamp = Utc::now() + Duration::microseconds(5);
         let value = RawValue::Binary(true);
 
-        let routine = Routine::new(timestamp, metadata.clone(), value, log, command);
+        let routine = Routine::new(timestamp, value, log, command);
 
         scheduled.push(routine);
         assert_eq!(2, scheduled.scheduled().into_iter().count());
@@ -96,14 +101,14 @@ mod tests {
     /// running the tests again should pass.
     fn test_attempt() {
         let metadata = DeviceMetadata::default();
-        let log = Def::new(Log::new(&metadata));
+        let log = Def::new(Log::with_metadata(&metadata));
 
         let command = IOCommand::Output(|_| Ok(()));
 
         let timestamp = Utc::now() + Duration::microseconds(30);
         let value = RawValue::Binary(true);
 
-        let routine = Routine::new(timestamp, metadata.clone(), value, log.clone(), command);
+        let routine = Routine::new(timestamp, value, log.clone(), command);
 
         let mut scheduled = SchedRoutineHandler::default();
 
@@ -111,7 +116,7 @@ mod tests {
 
         // Add second routine
         let metadata = DeviceMetadata::default();
-        let log = Def::new(Log::new(&metadata));
+        let log = Def::new(Log::with_metadata(&metadata));
 
         let command = IOCommand::Output(|_| Ok(()));
 
@@ -120,7 +125,7 @@ mod tests {
         let ts2 = Utc::now() + Duration::microseconds(120);
         let value = RawValue::Binary(true);
 
-        let routine = Routine::new(ts2, metadata.clone(), value, log.clone(), command);
+        let routine = Routine::new(ts2, value, log.clone(), command);
         scheduled.push(routine);
 
         while Utc::now() < timestamp {

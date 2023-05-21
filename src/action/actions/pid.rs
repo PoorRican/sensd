@@ -8,6 +8,90 @@ use crate::io::{Output, IOEvent, RawValue};
 ///
 /// This is a wrapper for [`Pid`] that conforms to Rust API guidelines and attaches an [`Output`].
 /// Output should be a device which can be controlled in a binary fashion (eg: pump, valve, etc).
+///
+/// # Example
+///
+/// Using the [`PID::new()`] constructor, [`Output`] and [`SchedRoutineHandler`]
+/// have to be manually associated:
+/// ```
+/// use sensd::action::{Action, SchedRoutineHandler};
+/// use sensd::action::actions::PID;
+/// use sensd::helpers::Def;
+/// use sensd::io::{Device, Output};
+///
+/// let setpoint = 7.5;         // keep process variable at 7.5
+/// let output_limit = 5.0;     // limit of 5 seconds, 0 milliseconds
+///
+/// let output =
+///     Output::default()
+///         .into_deferred();
+/// let handler =
+///     Def::new(
+///         SchedRoutineHandler::default());
+///
+/// let action =
+///     PID::new("", setpoint, output_limit)
+///         .set_output(output)
+///         .set_handler(handler);
+///
+/// assert!(action.output().is_some());
+/// assert!(action.has_handler());
+/// ```
+///
+/// All constructors have PID gain values of 0:
+/// ```
+/// use sensd::action::actions::PID;
+///
+/// let (p, i, d) = (2.0, 1.5, 1.0);
+/// let gain_limit = 2.0;
+///
+/// let action =
+///     PID::new("", 7.5, 10.0);
+///
+/// assert_eq!(0.0, action.p());
+/// assert_eq!(0.0, action.i());
+/// assert_eq!(0.0, action.d());
+/// ```
+///
+/// Setting gains for PID values also uses the builder pattern:
+/// ```
+/// use sensd::action::actions::PID;
+///
+/// let (p, i, d) = (2.0, 1.5, 1.0);
+/// let gain_limit = 2.0;
+///
+/// let action =
+///     PID::new("", 7.5, 10.0)
+///         .set_p(p, gain_limit)
+///         .set_i(i, gain_limit)
+///         .set_d(d, gain_limit);
+///
+/// assert_eq!(action.p(), p);
+/// assert_eq!(action.i(), i);
+/// assert_eq!(action.d(), d);
+///
+/// assert_eq!(action.p_limit(), gain_limit);
+/// assert_eq!(action.i_limit(), gain_limit);
+/// assert_eq!(action.d_limit(), gain_limit);
+/// ```
+///
+/// Functions have been provided that don't take ownership:
+/// ```
+/// use sensd::action::actions::PID;
+///
+/// let (p, i, d) = (2.0, 1.5, 1.0);
+/// let gain_limit = 2.0;
+///
+/// let mut action = PID::new("", 7.5, 10.0);
+/// action
+///     .set_p_ref(p, gain_limit)
+///     .set_i_ref(i, gain_limit)
+///     .set_d_ref(d, gain_limit);
+///
+/// assert_eq!(action.p(), p);
+/// assert_eq!(action.i(), i);
+/// assert_eq!(action.d(), d);
+/// ```
 pub struct PID {
     name: String,
     pid: Pid<f32>,
@@ -30,6 +114,20 @@ impl PID {
     /// A newly initialized [`PID`] action without an `output` and PID gains set to 0.
     /// Use of [`Action::set_output()`], and setters for PID gains are required to be called
     /// after initialization.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use sensd::action::Action;
+    /// use sensd::action::actions::PID;
+    ///
+    /// let setpoint = 7.5;         // keep process variable at 7.5
+    /// let output_limit = 10.0;    // limit of 10 seconds, 0 milliseconds
+    ///
+    /// let action = PID::new("", setpoint, output_limit);
+    ///
+    /// assert!(action.output().is_none());
+    /// ```
     pub fn new<N, V>(name: N, setpoint: V, output_limit: V) -> Self
         where
             N: Into<String>,
@@ -77,7 +175,7 @@ impl PID {
     where
         V: Into<f32> + Copy
     {
-        self.pid.p(gain, limit);
+        self.pid.p(gain.into(), limit.into());
         self
     }
 
@@ -129,7 +227,7 @@ impl PID {
     ///
     /// Ownership of `Self` is returned, with adjusted *I* gain and limit. As per Rust API guidelines,
     /// building by method chaining is encouraged.
-    pub fn set_i<V>(&mut self, gain: V, limit: V) -> &mut Self
+    pub fn set_i<V>(mut self, gain: V, limit: V) -> Self
     where
         V: Into<f32> + Copy
     {
@@ -185,12 +283,11 @@ impl PID {
     ///
     /// Ownership of `Self` is returned, with adjusted *D* gain and limit. As per Rust API guidelines,
     /// building by method chaining is encouraged.
-    pub fn set_d<V>(&mut self, gain: V, limit: V) -> &mut Self
+    pub fn set_d<V>(mut self, gain: V, limit: V) -> Self
     where
         V: Into<f32> + Copy
     {
-        self.pid.d(gain.into(),
-                   limit.into());
+        self.pid.d(gain, limit);
         self
     }
 
@@ -209,7 +306,7 @@ impl PID {
     where
         V: Into<f32> + Copy
     {
-        self.pid.i(gain, limit);
+        self.pid.d(gain, limit);
         self
     }
 
@@ -218,6 +315,18 @@ impl PID {
     /// # Returns
     ///
     /// Internal value of setpoint to achieve
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use sensd::action::actions::PID;
+    ///
+    /// let setpoint = 1.9;
+    ///
+    /// let action = PID::new("", setpoint, 9.9);
+    ///
+    /// assert_eq!(setpoint, action.setpoint());
+    /// ```
     pub fn setpoint(&self) -> f32 {
         self.pid.setpoint
     }
@@ -231,6 +340,22 @@ impl PID {
     /// # Returns
     ///
     /// Mutable reference to `self` to allow method chaining.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use sensd::action::actions::PID;
+    ///
+    /// let mut setpoint = 1.9;
+    /// let mut action = PID::new("", setpoint, 9.9);
+    ///
+    /// assert_eq!(setpoint, action.setpoint());
+    ///
+    /// setpoint = 3.0;
+    /// action.set_setpoint(setpoint);
+    ///
+    /// assert_eq!(setpoint, action.setpoint());
+    /// ```
     pub fn set_setpoint<V>(&mut self, setpoint: V) -> &mut Self
     where
         V: Into<f32> + Copy
@@ -244,6 +369,18 @@ impl PID {
     /// # Returns
     ///
     /// Current value of output limit
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use sensd::action::actions::PID;
+    ///
+    /// let output_limit = 1.9;
+    ///
+    /// let action = PID::new("", 1.1, output_limit);
+    ///
+    /// assert_eq!(output_limit, action.output_limit());
+    /// ```
     pub fn output_limit(&self) -> f32 {
         self.pid.output_limit
     }
@@ -258,6 +395,23 @@ impl PID {
     ///
     /// Reference to `self` with updated output limit to allow for
     /// method chaining.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use sensd::action::actions::PID;
+    ///
+    /// let mut output_limit = 1.9;
+    ///
+    /// let mut action = PID::new("", 1.1, output_limit);
+    ///
+    /// assert_eq!(output_limit, action.output_limit());
+    ///
+    /// output_limit = 3.0;
+    /// action.set_output_limit(output_limit);
+    ///
+    /// assert_eq!(output_limit, action.output_limit());
+    /// ```
     pub fn set_output_limit<V>(&mut self, output_limit: V) -> &mut Self
     where
         V: Into<f32> + Copy
@@ -293,9 +447,38 @@ impl PID {
     }
 
     /// Builder function to set `handler` parameter
+    ///
+    /// # Parameters
+    ///
+    /// - `handler`: [`Def<SchedRoutineHandler>`] to associate
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use sensd::action::{Action, SchedRoutineHandler};
+    /// use sensd::action::actions::PID;
+    /// use sensd::helpers::Def;
+    ///
+    /// let handler = Def::new(SchedRoutineHandler::default());
+    ///
+    /// let action =
+    ///     PID::new("", 7.5, 10.0)
+    ///         .set_handler(handler);
+    /// assert!(action.has_handler());
+    /// ```
     pub fn set_handler(mut self, handler: Def<SchedRoutineHandler>) -> Self {
         self.handler = Some(handler);
         self
+    }
+
+    /// Check method to see if a publisher is associated or not
+    ///
+    /// # Returns
+    ///
+    /// - `true` if [`SchedRoutineHandler`] is associated
+    /// - `false` if no handler is associated
+    pub fn has_handler(&self) -> bool {
+        self.handler.is_some()
     }
 }
 
@@ -305,7 +488,7 @@ impl Action for PID {
     }
 
     fn evaluate(&mut self, data: &IOEvent) {
-        let measurement = data.data.value;
+        let measurement = data.value;
         if let RawValue::Float(value) = measurement {
 
             let duration =
@@ -316,7 +499,7 @@ impl Action for PID {
                     panic!("Handler has not been set!");
                 }
 
-                self.write(RawValue::Binary(true)).expect("Error when writing to device");
+                self.write(RawValue::Binary(true));
 
                 let output = self.output.as_ref()
                     .expect("Output has not been set!")
@@ -329,6 +512,31 @@ impl Action for PID {
         }
     }
 
+    /// Builder method to set value of `Output`
+    ///
+    /// # Parameters
+    ///
+    /// - `device`: [`Def`] reference to set as output
+    ///
+    /// # Returns
+    ///
+    /// Ownership of `Self` to enable method chaining
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use sensd::action::Action;
+    /// use sensd::action::actions::PID;
+    /// use sensd::io::{Device, Output};
+    ///
+    /// let output = Output::default().into_deferred();
+    ///
+    /// let action =
+    ///     PID::new("", 7.5, 10.0)
+    ///         .set_output(output);
+    ///
+    /// assert!(action.output().is_some());
+    /// ```
     fn set_output(mut self, device: Def<Output>) -> Self
     where
         Self: Sized,

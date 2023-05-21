@@ -4,7 +4,9 @@ use crate::io::RawValue;
 #[derive(Debug, Clone)]
 /// Discrete variants that abstract comparison of external and threshold values.
 ///
-/// Used by [`crate::action::Action::evaluate()`]
+/// # See Also
+///
+/// [`crate::action::Threshold::evaluate()`] for implementation.
 pub enum Trigger {
     GT,
     LT,

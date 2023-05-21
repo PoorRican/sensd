@@ -1,18 +1,94 @@
 use std::fmt::Formatter;
+use std::path::{Path, PathBuf};
 use chrono::{Duration, Utc};
 use crate::action::{Command, IOCommand, Routine};
-use crate::errors::{ErrorType, no_internal_closure};
+use crate::errors::{DeviceError, ErrorType};
 use crate::helpers::Def;
 use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue, DeviceGetters, DeviceSetters};
-use crate::storage::{Chronicle, Log};
+use crate::io::dev::device::set_log_dir;
+use crate::name::Name;
+use crate::storage::{Chronicle, Directory, Log};
 
 #[derive(Default)]
+/// This is the generic implementation for any external output device.
+///
+/// # Getting Started
+///
+/// While [`Output`] derives a [`Default`] implementation, `name` and `id`
+/// should be passed to [`Device::new()`] constructor to differentiate it
+/// from other [`Output`] objects.
+///
+/// ```
+/// use sensd::io::{Device, DeviceGetters, Output, IOKind};
+/// use sensd::name::Name;
+/// let id = 777;
+/// let name = "our new output device";
+/// let kind = IOKind::default();
+///
+/// let device = Output::new(name, id, kind);
+///
+/// assert_eq!(device.name(), name);
+/// assert_eq!(device.id(), id);
+///
+/// assert_ne!(device, Output::default());
+/// ```
+///
+/// Now that we are able to set device metadata, constructor methods still don't
+/// provide any way to interact with hardware. The builder method [`Device::set_command()`]
+/// is used to add low-level code. In this example, we return a static value:
+///
+/// ```
+/// use sensd::action::IOCommand;
+/// use sensd::io::{Device, Output, RawValue};
+///
+/// let command = IOCommand::Output(|_| Ok(()));
+/// let device =
+///     Output::default()
+///         .set_command(command);
+/// ```
+///
+/// With a `command` set, [`Output::write()`] can be used to actuate or send data
+/// to devices.
 pub struct Output {
     metadata: DeviceMetadata,
     // cached state
     state: Option<RawValue>,
     log: Option<Def<Log>>,
     command: Option<IOCommand>,
+
+    dir: Option<PathBuf>,
+}
+
+impl Name for Output {
+    fn name(&self) -> &String {
+        &self.metadata().name
+    }
+
+    fn set_name<N>(&mut self, name: N) where N: Into<String> {
+        self.metadata.name = name.into();
+    }
+}
+
+impl Directory for Output {
+    fn parent_dir(&self) -> Option<PathBuf> {
+        self.dir.clone()
+    }
+
+    /// Setter for parent directory
+    ///
+    /// Updates any internal field that needs a parent directory (ie: [`Log`])
+    ///
+    /// # Parameters
+    ///
+    /// - `path`: New [`PathBuf`] to store
+    fn set_parent_dir_ref<P>(&mut self, path: P) -> &mut Self where Self: Sized, P: AsRef<Path> {
+        let path = path.as_ref();
+        self.dir = Some(PathBuf::from(path.clone()));
+
+        set_log_dir(self.log(), self.full_path());
+
+        self
+    }
 }
 
 impl DeviceGetters for Output {
@@ -29,20 +105,20 @@ impl DeviceGetters for Output {
 }
 
 impl DeviceSetters for Output {
-    fn set_name<N>(&mut self, name: N) where N: Into<String> {
-        self.metadata.name = name.into();
-    }
-
     fn set_id(&mut self, id: IdType) {
         self.metadata.id = id;
     }
 
     fn set_log(&mut self, log: Def<Log>) {
-        self.log = Some(log);
+        self.log = Some(log.clone());
+
+        if let Some(dir) = &self.dir {
+            set_log_dir(Some(log), dir)
+        }
     }
 }
 
-// Implement traits
+/// Implement unique constructors and builder methods
 impl Device for Output {
     /// Creates a generic output device
     ///
@@ -64,12 +140,14 @@ impl Device for Output {
 
         let command = None;
         let log = None;
+        let dir = None;
 
         Self {
             metadata,
             state,
             log,
             command,
+            dir,
         }
     }
 
@@ -85,30 +163,81 @@ impl Device for Output {
 }
 
 impl Output {
-    /// Execute low-level GPIO command
-    fn tx(&self, value: RawValue) -> Result<IOEvent, ErrorType> {
+    /// Execute low-level GPIO command to write data
+    ///
+    /// # Parameters
+    ///
+    /// - `value`: [`RawValue`] to send to device
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing:
+    ///
+    /// - `Ok` with [`IOEvent`] if low-level operation occurred successfully.
+    /// - `Err` with [`ErrorType`] if no `command` is set or there device command failed
+    ///
+    /// # Issues
+    ///
+    /// [Low level error type](https://github.com/PoorRican/sensd/issues/192)
+    fn tx(&self, value: RawValue) -> Result<IOEvent, DeviceError> {
         if let Some(command) = &self.command {
             command.execute(Some(value))?;
         } else {
-            return Err(no_internal_closure());
+            Err(DeviceError::NoCommand {metadata: self.metadata.clone()})?;
         };
 
-        Ok(self.generate_event(value))
+        Ok(IOEvent::new(value))
     }
 
-    /// Primary interface method during polling.
+    /// Get [`IOEvent`], add to log and update cache.
     ///
-    /// Calls `tx()`, updates cached state, and saves to log.
+    /// Primary interface method called during polling,
+    /// and by [`crate::action::Action::evaluate()`] and [`Routine::execute()`].
+    ///
+    /// # Parameters
+    ///
+    /// - `value`: [`RawValue`] to write to device. There is no check on value.
     ///
     /// # Notes
-    /// This method will fail if there is no associated log
+    ///
+    /// A panic is not thrown if there is no log associated.
+    ///
+    /// # Panics
+    ///
+    /// - If there is an error when writing to device on a low-level
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use sensd::action::IOCommand;
+    /// use sensd::io::{Device, DeviceGetters, Output, RawValue};
+    ///
+    /// let value = RawValue::default();
+    /// let command = IOCommand::Output(|_| Ok(()));
+    /// let mut output = Output::default().set_command(command);
+    ///
+    /// let event = output.write(value).unwrap();
+    ///
+    /// assert_eq!(event.value, value);
+    ///
+    /// // cached state is updated
+    /// assert_eq!(output.state().unwrap(), value);
+    /// ```
+    ///
+    /// # Issues
+    ///
+    /// [Low level error type](https://github.com/PoorRican/sensd/issues/192)
+    ///
+    /// # See Also
+    ///
+    /// - [`Input::push_to_log()`] for adding [`IOEvent`] to [`Log`]
     pub fn write(&mut self, value: RawValue) -> Result<IOEvent, ErrorType> {
-        let event = self.tx(value).expect("Error returned by `tx()`");
+        let event = self.tx(value).expect("Low level device error while writing");
 
         // update cached state
-        self.state = Some(event.data.value);
+        self.state = Some(event.value);
 
-        self.push_to_log(event);
+        self.push_to_log(&event);
 
         Ok(event)
     }
@@ -122,7 +251,7 @@ impl Output {
     ///
     /// # Returns
     ///
-    /// [`Routine`] ready to be added to [`SchedRoutineHandler`]
+    /// [`Routine`] ready to be added to [`crate::action::SchedRoutineHandler`]
     pub fn create_routine(&self, value: RawValue, duration: Duration) -> Routine {
         let timestamp = Utc::now() + duration;
         let log = self.log.as_ref()
@@ -135,7 +264,6 @@ impl Output {
             .clone();
         Routine::new(
             timestamp,
-            self.metadata.clone(),
             value,
             log,
             command,
@@ -149,12 +277,29 @@ impl Chronicle for Output {
     }
 }
 
+impl std::fmt::Debug for Output {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Output Device: - {{ name: {}, id: {}, kind: {}}}",
+            self.name(),
+            self.id(),
+            self.metadata().kind
+        )
+    }
+}
+
+impl PartialEq for Output {
+    fn eq(&self, other: &Self) -> bool {
+        self.metadata == other.metadata && self.command == other.command
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
     use crate::action::IOCommand;
     use crate::io::{Device, DeviceGetters, IOKind, Output, RawValue};
-    use crate::storage::Chronicle;
+    use crate::storage::{Chronicle, Directory, Document};
 
     /// Dummy output command for testing.
     /// Accepts value and returns `Ok(())`
@@ -182,9 +327,7 @@ mod tests {
         let value = RawValue::Binary(true);
         let event = output.tx(value).expect("Unknown error occurred in `tx()`");
 
-        assert_eq!(value, event.data.value);
-        assert_eq!(output.kind(), event.data.kind);
-        assert_eq!(output.direction(), event.direction);
+        assert_eq!(value, event.value);
     }
 
     #[test]
@@ -209,9 +352,7 @@ mod tests {
         assert_eq!(value, output.state().unwrap());
 
         // check returned `IOEvent`
-        assert_eq!(value, event.data.value);
-        assert_eq!(output.kind(), event.data.kind);
-        assert_eq!(output.direction(), event.direction);
+        assert_eq!(value, event.value);
 
         // assert that event was added to log
         assert_eq!(log.try_lock().unwrap().iter().count(), 1);
@@ -229,31 +370,37 @@ mod tests {
     }
 
     #[test]
-    fn set_root() {
-        let output = Output::default().init_log();
+    fn set_dir() {
+        let mut output = Output::default().init_log();
 
         assert!(output.log()
             .unwrap().try_lock().unwrap()
-            .root_path()
+            .dir()
             .is_none());
 
-        output.set_root(Arc::new(String::new()));
+        output = output.set_parent_dir("");
 
         assert!(output.log()
             .unwrap().try_lock().unwrap()
-            .root_path()
+            .dir()
             .is_some());
     }
-}
 
-impl std::fmt::Debug for Output {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Output Device: - {{ name: {}, id: {}, kind: {}}}",
-            self.name(),
-            self.id(),
-            self.metadata().kind
-        )
+    #[test]
+    /// Test that [`Input::set_parent_dir()`] correctly changes [`Log::dir()`]
+    fn set_dir_changes_log_dir() {
+        let mut output = Output::default().init_log();
+
+        assert!(output.log()
+            .unwrap().try_lock().unwrap()
+            .dir()
+            .is_none());
+
+        output = output.set_parent_dir("");
+
+        assert!(output.log()
+            .unwrap().try_lock().unwrap()
+            .dir()
+            .is_some());
     }
 }

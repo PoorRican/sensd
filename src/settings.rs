@@ -1,6 +1,6 @@
 use dotenv::dotenv;
 use std::env::var;
-use std::sync::Arc;
+use crate::storage::RootPath;
 
 /// Default values
 const VERSION: &str = "0.1.0";
@@ -10,11 +10,6 @@ pub const LOG_FN_PREFIX: &str = "log_";
 
 /// Default for top-level directory
 pub const DATA_ROOT: &str = "sensd";
-
-/// Specialized type for representing the root directory.
-///
-/// This type should be used to build paths, not be used to represent any sub-directory.
-pub type RootPath = Arc<String>;
 
 #[derive(PartialEq, Debug)]
 /// Global runtime settings
@@ -34,7 +29,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             version: VERSION.to_string(),
-            root_path: Arc::new(DATA_ROOT.to_string()),
+            root_path: RootPath::from(DATA_ROOT),
         }
     }
 }
@@ -55,7 +50,7 @@ impl Settings {
 
         Settings {
             version,
-            root_path: Arc::new(data_root),
+            root_path: RootPath::from(data_root),
         }
     }
 
@@ -89,36 +84,44 @@ impl Settings {
     /// # Panics
     ///
     /// Panics is thrown if any objects are already using this path. This would
-    /// happen if not called before initialization of [`Group`]'s or [`Log`]'s.
-    pub fn set_root<S>(&mut self, path: S)
+    /// happen if not called before initialization of [`crate::storage::Group`]'s or
+    /// [`crate::storage::Log`]'s.
+    pub fn set_root<P>(&mut self, path: P)
         where
-            S: Into<String>
+            P: Into<RootPath>
     {
-        if Arc::strong_count(&self.root_path) > 1 {
+        if self.root_path.strong_count() > 1 {
             panic!("Cannot change `root` while in use")
         }
-        self.root_path = Arc::new(path.into())
+        self.root_path = path.into()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::ops::Deref;
     use crate::settings::Settings;
+    use crate::storage::RootPath;
 
     #[test]
     /// Asserts that `Settings::set_root()` properly converts using `Into<_>`
     fn set_root_into() {
         let mut settings = Settings::default();
         let new_str = "new path";
+        let expected = RootPath::from(new_str);
 
-        assert_eq!(false, settings.root_path().deref().eq(new_str));
+        assert_eq!(false,
+                   settings.root_path()
+                       .eq(&expected));
 
         settings.set_root(new_str);
-        assert!(settings.root_path().deref().eq(new_str));
+        assert!(
+            settings.root_path()
+                .eq(&expected));
 
         settings.set_root(new_str.to_string());
-        assert!(settings.root_path().deref().eq(new_str));
+        assert!(
+            settings.root_path()
+                .eq(&expected));
     }
 
     #[test]

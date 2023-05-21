@@ -1,4 +1,4 @@
-use crate::errors::Error;
+use crate::errors::ErrorType;
 use float_cmp::approx_eq;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
@@ -6,10 +6,11 @@ use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
 
 /// Type used for passing between IO abstractions.
 ///
-/// An enum is used to avoid a generic implementation of [`crate::storage::Log`] caused by
-/// a generic implementation of [`crate::io::IOEvent`].
+/// An enum is used to avoid a generic implementations of [`crate::io::IOEvent`]
+/// and [`crate::io::Device`].
 ///
-/// # Notes
+/// # Contribution
+///
 /// The implemented types have been chosen as a good fit for GPIO. However,
 /// if a type is needed that is not here, feel free to initiate a pull request.
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialOrd)]
@@ -58,37 +59,37 @@ impl Display for RawValue {
 
 // █▓▒░ Conversion from primitive types
 impl TryFrom<u8> for RawValue {
-    type Error = Error;
+    type Error = ErrorType;
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         Ok(RawValue::PosInt8(value))
     }
 }
 impl TryFrom<i8> for RawValue {
-    type Error = Error;
+    type Error = ErrorType;
     fn try_from(value: i8) -> Result<Self, Self::Error> {
         Ok(RawValue::Int8(value))
     }
 }
 impl TryFrom<u32> for RawValue {
-    type Error = Error;
+    type Error = ErrorType;
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         Ok(RawValue::PosInt(value))
     }
 }
 impl TryFrom<i32> for RawValue {
-    type Error = Error;
+    type Error = ErrorType;
     fn try_from(value: i32) -> Result<Self, Self::Error> {
         Ok(RawValue::Int(value))
     }
 }
 impl TryFrom<f32> for RawValue {
-    type Error = Error;
+    type Error = ErrorType;
     fn try_from(value: f32) -> Result<Self, Self::Error> {
         Ok(RawValue::Float(value))
     }
 }
 impl TryFrom<bool> for RawValue {
-    type Error = Error;
+    type Error = ErrorType;
     fn try_from(value: bool) -> Result<Self, Self::Error> {
         Ok(RawValue::Binary(value))
     }

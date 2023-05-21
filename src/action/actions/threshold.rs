@@ -9,7 +9,8 @@ use crate::helpers::Def;
 /// where input value is below threshold. In the future, upper and lower thresholds will be added for
 /// finer control.
 ///
-/// Unlike the [`crate::action::PIDMonitor`] subscriber, [`Threshold`] is unable create a [`Routine`].
+/// Unlike the [`crate::action::actions::PID`] subscriber, [`Threshold`] is unable create a
+/// [`crate::action::Routine`].
 /// Instead, functionality implements simple on/off behavior.
 ///
 /// # Usage
@@ -41,11 +42,20 @@ impl Threshold {
     /// # Returns
     /// Initialized [`Threshold`] action without `output` set.
     ///
-    /// **Note**: [`Action::set_output()`] builder function should be chained after initialization.
+    /// # Example
+    ///
+    /// ```
+    /// use sensd::io::RawValue;
+    /// use sensd::action::{actions, Trigger};
+    ///
+    /// let action = actions::Threshold::new("", RawValue::Float(1.0), Trigger::GT);
+    /// ```
+    ///
+    /// **Note**: [`Action::set_output()`] builder method should be chained after initialization.
     ///
     /// # See Also
     ///
-    /// - [`Action::with_output()`] for constructor that accepts an `output` parameter.
+    /// - [`Threshold::with_output()`] for constructor that accepts an `output` parameter.
     // TODO: there should be an option to inverse polarity
     pub fn new<N>(name: N, threshold: RawValue, trigger: Trigger) -> Self
     where
@@ -63,6 +73,9 @@ impl Threshold {
 
     /// Constructor that accepts `output` parameter
     ///
+    /// This method can be called instead of using [`Threshold::new()`] followed by
+    /// [`Threshold::set_output()`].
+    ///
     /// # Parameters
     ///
     /// - `name`: name of action
@@ -73,6 +86,22 @@ impl Threshold {
     /// # Returns
     ///
     /// Initialized [`Threshold`] action with `output` set.
+    ///
+    /// # Example
+    ///
+    /// This method is meant to be used as a builder pattern via method chaining:
+    ///
+    /// ```
+    /// use sensd::io::{Device, Output, RawValue};
+    /// use sensd::action::{Action, actions, Trigger};
+    ///
+    /// let output = Output::default().into_deferred();
+    /// let action = actions::Threshold::with_output("",
+    ///                                         RawValue::Float(1.0),
+    ///                                         Trigger::GT,
+    ///                                         output);
+    /// assert!(action.output().is_some())
+    /// ```
     pub fn with_output<N>(name: N, threshold: RawValue, trigger: Trigger, output: Def<Output>) -> Self
     where
         N: Into<String>
@@ -82,6 +111,23 @@ impl Threshold {
 
     #[inline]
     /// Getter for internal `threshold` value
+    ///
+    /// # Returns
+    ///
+    /// Copy of internal [`RawValue`] to use as threshold
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use sensd::io::{Device, Output, RawValue};
+    /// use sensd::action::{Action, actions, Trigger};
+    ///
+    /// let threshold = RawValue::Float(1.0);
+    /// let output = Output::default().into_deferred();
+    /// let action = actions::Threshold::new("", threshold, Trigger::GT);
+    ///
+    /// assert_eq!(threshold, action.threshold())
+    /// ```
     pub fn threshold(&self) -> RawValue {
         self.threshold
     }
@@ -120,10 +166,9 @@ impl Action for Threshold {
     /// # Notes
     ///
     /// - This function is inline because it is used in iterator loops
-    /// - Any error returned by [`Self::write()`] is dropped by [`Self::on_unchecked()`] and
-    ///   [`Self::off_unchecked()`]
+    /// - Any error returned by [`Self::write()`] is silenced.
     fn evaluate(&mut self, data: &IOEvent) {
-        let input = data.data.value;
+        let input = data.value;
         let exceeded = self.trigger.exceeded(input, self.threshold);
 
         match exceeded {
@@ -138,6 +183,30 @@ impl Action for Threshold {
         };
     }
 
+    ///
+    /// Builder function for setting `output` field.
+    ///
+    /// # Parameters
+    ///
+    /// - `device`: [`Def`] reference to set as output
+    ///
+    /// # Returns
+    ///
+    /// Ownership of `Self` to enable method chaining
+    ///
+    /// # Example
+    ///
+    /// This method is meant to be used as a builder pattern via method chaining:
+    ///
+    /// ```
+    /// use sensd::io::{Device, Output, RawValue};
+    /// use sensd::action::{Action, actions, Trigger};
+    ///
+    /// let output = Output::default().into_deferred();
+    /// let action = actions::Threshold::new("", RawValue::Float(1.0), Trigger::GT)
+    ///                 .set_output(output);
+    /// assert!(action.output().is_some())
+    /// ```
     fn set_output(mut self, device: Def<Output>) -> Self
     where
         Self: Sized,

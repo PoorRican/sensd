@@ -4,14 +4,13 @@ use std::collections::hash_map::{Entry, Iter};
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::ops::Deref;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-use crate::errors::{Error, ErrorKind, ErrorType};
+use crate::errors::{ContainerError, ErrorType, FilesystemError};
 use crate::helpers::writable_or_create;
-use crate::io::{DeviceMetadata, IOEvent, IdType};
+use crate::io::{DeviceMetadata, IdType, IOEvent};
 use crate::settings;
-use crate::settings::RootPath;
-use crate::storage::{EventCollection, Persistent, FILETYPE};
+use crate::storage::{EventCollection, Persistent, FILETYPE, Document};
 
 
 /// A record of [`IOEvent`]s from a single device keyed by datetime
@@ -24,13 +23,15 @@ use crate::storage::{EventCollection, Persistent, FILETYPE};
 /// behind `Def`.
 #[derive(Serialize, Deserialize, Default)]
 pub struct Log {
-    // TODO: split logs using ID
-    id: IdType,
+    /// Retain a copy of source metadata for verification and recovery
+    metadata: Option<DeviceMetadata>,
     #[serde(skip)]
-    name: String,
-    #[serde(skip)]
-    root_path: Option<RootPath>,
+    /// Store a reference to local root
+    ///
+    /// This field is not serialized
+    dir: Option<PathBuf>,
 
+    /// Collection of `IOEvent` objects
     log: EventCollection,
 }
 
@@ -45,64 +46,65 @@ impl Log {
     /// # Returns
     ///
     /// Empty log with identity attributes belonging to given device.
-    pub fn new(metadata: &DeviceMetadata) -> Self
+    pub fn with_metadata(metadata: &DeviceMetadata) -> Self
     {
-        let id = metadata.id;
-        let name = metadata.name.clone();
-        let log = EventCollection::default();
-        let root_path = None;
-
-        Self {
-            id,
-            name,
-            log,
-            root_path,
-        }
+        Self::default()
+            .set_metadata(metadata.clone())
     }
 
-    /// Helper method which returns internal `root_path` or default
-    fn root(&self) -> String {
-        if self.root_path.is_some() {
-            self.root_path.as_ref().unwrap().to_string()
-        } else {
-            settings::DATA_ROOT.to_string()
-        }
-    }
-
-    /// Full path to log file
-    ///
-    /// # Issues
-    ///
-    /// - See [#126](https://github.com/PoorRican/sensd/issues/126) which implements validation of `path`.
+    /// Getter for device metadata
     ///
     /// # Returns
     ///
-    /// `String` of full path *including* filename
-    fn full_path(&self) -> String {
-        let root = self.root();
-        let dir = Path::new(&root);
-
-        let full_path = dir.join(self.filename());
-        String::from(full_path.to_str().unwrap())
+    /// An `Option` with:
+    /// - `None` if no device is associated
+    /// - `Some` containing a reference to internal device metadata
+    pub fn metadata(&self) -> Option<&DeviceMetadata> {
+        self.metadata.as_ref()
     }
 
-    /// Generate generic filename based on settings, owner, and id
+    /// Getter for `name`
     ///
     /// # Returns
     ///
-    /// A formatted filename as `String` with JSON filetype prefix.
+    /// Reference to `String` in local copy of `DeviceMetadata`
     ///
-    /// # See Also
+    /// # Panics
     ///
-    /// - [`FILETYPE`] for definition of filetype suffix
-    fn filename(&self) -> String {
-        format!(
-            "{}_{}_{}{}",
-            settings::LOG_FN_PREFIX,
-            self.name,
-            self.id.to_string().as_str(),
-            FILETYPE
-        )
+    /// If there is no associated device, a panic is thrown.
+    pub fn name(&self) -> &String {
+        &self.metadata()
+            .expect("No associated device metadata")
+            .name
+    }
+
+    /// Getter for `id`
+    ///
+    /// # Returns
+    ///
+    /// Reference to `IdType` in local copy of `DeviceMetadata`
+    ///
+    /// # Panics
+    ///
+    /// If there is no associated device, a panic is thrown.
+    pub fn id(&self) -> &IdType {
+        &self.metadata()
+            .expect("No associated device metadata")
+            .id
+    }
+
+    /// Setter for `metadata`
+    ///
+    /// # Parameters
+    ///
+    /// - `metadata`: Device metadata to store internally
+    ///
+    /// # Returns
+    ///
+    /// Ownership of `self` with updated metadata. This is meant to be used by method
+    pub fn set_metadata(mut self, metadata: DeviceMetadata) -> Self {
+        self.metadata = Some(metadata);
+        self
     }
 
     /// Iterator over keys and values
@@ -129,19 +131,30 @@ impl Log {
     pub fn push(
         &mut self,
         event: IOEvent,
-    ) -> Result<&mut IOEvent, ErrorType> {
+    ) -> Result<&mut IOEvent, ContainerError> {
         match self.log.entry(event.timestamp) {
-            Entry::Occupied(_) => Err(Error::new(ErrorKind::ContainerError, "Key already exists")),
+            Entry::Occupied(_) => Err(ContainerError::KeyExists { key: event.timestamp.to_string()}),
             Entry::Vacant(entry) => Ok(entry.insert(event)),
         }
     }
 
-    pub fn root_path(&self) -> Option<RootPath> {
-        self.root_path.clone()
-    }
+    /// Extend current [`Log`] with [`EventCollection`] from another [`Log`]
+    ///
+    /// This is used for loading archived logs into memory.
+    ///
+    /// # Parameters
+    ///
+    /// - `other`: [`Log`] to pull [`EventCollection`] from
+    ///
+    /// # Panics
+    ///
+    /// If both `metadata` fields do not match, then program panics.
+    pub fn extend(&mut self, other: &mut Log) {
+        if self.metadata != other.metadata {
+            panic!("Metadata does not match. Cannot extend");
+        }
 
-    pub fn set_root(&mut self, root: RootPath) {
-        self.root_path = Some(root)
+        self.log.extend(other.log.clone());
     }
 }
 
@@ -165,25 +178,18 @@ impl Persistent for Log {
     ///
     /// - [`Log::full_path()`] explains usage of `path` parameter.
     fn save(&self) -> Result<(), ErrorType> {
-        if self.log.is_empty() {
-            Err(Error::new(
-                ErrorKind::ContainerEmpty,
-                format!("Log for '{}'. Nothing to save.", self.name).as_str(),
-            ))
-        } else {
-            let file = writable_or_create(self.full_path());
-            let writer = BufWriter::new(file);
+        let file = writable_or_create(self.full_path());
+        let writer = BufWriter::new(file);
 
-            match serde_json::to_writer_pretty(writer, &self) {
-                Ok(_) => println!("Saved"),
-                Err(e) => {
-                    let msg = e.to_string();
-                    dbg!(msg.clone());
-                    return Err(Error::new(ErrorKind::SerializationError, msg.as_str()));
-                }
+        match serde_json::to_writer_pretty(writer, &self) {
+            Ok(_) => println!("Saved"),
+            Err(e) => {
+                let msg = e.to_string();
+                return Err(
+                    Box::new(FilesystemError::SerializationError {msg}));
             }
-            Ok(())
         }
+        Ok(())
     }
 
     /// Load log from JSON file
@@ -215,53 +221,94 @@ impl Persistent for Log {
             let buff: Log = match serde_json::from_reader(reader) {
                 Ok(data) => data,
                 Err(e) => {
-                    return Err(Error::new(
-                        ErrorKind::SerializationError,
-                        e.to_string().as_str(),
-                    ))
+                    let msg = e.to_string();
+                    return Err(
+                        Box::new(FilesystemError::SerializationError {msg})
+                    )
                 }
             };
             self.log = buff.log;
             Ok(())
         } else {
-            Err(Error::new(
-                ErrorKind::ContainerNotEmpty,
-                "Cannot load objects into non-empty container",
-            ))
+            Err(Box::new(ContainerError::ContainerNotEmpty))
         }
+    }
+}
+
+/// - See [#126](https://github.com/PoorRican/sensd/issues/126) which implements validation of `path`.
+impl Document for Log {
+    fn dir(&self) -> Option<&PathBuf> {
+        self.dir.as_ref()
+    }
+
+    fn set_dir_ref<P>(&mut self, path: P) -> &mut Self
+        where Self: Sized,
+              P: AsRef<Path>
+    {
+        self.dir = Some(PathBuf::from(path.as_ref()));
+
+        self
+    }
+
+    /// Generate generic filename based on settings, owner, and id
+    ///
+    /// # Returns
+    ///
+    /// A formatted filename as [`String`] with JSON filetype prefix.
+    ///
+    /// # See Also
+    ///
+    /// - [`FILETYPE`] for definition of filetype suffix
+    fn filename(&self) -> String {
+        format!(
+            "{}_{}_{}{}",
+            settings::LOG_FN_PREFIX,
+            self.name(),
+            self.id().to_string().as_str(),
+            FILETYPE
+        )
     }
 }
 
 // Testing
 #[cfg(test)]
 mod tests {
-    use crate::action::IOCommand;
-    use crate::helpers::Def;
-    use crate::io::{Device, Input, IOKind, IdType, RawValue};
-    use crate::storage::{Chronicle, Log, Persistent};
+    use crate::io::{IOKind, RawValue, IOEvent, DeviceMetadata, IODirection};
+    use crate::storage::{Document, Log, Persistent};
     use std::path::Path;
     use std::time::Duration;
     use std::{fs, thread};
-    use std::sync::Arc;
-    use crate::settings::RootPath;
 
-    fn add_to_log<D>(device: &D, log: &Def<Log>, count: usize)
-    where
-        D: Device
+    fn generate_log<'meta, M>(count: usize, metadata: M) -> Log
+        where
+            M: Into<Option<&'meta DeviceMetadata>>
     {
-        for _ in 0..count {
-            let event = device.generate_event(RawValue::default());
-            log.lock().unwrap().push(event).unwrap();
-            thread::sleep(Duration::from_nanos(1)); // add delay so that we don't finish too quickly
+        let mut log;
+        match metadata.into() {
+            Some(meta) => log = Log::with_metadata(meta),
+            None => log = Log::default(),
         }
+
+        for _ in 0..count {
+            let event = IOEvent::new(RawValue::default());
+            log.push(event).unwrap();
+            thread::sleep(Duration::from_nanos(1));
+        }
+
+        log
     }
 
     #[test]
     fn test_load_save() {
-        const SENSOR_NAME: &str = "test";
-        const ID: IdType = 32;
         const COUNT: usize = 10;
-        const COMMAND: IOCommand = IOCommand::Input(move || RawValue::default());
+        const TMP_DIR: &str = "/tmp/device/";
+
+        let metadata = DeviceMetadata::new(
+            "test",
+            32,
+            IOKind::Unassigned,
+            IODirection::In,
+        );
 
         /* NOTE: More complex `IOEvent` objects *could* be checked, but we are trusting `serde`.
         These tests only count the number of `IOEvent`'s added. */
@@ -269,17 +316,14 @@ mod tests {
         let filename;
         // test save
         {
-            let device = Input::new(String::from(SENSOR_NAME), ID, IOKind::Flow)
-                .set_command(COMMAND)
-                .init_log();
-            let log = device.log().unwrap();
+            let log =
+                generate_log(COUNT, &metadata)
+                    .set_dir(TMP_DIR);
 
-            add_to_log(&device, &log, COUNT);
-            let _log = log.lock().unwrap();
-            _log.save().unwrap();
+            log.save().unwrap();
 
             // save filename for later
-            filename = _log.full_path();
+            filename = log.full_path();
             // check that file exists
             assert!(Path::new(&filename).exists());
         };
@@ -287,30 +331,38 @@ mod tests {
         // test load
         // build back up then load
         {
-            let device = Input::new(SENSOR_NAME, ID, IOKind::Flow)
-                .set_command(COMMAND)
-                .init_log();
-            let log = device.log().unwrap();
+            let mut log = Log::with_metadata(&metadata)
+                .set_dir(TMP_DIR);
 
-            let mut _log = log.lock().unwrap();
-            _log.load().unwrap();
+            log.load().unwrap();
 
             // check count of `IOEvent`
-            assert_eq!(COUNT, _log.iter().count() as usize);
+            assert_eq!(COUNT, log.iter().count() as usize);
         };
 
         fs::remove_file(filename).unwrap();
     }
 
     #[test]
-    fn set_root_path() {
+    fn set_dir() {
         let mut log = Log::default();
 
-        assert!(log.root_path().is_none());
+        assert!(log.dir().is_none());
 
-        let root: RootPath = Arc::new(String::new());
-        log.set_root(root);
+        log.set_dir_ref("");
 
-        assert!(log.root_path().is_some())
+        assert!(log.dir().is_some())
+    }
+
+    #[test]
+    fn test_extend() {
+        let mut orig = generate_log(50, None);
+        let mut new = generate_log(50, None);
+
+        assert_eq!(50, orig.iter().count());
+
+        orig.extend(&mut new);
+
+        assert_eq!(100, orig.iter().count())
     }
 }

@@ -1,10 +1,11 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 
-/// Defines I/O type.
-/// Intended to allow differentiation and classification.
-/// More may be appended as time goes on.
-/// This might be expanded to multiple levels of organization.
+/// Representation of physical processes
+///
+/// # Contribution
+///
+/// This is not an exhaustive list. Feel free to add variants as needed.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
 pub enum IOKind {
     #[default]
