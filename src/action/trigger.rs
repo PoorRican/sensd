@@ -1,5 +1,5 @@
 use std::fmt::{Display, Formatter};
-use crate::io::RawValue;
+use crate::io::Datum;
 
 #[derive(Debug, Clone)]
 /// Discrete variants that abstract comparison of external and threshold values.
@@ -25,7 +25,7 @@ impl Trigger {
     /// # Returns
     ///
     /// A `bool` if threshold is exceeded or not in relation to variant of `self`
-    pub fn exceeded(&self, value: RawValue, threshold: RawValue) -> bool {
+    pub fn exceeded(&self, value: Datum, threshold: Datum) -> bool {
         match &self {
             &Trigger::GT => value > threshold,
             &Trigger::GTE => value >= threshold,
@@ -50,15 +50,15 @@ impl Display for Trigger {
 #[cfg(test)]
 mod tests {
     use crate::action::Trigger;
-    use crate::io::RawValue;
+    use crate::io::Datum;
 
 
     #[test]
     fn lte() {
         let trigger = Trigger::LTE;
         let (bigger, smaller) = (
-            RawValue::Int(2),
-            RawValue::Int(1),
+            Datum::Int(2),
+            Datum::Int(1),
         );
 
         assert_eq!(true,
@@ -77,8 +77,8 @@ mod tests {
     fn gte() {
         let trigger = Trigger::GTE;
         let (bigger, smaller) = (
-            RawValue::Int(2),
-            RawValue::Int(1),
+            Datum::Int(2),
+            Datum::Int(1),
         );
 
 
@@ -98,8 +98,8 @@ mod tests {
     fn lt() {
         let trigger = Trigger::LT;
         let (bigger, smaller) = (
-            RawValue::Int(2),
-            RawValue::Int(1),
+            Datum::Int(2),
+            Datum::Int(1),
         );
 
         assert_eq!(true,
@@ -115,8 +115,8 @@ mod tests {
     fn gt() {
         let trigger = Trigger::GT;
         let (bigger, smaller) = (
-            RawValue::Int(2),
-            RawValue::Int(1),
+            Datum::Int(2),
+            Datum::Int(1),
         );
 
 

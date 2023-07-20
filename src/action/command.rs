@@ -1,4 +1,4 @@
-use crate::io::RawValue;
+use crate::io::Datum;
 
 pub type BoxedCommand<T, E> = Box<dyn Command<T, E>>;
 
@@ -16,5 +16,5 @@ pub trait Command<T, E> {
     /// - `Err(ErrorType)`: [`ErrorType`] is returned when an error occurs during operation.
     fn execute<V>(&self, value: V) -> Result<Option<T>, E>
     where
-        V: Into<Option<RawValue>>;
+        V: Into<Option<Datum>>;
 }

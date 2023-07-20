@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::io::{IdTraits, RawValue};
+use crate::io::{IdTraits, Datum};
 
 /// Dedicated object for storing a single record at a specific point in time.
 ///
@@ -10,9 +10,9 @@ use crate::io::{IdTraits, RawValue};
 /// The easiest way to create an [`IOEvent`] is by using the `new` constructor:
 ///
 /// ```
-/// use sensd::io::{IOEvent, RawValue};
+/// use sensd::io::{IOEvent, Datum};
 ///
-/// let value = RawValue::default();
+/// let value = Datum::default();
 ///
 /// let event = IOEvent::new(value);
 ///
@@ -28,7 +28,7 @@ use crate::io::{IdTraits, RawValue};
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct IOEvent {
     pub timestamp: DateTime<Utc>,
-    pub value: RawValue,
+    pub value: Datum,
 }
 
 impl IOEvent {
@@ -47,17 +47,17 @@ impl IOEvent {
     ///
     /// ```
     /// use chrono::Utc;
-    /// use sensd::io::{IOEvent, RawValue};
+    /// use sensd::io::{IOEvent, Datum};
     ///
     /// let now = Utc::now();
-    /// let value = RawValue::default();
+    /// let value = Datum::default();
     ///
     /// let event = IOEvent::with_timestamp(now, value);
     ///
     /// assert_eq!(now, event.timestamp);
     /// assert_eq!(value, event.value);
     /// ```
-    pub fn with_timestamp(timestamp: DateTime<Utc>, value: RawValue) -> Self {
+    pub fn with_timestamp(timestamp: DateTime<Utc>, value: Datum) -> Self {
         IOEvent {
             timestamp,
             value,
@@ -77,15 +77,15 @@ impl IOEvent {
     /// # Example
     ///
     /// ```
-    /// use sensd::io::{IOEvent, RawValue};
+    /// use sensd::io::{IOEvent, Datum};
     ///
-    /// let value = RawValue::default();
+    /// let value = Datum::default();
     ///
     /// let event = IOEvent::new(value);
     ///
     /// assert_eq!(value, event.value);
     /// ```
-    pub fn new(value: RawValue) -> Self {
+    pub fn new(value: Datum) -> Self {
         let timestamp = Utc::now();
         IOEvent::with_timestamp(timestamp, value)
     }

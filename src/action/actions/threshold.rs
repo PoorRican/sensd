@@ -1,5 +1,5 @@
 use crate::action::{Action, BoxedAction};
-use crate::io::{IOEvent, Output, RawValue};
+use crate::io::{IOEvent, Output, Datum};
 use crate::action::trigger::Trigger;
 use crate::helpers::Def;
 
@@ -24,7 +24,7 @@ use crate::helpers::Def;
 // TODO: add upper/lower threshold
 pub struct Threshold {
     name: String,
-    threshold: RawValue,
+    threshold: Datum,
 
     trigger: Trigger,
     output: Option<Def<Output>>,
@@ -45,10 +45,10 @@ impl Threshold {
     /// # Example
     ///
     /// ```
-    /// use sensd::io::RawValue;
+    /// use sensd::io::Datum;
     /// use sensd::action::{actions, Trigger};
     ///
-    /// let action = actions::Threshold::new("", RawValue::Float(1.0), Trigger::GT);
+    /// let action = actions::Threshold::new("", Datum::Float(1.0), Trigger::GT);
     /// ```
     ///
     /// **Note**: [`Action::set_output()`] builder method should be chained after initialization.
@@ -57,7 +57,7 @@ impl Threshold {
     ///
     /// - [`Threshold::with_output()`] for constructor that accepts an `output` parameter.
     // TODO: there should be an option to inverse polarity
-    pub fn new<N>(name: N, threshold: RawValue, trigger: Trigger) -> Self
+    pub fn new<N>(name: N, threshold: Datum, trigger: Trigger) -> Self
     where
         N: Into<String>
     {
@@ -92,17 +92,17 @@ impl Threshold {
     /// This method is meant to be used as a builder pattern via method chaining:
     ///
     /// ```
-    /// use sensd::io::{Device, Output, RawValue};
+    /// use sensd::io::{Device, Output, Datum};
     /// use sensd::action::{Action, actions, Trigger};
     ///
     /// let output = Output::default().into_deferred();
     /// let action = actions::Threshold::with_output("",
-    ///                                         RawValue::Float(1.0),
+    ///                                         Datum::Float(1.0),
     ///                                         Trigger::GT,
     ///                                         output);
     /// assert!(action.output().is_some())
     /// ```
-    pub fn with_output<N>(name: N, threshold: RawValue, trigger: Trigger, output: Def<Output>) -> Self
+    pub fn with_output<N>(name: N, threshold: Datum, trigger: Trigger, output: Def<Output>) -> Self
     where
         N: Into<String>
     {
@@ -114,21 +114,21 @@ impl Threshold {
     ///
     /// # Returns
     ///
-    /// Copy of internal [`RawValue`] to use as threshold
+    /// Copy of internal [`Datum`] to use as threshold
     ///
     /// # Example
     ///
     /// ```
-    /// use sensd::io::{Device, Output, RawValue};
+    /// use sensd::io::{Device, Output, Datum};
     /// use sensd::action::{Action, actions, Trigger};
     ///
-    /// let threshold = RawValue::Float(1.0);
+    /// let threshold = Datum::Float(1.0);
     /// let output = Output::default().into_deferred();
     /// let action = actions::Threshold::new("", threshold, Trigger::GT);
     ///
     /// assert_eq!(threshold, action.threshold())
     /// ```
-    pub fn threshold(&self) -> RawValue {
+    pub fn threshold(&self) -> Datum {
         self.threshold
     }
 
@@ -137,7 +137,7 @@ impl Threshold {
     ///
     /// Sends a `true` value to output device. Does not check value [`Result`] from [`Action::write()`].
     fn on_unchecked(&self) {
-        let _ = self.write(RawValue::Binary(true));
+        let _ = self.write(Datum::Binary(true));
     }
 
     #[inline]
@@ -145,7 +145,7 @@ impl Threshold {
     ///
     /// Sends a `false` value to output device. Does not check value [`Result`] from [`Action::write()`].
     fn off_unchecked(&self) {
-        let _ = self.write(RawValue::Binary(false));
+        let _ = self.write(Datum::Binary(false));
     }
 }
 
@@ -199,11 +199,11 @@ impl Action for Threshold {
     /// This method is meant to be used as a builder pattern via method chaining:
     ///
     /// ```
-    /// use sensd::io::{Device, Output, RawValue};
+    /// use sensd::io::{Device, Output, Datum};
     /// use sensd::action::{Action, actions, Trigger};
     ///
     /// let output = Output::default().into_deferred();
-    /// let action = actions::Threshold::new("", RawValue::Float(1.0), Trigger::GT)
+    /// let action = actions::Threshold::new("", Datum::Float(1.0), Trigger::GT)
     ///                 .set_output(output);
     /// assert!(action.output().is_some())
     /// ```
@@ -231,16 +231,16 @@ impl Action for Threshold {
 mod tests {
     use crate::action::actions::Threshold;
     use crate::action::Trigger;
-    use crate::io::{Device, Output, RawValue};
+    use crate::io::{Device, Output, Datum};
 
     #[test]
     /// Ensure that `name` can be given to `new()` constructor as `String` or `&str`
     fn new_name_parameter() {
         let name = "test name";
-        Threshold::new(name, RawValue::default(), Trigger::GT);
+        Threshold::new(name, Datum::default(), Trigger::GT);
 
         let name = String::from(name);
-        Threshold::new(name, RawValue::default(), Trigger::GT);
+        Threshold::new(name, Datum::default(), Trigger::GT);
     }
 
     #[test]
@@ -248,9 +248,9 @@ mod tests {
     fn with_output_name_parameter() {
         let output = Output::default().into_deferred();
         let name = "test name";
-        Threshold::with_output(name, RawValue::default(), Trigger::GT, output.clone());
+        Threshold::with_output(name, Datum::default(), Trigger::GT, output.clone());
 
         let name = String::from(name);
-        Threshold::with_output(name, RawValue::default(), Trigger::GT, output);
+        Threshold::with_output(name, Datum::default(), Trigger::GT, output);
     }
 }

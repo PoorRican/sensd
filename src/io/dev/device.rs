@@ -11,7 +11,7 @@
 use std::path::{Path};
 use crate::action::IOCommand;
 use crate::helpers::Def;
-use crate::io::{DeviceMetadata, IODirection, IOKind, IdType, RawValue};
+use crate::io::{DeviceMetadata, IODirection, IOKind, IdType, Datum};
 use crate::storage::Document;
 use crate::storage::{Chronicle, Log, Persistent};
 use crate::errors::ErrorType;
@@ -100,8 +100,8 @@ pub trait DeviceGetters {
     ///
     /// An `Option` that is:
     /// - `None` upon initialization since device has not been read from or written to.
-    /// - `RawValue` after first read or write, and represents last known state.
-    fn state(&self) -> &Option<RawValue>;
+    /// - `Datum` after first read or write, and represents last known state.
+    fn state(&self) -> &Option<Datum>;
 }
 
 /// Command setter methods share by all device types

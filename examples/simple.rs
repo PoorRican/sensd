@@ -23,7 +23,7 @@ extern crate serde;
 
 use sensd::action::{Action, actions, IOCommand, Trigger};
 use sensd::errors::ErrorType;
-use sensd::io::{IOKind, RawValue, Input, Device};
+use sensd::io::{IOKind, Datum, Input, Device};
 use sensd::storage::{Group, Persistent};
 
 /// █▓▒░ Event Loop Operating frequency
@@ -70,7 +70,7 @@ fn main() {
         let name = "test name";
         let id = 0;
         let kind = IOKind::PH;
-        let command = IOCommand::Input(|| RawValue::Float(1.2));
+        let command = IOCommand::Input(|| Datum::Float(1.2));
 
         // build input device
         let mut input =
@@ -88,7 +88,7 @@ fn main() {
             .subscribe(
                 actions::Threshold::new(
                     format!("Subscriber for Input:{}", id),
-                    RawValue::Float(1.0),
+                    Datum::Float(1.0),
                     Trigger::GT,
                 ).into_boxed()
             );
@@ -100,7 +100,7 @@ fn main() {
         let name = "second sensor";
         let id = 1;
         let kind = IOKind::PH;
-        let command = IOCommand::Input(|| RawValue::Float(1.2));
+        let command = IOCommand::Input(|| Datum::Float(1.2));
 
         // build input device
         let mut input = Input::new(
@@ -117,7 +117,7 @@ fn main() {
             .subscribe(
                 actions::Threshold::new(
                     format!("Subscriber for Input:{}", id),
-                    RawValue::Float(1.0),
+                    Datum::Float(1.0),
                     Trigger::GT,
                 ).into_boxed()
             );

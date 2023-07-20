@@ -1,4 +1,4 @@
-use crate::io::{IOEvent, Output, RawValue};
+use crate::io::{IOEvent, Output, Datum};
 use std::ops::DerefMut;
 use crate::helpers::Def;
 
@@ -45,7 +45,7 @@ pub trait Action {
     ///
     /// - If error occurs when writing to device
     /// - If output has no associated output
-    fn write(&self, value: RawValue) {
+    fn write(&self, value: Datum) {
         let output = self.output()
             .expect("Action has no associated output device");
 

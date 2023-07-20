@@ -4,7 +4,7 @@ use chrono::{Duration, Utc};
 use crate::action::{Command, IOCommand, Routine};
 use crate::errors::{DeviceError, ErrorType};
 use crate::helpers::Def;
-use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue, DeviceGetters, DeviceSetters};
+use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, Datum, DeviceGetters, DeviceSetters};
 use crate::io::dev::device::set_log_dir;
 use crate::name::Name;
 use crate::storage::{Chronicle, Directory, Log};
@@ -39,7 +39,7 @@ use crate::storage::{Chronicle, Directory, Log};
 ///
 /// ```
 /// use sensd::action::IOCommand;
-/// use sensd::io::{Device, Output, RawValue};
+/// use sensd::io::{Device, Output, Datum};
 ///
 /// let command = IOCommand::Output(|_| Ok(()));
 /// let device =
@@ -52,7 +52,7 @@ use crate::storage::{Chronicle, Directory, Log};
 pub struct Output {
     metadata: DeviceMetadata,
     // cached state
-    state: Option<RawValue>,
+    state: Option<Datum>,
     log: Option<Def<Log>>,
     command: Option<IOCommand>,
 
@@ -99,7 +99,7 @@ impl DeviceGetters for Output {
     /// Immutable reference to cached state
     ///
     /// `state` field should be updated by `write()`
-    fn state(&self) -> &Option<RawValue> {
+    fn state(&self) -> &Option<Datum> {
         &self.state
     }
 }
@@ -167,7 +167,7 @@ impl Output {
     ///
     /// # Parameters
     ///
-    /// - `value`: [`RawValue`] to send to device
+    /// - `value`: [`Datum`] to send to device
     ///
     /// # Returns
     ///
@@ -179,7 +179,7 @@ impl Output {
     /// # Issues
     ///
     /// [Low level error type](https://github.com/PoorRican/sensd/issues/192)
-    fn tx(&self, value: RawValue) -> Result<IOEvent, DeviceError> {
+    fn tx(&self, value: Datum) -> Result<IOEvent, DeviceError> {
         if let Some(command) = &self.command {
             command.execute(Some(value))?;
         } else {
@@ -196,7 +196,7 @@ impl Output {
     ///
     /// # Parameters
     ///
-    /// - `value`: [`RawValue`] to write to device. There is no check on value.
+    /// - `value`: [`Datum`] to write to device. There is no check on value.
     ///
     /// # Notes
     ///
@@ -210,9 +210,9 @@ impl Output {
     ///
     /// ```
     /// use sensd::action::IOCommand;
-    /// use sensd::io::{Device, DeviceGetters, Output, RawValue};
+    /// use sensd::io::{Device, DeviceGetters, Output, Datum};
     ///
-    /// let value = RawValue::default();
+    /// let value = Datum::default();
     /// let command = IOCommand::Output(|_| Ok(()));
     /// let mut output = Output::default().set_command(command);
     ///
@@ -231,7 +231,7 @@ impl Output {
     /// # See Also
     ///
     /// - [`Input::push_to_log()`] for adding [`IOEvent`] to [`Log`]
-    pub fn write(&mut self, value: RawValue) -> Result<IOEvent, ErrorType> {
+    pub fn write(&mut self, value: Datum) -> Result<IOEvent, ErrorType> {
         let event = self.tx(value).expect("Low level device error while writing");
 
         // update cached state
@@ -252,7 +252,7 @@ impl Output {
     /// # Returns
     ///
     /// [`Routine`] ready to be added to [`crate::action::SchedRoutineHandler`]
-    pub fn create_routine(&self, value: RawValue, duration: Duration) -> Routine {
+    pub fn create_routine(&self, value: Datum, duration: Duration) -> Routine {
         let timestamp = Utc::now() + duration;
         let log = self.log.as_ref()
             .expect("Output device does not have log")
@@ -298,7 +298,7 @@ impl PartialEq for Output {
 #[cfg(test)]
 mod tests {
     use crate::action::IOCommand;
-    use crate::io::{Device, DeviceGetters, IOKind, Output, RawValue};
+    use crate::io::{Device, DeviceGetters, IOKind, Output, Datum};
     use crate::storage::{Chronicle, Directory, Document};
 
     /// Dummy output command for testing.
@@ -324,7 +324,7 @@ mod tests {
         let mut output = Output::default();
         output.command = Some(COMMAND);
 
-        let value = RawValue::Binary(true);
+        let value = Datum::Binary(true);
         let event = output.tx(value).expect("Unknown error occurred in `tx()`");
 
         assert_eq!(value, event.value);
@@ -338,7 +338,7 @@ mod tests {
 
         assert_eq!(log.try_lock().unwrap().iter().count(), 0);
 
-        let value = RawValue::Binary(true);
+        let value = Datum::Binary(true);
         output.command = Some(COMMAND);
 
         // check `state` before `::write()`

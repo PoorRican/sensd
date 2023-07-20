@@ -9,7 +9,7 @@ extern crate sensd;
 extern crate serde;
 
 use sensd::action::IOCommand;
-use sensd::io::{IOKind, IdType, RawValue, Input, Device};
+use sensd::io::{IOKind, IdType, Datum, Input, Device};
 use sensd::storage::{Group, Persistent};
 use std::ops::{DerefMut, Neg};
 
@@ -63,7 +63,7 @@ fn main() {
 
     println!("█▓▒░ Beginning loop ░▒▓█\n");
 
-    let mut value = RawValue::Binary(false);
+    let mut value = Datum::Binary(false);
 
     loop {
         {

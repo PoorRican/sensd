@@ -3,9 +3,9 @@
 mod direction;
 mod id;
 mod kind;
-mod raw;
+mod datum;
 
 pub use direction::*;
 pub use id::*;
 pub use kind::*;
-pub use raw::*;
+pub use datum::*;

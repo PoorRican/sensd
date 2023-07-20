@@ -2,7 +2,7 @@ use chrono::Duration;
 use ext_pid::Pid;
 use crate::action::{Action, BoxedAction, SchedRoutineHandler};
 use crate::helpers::Def;
-use crate::io::{Output, IOEvent, RawValue};
+use crate::io::{Output, IOEvent, Datum};
 
 /// Action implementing a PID controller to control a single output
 ///
@@ -489,7 +489,7 @@ impl Action for PID {
 
     fn evaluate(&mut self, data: &IOEvent) {
         let measurement = data.value;
-        if let RawValue::Float(value) = measurement {
+        if let Datum::Float(value) = measurement {
 
             let duration =
                 self.calculate(value);
@@ -499,13 +499,13 @@ impl Action for PID {
                     panic!("Handler has not been set!");
                 }
 
-                self.write(RawValue::Binary(true));
+                self.write(Datum::Binary(true));
 
                 let output = self.output.as_ref()
                     .expect("Output has not been set!")
                     .try_lock().unwrap();
                 let routine = output.create_routine(
-                    RawValue::Binary(false),
+                    Datum::Binary(false),
                     duration);
                 self.handler.as_ref().unwrap().try_lock().unwrap().push(routine);
             }

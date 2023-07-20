@@ -17,7 +17,7 @@ pub type LogContainer = Vec<Def<Log>>;
 #[cfg(test)]
 mod test_event_collection {
     use chrono::{Duration, Utc};
-    use crate::io::{IOEvent, RawValue};
+    use crate::io::{IOEvent, Datum};
     use crate::storage::EventCollection;
 
     fn generate_log(count: usize) -> EventCollection {
@@ -27,7 +27,7 @@ mod test_event_collection {
 
         for i in 0..count {
             let timestamp = now - Duration::seconds(i as i64);
-            let event = IOEvent::with_timestamp(timestamp, RawValue::Binary(true));
+            let event = IOEvent::with_timestamp(timestamp, Datum::Binary(true));
 
             log.insert(timestamp, event);
         }

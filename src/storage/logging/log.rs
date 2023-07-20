@@ -273,7 +273,7 @@ impl Document for Log {
 // Testing
 #[cfg(test)]
 mod tests {
-    use crate::io::{IOKind, RawValue, IOEvent, DeviceMetadata, IODirection};
+    use crate::io::{IOKind, Datum, IOEvent, DeviceMetadata, IODirection};
     use crate::storage::{Document, Log, Persistent};
     use std::path::Path;
     use std::time::Duration;
@@ -290,7 +290,7 @@ mod tests {
         }
 
         for _ in 0..count {
-            let event = IOEvent::new(RawValue::default());
+            let event = IOEvent::new(Datum::default());
             log.push(event).unwrap();
             thread::sleep(Duration::from_nanos(1));
         }

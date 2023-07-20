@@ -59,7 +59,7 @@ mod tests {
     use crate::{
         action::{IOCommand, Routine, SchedRoutineHandler},
         helpers::Def,
-        io::{DeviceMetadata, RawValue},
+        io::{DeviceMetadata, Datum},
         storage::Log,
     };
 
@@ -71,7 +71,7 @@ mod tests {
         let command = IOCommand::Output(|_| Ok(()));
 
         let timestamp = Utc::now() + Duration::microseconds(5);
-        let value = RawValue::Binary(true);
+        let value = Datum::Binary(true);
 
         let routine = Routine::new(timestamp, value, log, command);
 
@@ -88,7 +88,7 @@ mod tests {
         let command = IOCommand::Output(|_| Ok(()));
 
         let timestamp = Utc::now() + Duration::microseconds(5);
-        let value = RawValue::Binary(true);
+        let value = Datum::Binary(true);
 
         let routine = Routine::new(timestamp, value, log, command);
 
@@ -106,7 +106,7 @@ mod tests {
         let command = IOCommand::Output(|_| Ok(()));
 
         let timestamp = Utc::now() + Duration::microseconds(30);
-        let value = RawValue::Binary(true);
+        let value = Datum::Binary(true);
 
         let routine = Routine::new(timestamp, value, log.clone(), command);
 
@@ -123,7 +123,7 @@ mod tests {
         // BUG: why does this operation fail with any value less than 31 microseconds? There seems
         // to be a race condition.
         let ts2 = Utc::now() + Duration::microseconds(120);
-        let value = RawValue::Binary(true);
+        let value = Datum::Binary(true);
 
         let routine = Routine::new(ts2, value, log.clone(), command);
         scheduled.push(routine);

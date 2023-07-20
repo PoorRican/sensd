@@ -2,7 +2,7 @@ use std::ops::Not;
 use crate::action::{Command, IOCommand};
 use crate::errors::ErrorType;
 use crate::helpers::Def;
-use crate::io::{IOEvent, RawValue};
+use crate::io::{IOEvent, Datum};
 use crate::storage::{Chronicle, Log};
 use chrono::{DateTime, Utc};
 use std::sync::{Arc, Mutex, Weak};
@@ -26,7 +26,7 @@ pub struct Routine {
     timestamp: DateTime<Utc>,
 
     /// Value to pass to `IOCommand`
-    value: RawValue,
+    value: Datum,
 
     /// Weak reference to log for originating device
     log: Option<Weak<Mutex<Log>>>,
@@ -52,7 +52,7 @@ impl Routine {
     /// to [`Log`]
     pub fn new<L>(
         timestamp: DateTime<Utc>,
-        value: RawValue,
+        value: Datum,
         log: L,
         command: IOCommand,
     ) -> Self
@@ -117,7 +117,7 @@ impl Routine {
 impl Command<IOEvent, ErrorType> for Routine {
     fn execute<V>(&self, value: V) -> Result<Option<IOEvent>, ErrorType>
     where
-        V: Into<Option<RawValue>>
+        V: Into<Option<Datum>>
     {
         let value = value.into();
         match self.command.execute(value) {
@@ -145,18 +145,18 @@ impl Chronicle for Routine {
 mod functionality_tests {
     use crate::action::{IOCommand, Routine};
     use crate::helpers::Def;
-    use crate::io::{DeviceMetadata, RawValue};
+    use crate::io::{DeviceMetadata, Datum};
     use crate::storage::Log;
     use chrono::{Duration, Utc};
 
-    const REGISTER_DEFAULT: RawValue = RawValue::Binary(false);
-    static mut REGISTER: RawValue = REGISTER_DEFAULT;
+    const REGISTER_DEFAULT: Datum = Datum::Binary(false);
+    static mut REGISTER: Datum = REGISTER_DEFAULT;
 
     unsafe fn reset_register() {
         REGISTER = REGISTER_DEFAULT;
     }
 
-    unsafe fn set_register(val: RawValue) {
+    unsafe fn set_register(val: Datum) {
         REGISTER = val;
     }
 
@@ -175,7 +175,7 @@ mod functionality_tests {
         });
 
         let timestamp = Utc::now() + Duration::microseconds(10);
-        let value = RawValue::Binary(true);
+        let value = Datum::Binary(true);
         let routine = Routine::new(timestamp, value, log.clone(), command);
 
         unsafe {
@@ -201,13 +201,13 @@ mod meta_tests {
     use crate::{
         action::{IOCommand, Routine},
         helpers::Def,
-        io::{DeviceMetadata, RawValue},
+        io::{DeviceMetadata, Datum},
         storage::Log,
     };
     #[test]
     fn test_constructor_w_none() {
         let timestamp = Utc::now();
-        let value = RawValue::Binary(true);
+        let value = Datum::Binary(true);
         let command = IOCommand::Output(|_| Ok(()));
 
         let routine = Routine::new(timestamp, value, None, command);
@@ -222,7 +222,7 @@ mod meta_tests {
         let log = Def::new(Log::with_metadata(&metadata));
 
         let timestamp = Utc::now();
-        let value = RawValue::Binary(true);
+        let value = Datum::Binary(true);
         let command = IOCommand::Output(|_| Ok(()));
 
         let routine = Routine::new(timestamp, value, log.clone(), command);
@@ -233,8 +233,8 @@ mod meta_tests {
     #[should_panic]
     fn validate_command() {
         let timestamp = Utc::now();
-        let value = RawValue::Binary(true);
-        let command = IOCommand::Input(|| RawValue::default());
+        let value = Datum::Binary(true);
+        let command = IOCommand::Input(|| Datum::default());
 
         let routine = Routine::new(timestamp, value, None, command);
         assert!(routine.attempt());

@@ -2,13 +2,13 @@ use std::path::PathBuf;
 // TODO: these tests need to be added to "src/storage/grouping.rs"
 use chrono::Duration;
 use sensd::action::IOCommand;
-use sensd::io::{Device, Input, IOKind, Output, RawValue};
+use sensd::io::{Device, Input, IOKind, Output, Datum};
 use sensd::storage::{Chronicle, Group, Persistent, RootDirectory};
 
 #[test]
 /// Test builder pattern for adding devices
 fn test_builder_pattern() {
-    let command = IOCommand::Input(move || RawValue::default());
+    let command = IOCommand::Input(move || Datum::default());
 
     let mut group = Group::new("main");
     group
@@ -38,7 +38,7 @@ fn test_builder_pattern() {
 
 #[test]
 fn test_poll() {
-    let command = IOCommand::Input(move || RawValue::default());
+    let command = IOCommand::Input(move || Datum::default());
 
     let mut group = Group::with_interval("main", Duration::nanoseconds(1));
     group
@@ -93,7 +93,7 @@ fn test_directory_hierarchy() {
     const TMP_DIR: &str = "/tmp/sensd/hierarchy_testing";
     const INTERVAL: i64 = 1;
 
-    let in_command = IOCommand::Input(move || RawValue::default());
+    let in_command = IOCommand::Input(move || Datum::default());
 
     let input1 =
         Input::new(

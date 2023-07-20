@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use crate::action::{Command, IOCommand, Publisher};
 use crate::errors::DeviceError;
 use crate::helpers::Def;
-use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, RawValue, DeviceGetters, DeviceSetters};
+use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, Datum, DeviceGetters, DeviceSetters};
 use crate::io::dev::device::set_log_dir;
 use crate::name::Name;
 use crate::storage::{Chronicle, Directory, Log};
@@ -38,9 +38,9 @@ use crate::storage::{Chronicle, Directory, Log};
 ///
 /// ```
 /// use sensd::action::IOCommand;
-/// use sensd::io::{Device, Input, RawValue};
+/// use sensd::io::{Device, Input, Datum};
 ///
-/// let command = IOCommand::Input(|| RawValue::Binary(true));
+/// let command = IOCommand::Input(|| Datum::Binary(true));
 /// let input =
 ///     Input::default()
 ///         .set_command(command);
@@ -53,7 +53,7 @@ pub struct Input {
     log: Option<Def<Log>>,
     publisher: Option<Publisher>,
     command: Option<IOCommand>,
-    state: Option<RawValue>,
+    state: Option<Datum>,
 
     dir: Option<PathBuf>,
 }
@@ -153,7 +153,7 @@ impl DeviceGetters for Input {
     /// Immutable reference to cached state
     ///
     /// `state` field should be updated by `write()`
-    fn state(&self) -> &Option<RawValue> {
+    fn state(&self) -> &Option<Datum> {
         &self.state
     }
 }
@@ -237,10 +237,10 @@ impl Input {
     ///
     /// ```
     /// use sensd::action::IOCommand;
-    /// use sensd::io::{Device, DeviceGetters, Input, RawValue};
+    /// use sensd::io::{Device, DeviceGetters, Input, Datum};
     ///
-    /// let value = RawValue::default();
-    /// let command = IOCommand::Input(|| RawValue::default());
+    /// let value = Datum::default();
+    /// let command = IOCommand::Input(|| Datum::default());
     /// let mut input = Input::default().set_command(command);
     ///
     /// let event = input.read().unwrap();
@@ -326,10 +326,10 @@ impl PartialEq for Input {
 #[cfg(test)]
 mod tests {
     use crate::action::{IOCommand};
-    use crate::io::{Device, Input, IOKind, RawValue};
+    use crate::io::{Device, Input, IOKind, Datum};
     use crate::storage::{Chronicle, Directory, Document};
 
-    const DUMMY_OUTPUT: RawValue = RawValue::Float(1.2);
+    const DUMMY_OUTPUT: Datum = Datum::Float(1.2);
     const COMMAND: IOCommand = IOCommand::Input(move || DUMMY_OUTPUT);
 
     #[test]

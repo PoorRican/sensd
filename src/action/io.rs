@@ -1,6 +1,6 @@
 use crate::action::Command;
 use crate::errors::DeviceError;
-use crate::io::{IODirection, RawValue};
+use crate::io::{IODirection, Datum};
 
 /// Command design pattern for storing low-level I/O code
 ///
@@ -8,13 +8,13 @@ use crate::io::{IODirection, RawValue};
 #[derive(Clone, PartialEq)]
 pub enum IOCommand {
     /// Low-level code to read HW input
-    Input(fn() -> RawValue),
+    Input(fn() -> Datum),
     /// Low-level code to write to HW output
     ///
     /// # Returns
-    /// `Err` is returned if `RawValue` variant is incorrect. Otherwise, `Ok` is returned by
+    /// `Err` is returned if `Datum` variant is incorrect. Otherwise, `Ok` is returned by
     /// default.
-    Output(fn(RawValue) -> Result<(), ()>),
+    Output(fn(Datum) -> Result<(), ()>),
 }
 
 impl IOCommand {
@@ -67,7 +67,7 @@ impl Default for IOCommand {
     }
 }
 
-impl Command<RawValue, DeviceError> for IOCommand {
+impl Command<Datum, DeviceError> for IOCommand {
     /// Execute internally stored function.
     ///
     /// In summary, input command returns a value, output command accepts a value.
@@ -80,7 +80,7 @@ impl Command<RawValue, DeviceError> for IOCommand {
     ///
     /// A `Result` containing:
     ///
-    /// - `Ok` containing [`RawValue`] if internal function is [`IOCommand::Input`]. Otherwise, `None`
+    /// - `Ok` containing [`Datum`] if internal function is [`IOCommand::Input`]. Otherwise, `None`
     ///   since internal function is [`IOCommand::Output`].
     ///
     /// Currently, there is no scenario that returns `Err`. It is set as the return type to match
@@ -89,9 +89,9 @@ impl Command<RawValue, DeviceError> for IOCommand {
     /// # Panics
     ///
     /// A panic is thrown if no value is passed to [`IOCommand::Output`]
-    fn execute<V>(&self, value: V) -> Result<Option<RawValue>, DeviceError>
+    fn execute<V>(&self, value: V) -> Result<Option<Datum>, DeviceError>
     where
-        V: Into<Option<RawValue>>
+        V: Into<Option<Datum>>
     {
         let value = value.into();
         match self {
@@ -122,7 +122,7 @@ fn unused_value() {
 #[cfg(test)]
 mod tests {
     use crate::action::{Command, IOCommand};
-    use crate::io::{IODirection, RawValue};
+    use crate::io::{IODirection, Datum};
 
     #[test]
     #[should_panic]
@@ -135,7 +135,7 @@ mod tests {
     fn test_default() {
         let command = IOCommand::default();
         assert_eq!(command.direction(), IODirection::Out);
-        assert_eq!(None, command.execute(Some(RawValue::Binary(true))).unwrap());
+        assert_eq!(None, command.execute(Some(Datum::Binary(true))).unwrap());
     }
 
     #[test]
@@ -149,7 +149,7 @@ mod tests {
                        .err()
                        .unwrap());
 
-        command = IOCommand::Input(|| RawValue::default());
+        command = IOCommand::Input(|| Datum::default());
         assert_eq!((),
                    command.agrees(IODirection::In)
                        .unwrap());
