@@ -63,7 +63,7 @@ fn main() {
 
     println!("█▓▒░ Beginning loop ░▒▓█\n");
 
-    let mut value = Datum::Binary(false);
+    let mut value = Datum::binary(false);
 
     loop {
         {

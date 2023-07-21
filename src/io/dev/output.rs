@@ -324,7 +324,7 @@ mod tests {
         let mut output = Output::default();
         output.command = Some(COMMAND);
 
-        let value = Datum::Binary(true);
+        let value = Datum::binary(true);
         let event = output.tx(value).expect("Unknown error occurred in `tx()`");
 
         assert_eq!(value, event.value);
@@ -338,7 +338,7 @@ mod tests {
 
         assert_eq!(log.try_lock().unwrap().iter().count(), 0);
 
-        let value = Datum::Binary(true);
+        let value = Datum::binary(true);
         output.command = Some(COMMAND);
 
         // check `state` before `::write()`

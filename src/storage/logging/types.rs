@@ -27,7 +27,7 @@ mod test_event_collection {
 
         for i in 0..count {
             let timestamp = now - Duration::seconds(i as i64);
-            let event = IOEvent::with_timestamp(timestamp, Datum::Binary(true));
+            let event = IOEvent::with_timestamp(timestamp, Datum::binary(true));
 
             log.insert(timestamp, event);
         }

@@ -40,7 +40,7 @@ use crate::storage::{Chronicle, Directory, Log};
 /// use sensd::action::IOCommand;
 /// use sensd::io::{Device, Input, Datum};
 ///
-/// let command = IOCommand::Input(|| Datum::Binary(true));
+/// let command = IOCommand::Input(|| Datum::binary(true));
 /// let input =
 ///     Input::default()
 ///         .set_command(command);
@@ -329,7 +329,7 @@ mod tests {
     use crate::io::{Device, Input, IOKind, Datum};
     use crate::storage::{Chronicle, Directory, Document};
 
-    const DUMMY_OUTPUT: Datum = Datum::Float(1.2);
+    const DUMMY_OUTPUT: Datum = Datum::Float(Some(1.2));
     const COMMAND: IOCommand = IOCommand::Input(move || DUMMY_OUTPUT);
 
     #[test]

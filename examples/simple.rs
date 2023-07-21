@@ -70,7 +70,7 @@ fn main() {
         let name = "test name";
         let id = 0;
         let kind = IOKind::PH;
-        let command = IOCommand::Input(|| Datum::Float(1.2));
+        let command = IOCommand::Input(|| Datum::float(1.2));
 
         // build input device
         let mut input =
@@ -88,7 +88,7 @@ fn main() {
             .subscribe(
                 actions::Threshold::new(
                     format!("Subscriber for Input:{}", id),
-                    Datum::Float(1.0),
+                    Datum::float(1.0),
                     Trigger::GT,
                 ).into_boxed()
             );
@@ -100,7 +100,7 @@ fn main() {
         let name = "second sensor";
         let id = 1;
         let kind = IOKind::PH;
-        let command = IOCommand::Input(|| Datum::Float(1.2));
+        let command = IOCommand::Input(|| Datum::float(1.2));
 
         // build input device
         let mut input = Input::new(
@@ -117,7 +117,7 @@ fn main() {
             .subscribe(
                 actions::Threshold::new(
                     format!("Subscriber for Input:{}", id),
-                    Datum::Float(1.0),
+                    Datum::float(1.0),
                     Trigger::GT,
                 ).into_boxed()
             );

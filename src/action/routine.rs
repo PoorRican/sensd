@@ -149,7 +149,7 @@ mod functionality_tests {
     use crate::storage::Log;
     use chrono::{Duration, Utc};
 
-    const REGISTER_DEFAULT: Datum = Datum::Binary(false);
+    const REGISTER_DEFAULT: Datum = Datum::Binary(Some(false));
     static mut REGISTER: Datum = REGISTER_DEFAULT;
 
     unsafe fn reset_register() {
@@ -175,7 +175,7 @@ mod functionality_tests {
         });
 
         let timestamp = Utc::now() + Duration::microseconds(10);
-        let value = Datum::Binary(true);
+        let value = Datum::binary(true);
         let routine = Routine::new(timestamp, value, log.clone(), command);
 
         unsafe {
@@ -207,7 +207,7 @@ mod meta_tests {
     #[test]
     fn test_constructor_w_none() {
         let timestamp = Utc::now();
-        let value = Datum::Binary(true);
+        let value = Datum::binary(true);
         let command = IOCommand::Output(|_| Ok(()));
 
         let routine = Routine::new(timestamp, value, None, command);
@@ -222,7 +222,7 @@ mod meta_tests {
         let log = Def::new(Log::with_metadata(&metadata));
 
         let timestamp = Utc::now();
-        let value = Datum::Binary(true);
+        let value = Datum::binary(true);
         let command = IOCommand::Output(|_| Ok(()));
 
         let routine = Routine::new(timestamp, value, log.clone(), command);
@@ -233,7 +233,7 @@ mod meta_tests {
     #[should_panic]
     fn validate_command() {
         let timestamp = Utc::now();
-        let value = Datum::Binary(true);
+        let value = Datum::binary(true);
         let command = IOCommand::Input(|| Datum::default());
 
         let routine = Routine::new(timestamp, value, None, command);

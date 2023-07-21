@@ -36,7 +36,7 @@ const OUTPUT_ID: IdType = 1;
 const FREQUENCY: std::time::Duration = std::time::Duration::from_secs(5);
 
 const THRESHOLD: i8 = 10;
-static mut EXTERNAL_VALUE: Datum = Datum::Int8(0);
+static mut EXTERNAL_VALUE: Datum = Datum::Int(Some(0));
 
 /// █▓▒░ Load settings and setup `Group`.
 ///
@@ -63,7 +63,7 @@ fn build_actions(poller: &mut Group) {
     println!("- Initializing subscriber ...");
 
     let name = format!("Subscriber for Input:{}", INPUT_ID);
-    let threshold = Datum::Int8(THRESHOLD);
+    let threshold = Datum::int8(THRESHOLD);
     let trigger = Trigger::LT;
     if let Some(publisher) = binding.publisher_mut() {
         publisher.subscribe(
@@ -128,7 +128,7 @@ fn main() {
     let range = 5..11;
     for value in range.clone().into_iter().chain(range.rev()).cycle() {
         unsafe {
-            EXTERNAL_VALUE = Datum::Int8(value);
+            EXTERNAL_VALUE = Datum::int8(value);
         }
 
         poll(&mut poller).expect("Error occurred during polling");

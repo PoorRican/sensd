@@ -135,7 +135,7 @@ mod tests {
     fn test_default() {
         let command = IOCommand::default();
         assert_eq!(command.direction(), IODirection::Out);
-        assert_eq!(None, command.execute(Some(Datum::Binary(true))).unwrap());
+        assert_eq!(None, command.execute(Some(Datum::binary(true))).unwrap());
     }
 
     #[test]

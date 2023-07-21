@@ -490,6 +490,7 @@ impl Action for PID {
     fn evaluate(&mut self, data: &IOEvent) {
         let measurement = data.value;
         if let Datum::Float(value) = measurement {
+            let value = value.expect("No value contained in measurement");
 
             let duration =
                 self.calculate(value);
@@ -499,13 +500,13 @@ impl Action for PID {
                     panic!("Handler has not been set!");
                 }
 
-                self.write(Datum::Binary(true));
+                self.write(Datum::binary(true));
 
                 let output = self.output.as_ref()
                     .expect("Output has not been set!")
                     .try_lock().unwrap();
                 let routine = output.create_routine(
-                    Datum::Binary(false),
+                    Datum::binary(false),
                     duration);
                 self.handler.as_ref().unwrap().try_lock().unwrap().push(routine);
             }

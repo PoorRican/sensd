@@ -48,7 +48,7 @@ impl Threshold {
     /// use sensd::io::Datum;
     /// use sensd::action::{actions, Trigger};
     ///
-    /// let action = actions::Threshold::new("", Datum::Float(1.0), Trigger::GT);
+    /// let action = actions::Threshold::new("", Datum::float(1.0), Trigger::GT);
     /// ```
     ///
     /// **Note**: [`Action::set_output()`] builder method should be chained after initialization.
@@ -97,7 +97,7 @@ impl Threshold {
     ///
     /// let output = Output::default().into_deferred();
     /// let action = actions::Threshold::with_output("",
-    ///                                         Datum::Float(1.0),
+    ///                                         Datum::float(1.0),
     ///                                         Trigger::GT,
     ///                                         output);
     /// assert!(action.output().is_some())
@@ -122,7 +122,7 @@ impl Threshold {
     /// use sensd::io::{Device, Output, Datum};
     /// use sensd::action::{Action, actions, Trigger};
     ///
-    /// let threshold = Datum::Float(1.0);
+    /// let threshold = Datum::float(1.0);
     /// let output = Output::default().into_deferred();
     /// let action = actions::Threshold::new("", threshold, Trigger::GT);
     ///
@@ -137,7 +137,7 @@ impl Threshold {
     ///
     /// Sends a `true` value to output device. Does not check value [`Result`] from [`Action::write()`].
     fn on_unchecked(&self) {
-        let _ = self.write(Datum::Binary(true));
+        let _ = self.write(Datum::binary(true));
     }
 
     #[inline]
@@ -145,7 +145,7 @@ impl Threshold {
     ///
     /// Sends a `false` value to output device. Does not check value [`Result`] from [`Action::write()`].
     fn off_unchecked(&self) {
-        let _ = self.write(Datum::Binary(false));
+        let _ = self.write(Datum::binary(false));
     }
 }
 
@@ -203,7 +203,7 @@ impl Action for Threshold {
     /// use sensd::action::{Action, actions, Trigger};
     ///
     /// let output = Output::default().into_deferred();
-    /// let action = actions::Threshold::new("", Datum::Float(1.0), Trigger::GT)
+    /// let action = actions::Threshold::new("", Datum::float(1.0), Trigger::GT)
     ///                 .set_output(output);
     /// assert!(action.output().is_some())
     /// ```

@@ -57,8 +57,8 @@ mod tests {
     fn lte() {
         let trigger = Trigger::LTE;
         let (bigger, smaller) = (
-            Datum::Int(2),
-            Datum::Int(1),
+            Datum::int(2),
+            Datum::int(1),
         );
 
         assert_eq!(true,
@@ -77,8 +77,8 @@ mod tests {
     fn gte() {
         let trigger = Trigger::GTE;
         let (bigger, smaller) = (
-            Datum::Int(2),
-            Datum::Int(1),
+            Datum::int(2),
+            Datum::int(1),
         );
 
 
@@ -98,8 +98,8 @@ mod tests {
     fn lt() {
         let trigger = Trigger::LT;
         let (bigger, smaller) = (
-            Datum::Int(2),
-            Datum::Int(1),
+            Datum::int(2),
+            Datum::int(1),
         );
 
         assert_eq!(true,
@@ -115,8 +115,8 @@ mod tests {
     fn gt() {
         let trigger = Trigger::GT;
         let (bigger, smaller) = (
-            Datum::Int(2),
-            Datum::Int(1),
+            Datum::int(2),
+            Datum::int(1),
         );
 
 
