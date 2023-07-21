@@ -26,13 +26,12 @@ pub trait Device: Name + Chronicle + DeviceGetters + DeviceSetters + Persistent 
     /// - `name`: name of device.
     /// - `id`: device ID.
     /// - `kind`: kind of I/O device. Optional argument.
-    fn new<N, K>(name: N, id: IdType, kind: K) -> Self
+    fn new<N>(name: N, id: IdType) -> Self
     where
         Self: Sized,
-        N: Into<String>,
-        K: Into<Option<IOKind>>;
+        N: Into<String>;
 
-    /// Setter for `command` field as builder method
+    /// Builder method for `command` field
     ///
     /// # Notes
     ///
@@ -46,7 +45,25 @@ pub trait Device: Name + Chronicle + DeviceGetters + DeviceSetters + Persistent 
     where
         Self: Sized;
 
-    /// Initialize, set, and return log.
+    /// Builder method for `kind` field
+    ///
+    /// # Notes
+    ///
+    /// Since this function is a builder command, and is meant to be used with method chaining,
+    /// it is not included in [`DeviceSetters`]
+    ///
+    /// # Returns
+    ///
+    /// Passes ownership of `self`
+    fn set_kind(self, kind: IOKind) -> Self
+    where
+        Self: Sized;
+
+    /// Builder method to initialize, and set log.
+    ///
+    /// # Returns
+    ///
+    /// Passes ownership of `self`
     fn init_log(mut self) -> Self
     where
         Self: Sized,

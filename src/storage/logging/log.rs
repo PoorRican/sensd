@@ -273,7 +273,7 @@ impl Document for Log {
 // Testing
 #[cfg(test)]
 mod tests {
-    use crate::io::{IOKind, Datum, IOEvent, DeviceMetadata, IODirection};
+    use crate::io::{Datum, IOEvent, DeviceMetadata, IODirection};
     use crate::storage::{Document, Log, Persistent};
     use std::path::Path;
     use std::time::Duration;
@@ -306,7 +306,6 @@ mod tests {
         let metadata = DeviceMetadata::new(
             "test",
             32,
-            IOKind::Unassigned,
             IODirection::In,
         );
 

@@ -473,7 +473,7 @@ mod tests {
     use std::fs::remove_dir_all;
     use std::path::{Path, PathBuf};
 
-    use crate::io::{Device, Input, IOKind, Output};
+    use crate::io::{Device, Input, Output};
     use crate::storage::{Directory, Group, RootDirectory, RootPath};
 
     const DIR_PATH: &str = "/tmp/sensd_tests";
@@ -512,7 +512,7 @@ mod tests {
         assert_eq!(0, group.inputs.len());
 
         for id in 0..15 {
-            group.push_input(Input::new("", id, None));
+            group.push_input(Input::new("", id));
 
             assert_eq!(
                 (id + 1) as usize,
@@ -527,7 +527,7 @@ mod tests {
         const TMP_DIR: &str = "/tmp/sensd/group_tests";
         const ID: u32 = 0;
 
-        let input = Input::new("input", ID, IOKind::Unassigned);
+        let input = Input::new("input", ID);
 
         assert!(input.parent_dir().is_none());
 
@@ -550,7 +550,7 @@ mod tests {
         const TMP_DIR: &str = "/tmp/sensd/group_tests";
         const ID: u32 = 0;
 
-        let output = Output::new("output", ID, IOKind::Unassigned);
+        let output = Output::new("output", ID);
 
         assert!(output.parent_dir().is_none());
 
@@ -571,8 +571,8 @@ mod tests {
     #[should_panic]
     fn push_input_panics() {
         let mut group = Group::new("name");
-        group.push_input(Input::new("", 0, None));
-        group.push_input(Input::new("", 0, None));
+        group.push_input(Input::new("", 0));
+        group.push_input(Input::new("", 0));
     }
 
     #[test]
@@ -582,7 +582,7 @@ mod tests {
         assert_eq!(0, group.outputs.len());
 
         for id in 0..15 {
-            group.push_output(Output::new("", id, None));
+            group.push_output(Output::new("", id));
 
             assert_eq!(
                 (id + 1) as usize,
@@ -595,8 +595,8 @@ mod tests {
     #[should_panic]
     fn push_output_panics() {
         let mut group = Group::new("name");
-        group.push_output(Output::new("", 0, None));
-        group.push_output(Output::new("", 0, None));
+        group.push_output(Output::new("", 0));
+        group.push_output(Output::new("", 0));
     }
 
     /// Test [`Group::full_path()`]

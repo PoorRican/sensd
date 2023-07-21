@@ -71,7 +71,7 @@ mod tests {
         assert_eq!(0, container.len());
 
         for id in 0..ITERATIONS {
-            let output = Output::new("", id, None).into_deferred();
+            let output = Output::new("", id).into_deferred();
 
             assert!(
                 container.insert(id, output)
@@ -84,7 +84,7 @@ mod tests {
         }
 
         for id in 0..ITERATIONS {
-            let output = Output::new("", id, None).into_deferred();
+            let output = Output::new("", id).into_deferred();
 
             assert!(
                 container.insert(id, output)
@@ -106,7 +106,7 @@ mod tests {
         assert_eq!(0, container.len());
 
         for id in 0..ITERATIONS {
-            let input = Input::new("", id, None).into_deferred();
+            let input = Input::new("", id).into_deferred();
 
             assert!(
                 container.insert(id, input)
@@ -119,7 +119,7 @@ mod tests {
         }
 
         for id in 0..ITERATIONS {
-            let input = Input::new("", id, None).into_deferred();
+            let input = Input::new("", id).into_deferred();
 
             assert!(
                 container.insert(id, input)
@@ -137,7 +137,7 @@ mod tests {
     fn set_root() {
         const PATH: &str = "New Root";
 
-        let input = Input::new("", 0, None)
+        let input = Input::new("", 0)
             .init_log();
         assert!(
             input.log().unwrap()

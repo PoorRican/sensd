@@ -2,7 +2,7 @@ use std::path::PathBuf;
 // TODO: these tests need to be added to "src/storage/grouping.rs"
 use chrono::Duration;
 use sensd::action::IOCommand;
-use sensd::io::{Device, Input, IOKind, Output, Datum};
+use sensd::io::{Device, Input, Output, Datum};
 use sensd::storage::{Chronicle, Group, Persistent, RootDirectory};
 
 #[test]
@@ -16,19 +16,16 @@ fn test_builder_pattern() {
             Input::new(
                 "test name",
                 0,
-                IOKind::PH,
             ).set_command(command.clone()))
         .push_input(
             Input::new(
                 "second sensor",
                 1,
-                IOKind::EC,
             ).set_command(command.clone()))
         .push_output(
             Output::new(
                 "output device",
                 2,
-                IOKind::Flow
             ).set_command(IOCommand::Output(|_| Ok(())))
         );
 
@@ -47,7 +44,6 @@ fn test_poll() {
             Input::new(
                 "test name",
                 0,
-                IOKind::PH,
             ).set_command(
                 command.clone()
             ).init_log()
@@ -57,7 +53,6 @@ fn test_poll() {
             Input::new(
                 "second sensor",
                 1,
-                IOKind::EC,
             ).set_command(
                 command.clone()
             ).init_log()
@@ -99,7 +94,6 @@ fn test_directory_hierarchy() {
         Input::new(
             "i1",
             0,
-            IOKind::PH,
         ).set_command(
             in_command.clone()
         ).init_log();
@@ -107,7 +101,6 @@ fn test_directory_hierarchy() {
         Input::new(
             "i2",
             1,
-            IOKind::EC,
         ).set_command(
             in_command.clone()
         ).init_log();
@@ -118,7 +111,6 @@ fn test_directory_hierarchy() {
         Output::new(
             "o1",
             0,
-            IOKind::RotationVector,
         ).set_command(
             out_command.clone()
         ).init_log();
@@ -127,7 +119,6 @@ fn test_directory_hierarchy() {
         Output::new(
             "o2",
             1,
-            IOKind::RotationVector,
         ).set_command(
             out_command.clone()
         ).init_log();

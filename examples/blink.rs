@@ -9,7 +9,7 @@ extern crate sensd;
 extern crate serde;
 
 use sensd::action::IOCommand;
-use sensd::io::{IOKind, IdType, Datum, Input, Device};
+use sensd::io::{IdType, Datum, Input, Device};
 use sensd::storage::{Group, Persistent};
 use std::ops::{DerefMut, Neg};
 
@@ -44,7 +44,6 @@ fn setup_devices(poller: &mut Group) {
         Input::new(
             "Mock Output",
             OUTPUT_ID,
-            IOKind::Light,
         ).set_command(
             IOCommand::Output(|val| Ok(println!("\n{}\n", val)))
         )

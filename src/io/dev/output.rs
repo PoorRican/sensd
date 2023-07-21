@@ -23,9 +23,8 @@ use crate::storage::{Chronicle, Directory, Log};
 /// use sensd::name::Name;
 /// let id = 777;
 /// let name = "our new output device";
-/// let kind = IOKind::default();
 ///
-/// let device = Output::new(name, id, kind);
+/// let device = Output::new(name, id);
 ///
 /// assert_eq!(device.name(), name);
 /// assert_eq!(device.id(), id);
@@ -128,15 +127,13 @@ impl Device for Output {
     /// * `id`: arbitrary, numeric ID to differentiate from other devices
     ///
     /// returns: GenericOutput
-    fn new<N, K>(name: N, id: IdType, kind: K) -> Self
+    fn new<N>(name: N, id: IdType) -> Self
     where
         Self: Sized,
         N: Into<String>,
-        K: Into<Option<IOKind>>,
     {
-        let kind = kind.into().unwrap_or_default();
         let state = None;
-        let metadata: DeviceMetadata = DeviceMetadata::new(name, id, kind, IODirection::Out);
+        let metadata: DeviceMetadata = DeviceMetadata::new(name, id, IODirection::Out);
 
         let command = None;
         let log = None;
@@ -158,6 +155,14 @@ impl Device for Output {
         command.agrees(IODirection::Out)
             .expect("Command is not output");
         self.command = Some(command);
+        self
+    }
+
+    fn set_kind(mut self, kind: IOKind) -> Self
+        where
+            Self: Sized
+    {
+        self.metadata.kind = kind;
         self
     }
 }
@@ -298,7 +303,7 @@ impl PartialEq for Output {
 #[cfg(test)]
 mod tests {
     use crate::action::IOCommand;
-    use crate::io::{Device, DeviceGetters, IOKind, Output, Datum};
+    use crate::io::{Device, DeviceGetters, Output, Datum};
     use crate::storage::{Chronicle, Directory, Document};
 
     /// Dummy output command for testing.
@@ -308,15 +313,8 @@ mod tests {
     #[test]
     /// Test that constructor accepts `name` as `&str` or `String`
     fn new_name_parameter() {
-        Output::new("as &str", 0, None);
-        Output::new(String::from("as String"), 0, None);
-    }
-
-    #[test]
-    fn new_kind_parameter() {
-        Output::new("", 0, None);
-        Output::new("", 0, Some(IOKind::Unassigned));
-        Output::new("", 0, IOKind::Unassigned);
+        Output::new("as &str", 0);
+        Output::new(String::from("as String"), 0);
     }
 
     #[test]

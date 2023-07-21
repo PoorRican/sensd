@@ -18,7 +18,7 @@ extern crate serde;
 
 use sensd::action::{Action, actions, IOCommand, Trigger};
 use sensd::errors::ErrorType;
-use sensd::io::{Device, IdType, Input, IOKind, Output, Datum};
+use sensd::io::{Device, IdType, Input, Output, Datum};
 use sensd::storage::{Group, Persistent};
 
 use std::ops::DerefMut;
@@ -103,7 +103,6 @@ fn main() {
             Input::new(
                 "mock temp sensor",
                 INPUT_ID,
-                IOKind::Temperature,
             ).set_command(
                 IOCommand::Input(|| EXTERNAL_VALUE)
             ).init_log()
@@ -115,7 +114,6 @@ fn main() {
         Output::new(
             "test mock cooling device",
             OUTPUT_ID,
-            IOKind::Temperature,
         ).set_command(
             IOCommand::Output(|val| Ok(println!("\nSimulated HW Output: {}\n", val)))
         ).init_log()

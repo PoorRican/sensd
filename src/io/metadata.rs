@@ -1,4 +1,3 @@
-use crate::io;
 use crate::io::{IdType, IOKind, IODirection};
 use serde::{Deserialize, Serialize};
 use std::fmt::Formatter;
@@ -47,23 +46,28 @@ impl DeviceMetadata {
     /// let kind = IOKind::PH;
     /// let direction = IODirection::default();
     ///
-    /// let metadata = DeviceMetadata::new(name, id, kind, direction);
+    /// let metadata = DeviceMetadata::new(name, id, direction);
     ///
     /// assert_eq!(metadata.name, name);
     /// assert_eq!(metadata.id, id);
-    /// assert_eq!(metadata.kind, kind);
+    /// assert_eq!(metadata.kind, IOKind::default());
     /// assert_eq!(metadata.direction, direction);
     /// ```
-    pub fn new<N>(name: N, id: IdType, kind: io::IOKind, direction: io::IODirection) -> Self
+    pub fn new<N>(name: N, id: IdType, direction: IODirection) -> Self
     where
         N: Into<String>,
     {
         DeviceMetadata {
             name: name.into(),
             id,
-            kind,
+            kind: IOKind::default(),
             direction,
         }
+    }
+
+    pub fn kind(mut self, kind: IOKind) -> Self {
+        self.kind = kind;
+        self
     }
 }
 
@@ -84,7 +88,22 @@ mod tests {
     #[test]
     /// Test that constructor accepts `name` parameter as `&str` or `String`
     fn new_name_parameter() {
-        DeviceMetadata::new("as &str", 0, IOKind::default(), IODirection::default());
-        DeviceMetadata::new(String::from("as String"), 0, IOKind::default(), IODirection::default());
+        DeviceMetadata::new("as &str", 0, IODirection::default());
+        DeviceMetadata::new(String::from("as String"), 0, IODirection::default());
+    }
+
+    #[test]
+    fn assert_kind_default() {
+        let meta = DeviceMetadata::new("", 0, IODirection::default());
+        assert_eq!(IOKind::default(), meta.kind);
+    }
+
+    #[test]
+    fn test_kind_setter() {
+        let expected = IOKind::EC;
+        let meta =
+            DeviceMetadata::new("", 0, IODirection::default())
+                .kind(expected);
+        assert_eq!(expected, meta.kind);
     }
 }

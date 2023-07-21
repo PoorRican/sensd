@@ -22,9 +22,8 @@ use crate::storage::{Chronicle, Directory, Log};
 /// use sensd::name::Name;
 /// let id = 777;
 /// let name = "our new input sensor";
-/// let kind = IOKind::default();
 ///
-/// let input = Input::new(name, id, kind);
+/// let input = Input::new(name, id);
 ///
 /// assert_eq!(input.name(), name);
 /// assert_eq!(input.id(), id);
@@ -71,15 +70,12 @@ impl Device for Input {
     ///
     /// Partially initialized [`Input`]. The builder method [`Device::set_command()`]
     /// needs to be called to assign an [`IOCommand`] to interact with hardware.
-    fn new<N, K>(name: N, id: IdType, kind: K) -> Self
+    fn new<N>(name: N, id: IdType) -> Self
     where
         Self: Sized,
         N: Into<String>,
-        K: Into<Option<IOKind>>,
     {
-        let kind = kind.into().unwrap_or_default();
-
-        let metadata: DeviceMetadata = DeviceMetadata::new(name.into(), id, kind, IODirection::In);
+        let metadata: DeviceMetadata = DeviceMetadata::new(name.into(), id, IODirection::In);
 
         let publisher = None;
         let command = None;
@@ -100,11 +96,19 @@ impl Device for Input {
 
     fn set_command(mut self, command: IOCommand) -> Self
     where
-        Self: Sized,
+        Self: Sized
     {
         command.agrees(IODirection::In)
             .expect("Command is not input");
         self.command = Some(command);
+        self
+    }
+
+    fn set_kind(mut self, kind: IOKind) -> Self
+    where
+        Self: Sized
+    {
+        self.metadata.kind = kind;
         self
     }
 }
@@ -326,7 +330,7 @@ impl PartialEq for Input {
 #[cfg(test)]
 mod tests {
     use crate::action::{IOCommand};
-    use crate::io::{Device, Input, IOKind, Datum};
+    use crate::io::{Device, Input, Datum};
     use crate::storage::{Chronicle, Directory, Document};
 
     const DUMMY_OUTPUT: Datum = Datum::Float(Some(1.2));
@@ -335,15 +339,8 @@ mod tests {
     #[test]
     /// Test that constructor accepts `name` as `&str` or `String`
     fn new_name_parameter() {
-        Input::new("as &str", 0, None);
-        Input::new(String::from("as String"), 0, None);
-    }
-
-    #[test]
-    fn new_kind_parameter() {
-        Input::new("", 0, None);
-        Input::new("", 0, Some(IOKind::Unassigned));
-        Input::new("", 0, IOKind::Unassigned);
+        Input::new("as &str", 0);
+        Input::new(String::from("as String"), 0);
     }
 
     #[test]
