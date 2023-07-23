@@ -63,9 +63,10 @@ impl Name for Output {
         &self.metadata().name
     }
 
-    fn set_name<N>(&mut self, name: N) where N: Into<String> {
+    fn set_name<S>(&mut self, name: S) where S: Into<String> {
         self.metadata.name = name.into();
     }
+
 }
 
 impl Directory for Output {
@@ -133,7 +134,7 @@ impl Device for Output {
         N: Into<String>,
     {
         let state = None;
-        let metadata: DeviceMetadata = DeviceMetadata::new(name, id, IODirection::Out);
+        let metadata: DeviceMetadata = DeviceMetadata::with_name(name, id, IODirection::Out);
 
         let command = None;
         let log = None;

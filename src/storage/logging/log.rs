@@ -73,7 +73,7 @@ impl Log {
     ///
     /// If there is no associated device, a panic is thrown.
     pub fn name(&self) -> &String {
-        &self.metadata()
+       &self.metadata()
             .expect("No associated device metadata")
             .name
     }
@@ -303,7 +303,7 @@ mod tests {
         const COUNT: usize = 10;
         const TMP_DIR: &str = "/tmp/device/";
 
-        let metadata = DeviceMetadata::new(
+        let metadata = DeviceMetadata::with_name(
             "test",
             32,
             IODirection::In,

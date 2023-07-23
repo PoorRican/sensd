@@ -46,14 +46,14 @@ impl DeviceMetadata {
     /// let kind = IOKind::PH;
     /// let direction = IODirection::default();
     ///
-    /// let metadata = DeviceMetadata::new(name, id, direction);
+    /// let metadata = DeviceMetadata::with_name(name, id, direction);
     ///
     /// assert_eq!(metadata.name, name);
     /// assert_eq!(metadata.id, id);
     /// assert_eq!(metadata.kind, IOKind::default());
     /// assert_eq!(metadata.direction, direction);
     /// ```
-    pub fn new<N>(name: N, id: IdType, direction: IODirection) -> Self
+    pub fn with_name<N>(name: N, id: IdType, direction: IODirection) -> Self
     where
         N: Into<String>,
     {
@@ -88,13 +88,13 @@ mod tests {
     #[test]
     /// Test that constructor accepts `name` parameter as `&str` or `String`
     fn new_name_parameter() {
-        DeviceMetadata::new("as &str", 0, IODirection::default());
-        DeviceMetadata::new(String::from("as String"), 0, IODirection::default());
+        DeviceMetadata::with_name("as &str", 0, IODirection::default());
+        DeviceMetadata::with_name(String::from("as String"), 0, IODirection::default());
     }
 
     #[test]
     fn assert_kind_default() {
-        let meta = DeviceMetadata::new("", 0, IODirection::default());
+        let meta = DeviceMetadata::with_name("", 0, IODirection::default());
         assert_eq!(IOKind::default(), meta.kind);
     }
 
@@ -102,7 +102,7 @@ mod tests {
     fn test_kind_setter() {
         let expected = IOKind::EC;
         let meta =
-            DeviceMetadata::new("", 0, IODirection::default())
+            DeviceMetadata::with_name("", 0, IODirection::default())
                 .kind(expected);
         assert_eq!(expected, meta.kind);
     }

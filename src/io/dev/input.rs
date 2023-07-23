@@ -75,7 +75,7 @@ impl Device for Input {
         Self: Sized,
         N: Into<String>,
     {
-        let metadata: DeviceMetadata = DeviceMetadata::new(name.into(), id, IODirection::In);
+        let metadata: DeviceMetadata = DeviceMetadata::with_name(name.into(), id, IODirection::In);
 
         let publisher = None;
         let command = None;
