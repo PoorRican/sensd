@@ -1,31 +1,28 @@
 //! An example of demonstrating a bang-bang (on-off) controller to maintain temperature.
 //!
-//! This example is non-functional and simulates HW GPIO via `println()`.
-//!
-//! # Operation
-//!
-//! So the whole point is to display the use of an Output device via pub/sub functionality. This is
-//! accomplished by oscillating `EXTERNAL_VALUE`. When the external value falls below `THRESHOLD`,
-//! a message is printed to stdout to simulate a HW action.
-//!
-//! # Note
-//!
-//! ## █▓▒░ Unsafe Code
-//! In order to simulate an external device,
+//! This is intended to be a rough implementation for the RPi
+//! and to observe the PID controller in action.
 extern crate chrono;
 extern crate sensd;
 extern crate serde;
 
+use std::error::Error;
 use sensd::action::{Action, actions, IOCommand, Trigger};
 use sensd::errors::ErrorType;
 use sensd::io::{Device, IdType, Input, Output, Datum};
 use sensd::storage::{Group, Persistent};
 
 use std::ops::DerefMut;
+use std::thread;
+#[cfg(feature = "rppal")]
+use rppal::gpio::{Gpio, Level};
 use sensd::name::Name;
 
-const INPUT_ID: IdType = 0;
-const OUTPUT_ID: IdType = 1;
+const HEATER_PIN: u8 = 23;
+const SENSOR_PIN: u8 = 24;
+
+/// Example setpoint of 92.0F
+const SETPOINT: f32 = 92.0;
 
 /// █▓▒░ Event Loop Operating frequency
 ///
@@ -36,98 +33,62 @@ const OUTPUT_ID: IdType = 1;
 /// Refer to file notes about making this a mutable value
 const FREQUENCY: std::time::Duration = std::time::Duration::from_secs(5);
 
-const THRESHOLD: i8 = 10;
-static mut EXTERNAL_VALUE: Datum = Datum::Int(Some(0));
 
-/// █▓▒░ Load settings and setup `Group`.
-///
-/// # Args
-/// name - Name to be converted to string
-///
-/// # Returns
-/// Single initialized Group
-fn init(name: &str) -> Group {
-    let group = Group::new(name.clone());
-    println!("Initialized poll group: \"{}\"", name);
-    group
-}
-
-/// █▓▒░ Add a single `ThresholdNotifier` to all device in `Group`.
-fn build_actions(poller: &mut Group) {
-    println!("\n█▓▒░ Building subscribers ...");
-
-    let input = poller.inputs.get(&INPUT_ID).unwrap().clone();
-    let output = poller.outputs.get(&OUTPUT_ID).unwrap().clone();
-
-    let mut binding = input.try_lock().unwrap();
-    let binding = binding.deref_mut();
-    println!("- Initializing subscriber ...");
-
-    let name = format!("Subscriber for Input:{}", INPUT_ID);
-    let threshold = Datum::int8(THRESHOLD);
-    let trigger = Trigger::LT;
-    if let Some(publisher) = binding.publisher_mut() {
-        publisher.subscribe(
-            actions::Threshold::new(
-                name,
-                threshold,
-                trigger,
-            )
-                .set_output(output)
-                .into_boxed()
-        );
-    }
-
-    println!("\n... Finished Initializing subscribers\n");
-}
-
-/// █▓▒░ Handle polling of all devices in `Group`
-fn poll(poller: &mut Group) -> Result<(), ErrorType> {
-    match poller.poll() {
-        Ok(_) => match poller.save() {
-            Ok(_) => println!("\n"),
-            Err(t) => {
-                return Err(t);
-            }
-        },
-        _ => (),
-    };
-    Ok(())
-}
-
+#[cfg(not(feature = "rppal"))]
 fn main() {
-    let mut poller = init("main");
+    println!("This example needs to be run on an Raspberry Pi")
+}
 
-    // build input
-    poller.push_input(
-        unsafe {
-            Input::new(INPUT_ID)
-                .set_name("mock temp sensor")
-                .set_command(IOCommand::Input(|| EXTERNAL_VALUE))
-                .init_log()
-        }
-    );
+#[cfg(feature = "rppal")]
+fn main() -> Result<(), Box<dyn Error>>{
+
+    // initialize HW pins
+    let mut heater = Gpio::new()?
+        .get(HEATER_PIN)?
+        .into_output();
+    let sensor = Gpio::new()?
+        .get(SENSOR_PIN)?
+        .into_input();
+
+    let mut poller = Group::new("main");
+
 
     // build output
     poller.push_output(
         Output::new(OUTPUT_ID)
-            .set_name("test mock cooling device")
-            .set_command(IOCommand::Output(|val| Ok(println!("\nSimulated HW Output: {}\n", val))))
+            .set_command(IOCommand::Output(|val| {
+                if let Datum::Binary(inner) = val {
+                    if let Some(value) = inner {
+                        let output = match value {
+                            true => Level::High,
+                            false => Level::Low
+                        };
+                        heater.write(output);
+                        return Ok(())
+                    }
+                }
+                panic!("Incorrect value passed to output command")
+            }))
             .init_log()
     );
 
-    build_actions(&mut poller);
+    // build input with PID controller
+    let mut input =
+        Input::new(0)
+            .set_command(IOCommand::Input(|| Datum::float(sensor.read())))
+            .init_log()
+            .init_publisher()
+            .set_name("heater");
+    let mut publisher = input.publisher_mut().unwrap();
+    publisher.subscribe(
+        actions::PID::new("heater PID", SETPOINT, 1000.0).into_boxed()
+    );
+    drop(publisher);
+    poller.push_input(input);
 
-    println!("█▓▒░ Beginning polling ░▒▓█\n");
-
-    let range = 5..11;
-    for value in range.clone().into_iter().chain(range.rev()).cycle() {
-        unsafe {
-            EXTERNAL_VALUE = Datum::int8(value);
-        }
-
-        poll(&mut poller).expect("Error occurred during polling");
-
-        std::thread::sleep(FREQUENCY);
+    loop {
+        poller.poll()
+            .and_then(poller.save().expect("Could not save"))?;
+        thread::sleep(FREQUENCY);
     }
 }
