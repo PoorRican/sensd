@@ -54,7 +54,9 @@ fn main() -> Result<(), Box<dyn Error>>{
 
 
     // build output
-    poller.push_output_then(
+
+    // save referenced output device to add to `Action`
+    let output = poller.push_output(
         Output::new(OUTPUT_ID)
             .set_command(IOCommand::Output(|val| {
                 if let Datum::Binary(inner) = val {
@@ -70,7 +72,7 @@ fn main() -> Result<(), Box<dyn Error>>{
                 panic!("Incorrect value passed to output command")
             }))
             .init_log()
-    );
+    ).unwrap();
 
     // build input + PID controller
     poller.push_input_then(
@@ -84,6 +86,7 @@ fn main() -> Result<(), Box<dyn Error>>{
                     "heater PID",
                     SETPOINT,
                     1000.0)
+                    .set_output(output)
                     .into_boxed()));
 
     loop {
