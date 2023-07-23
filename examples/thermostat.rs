@@ -54,7 +54,7 @@ fn main() -> Result<(), Box<dyn Error>>{
 
 
     // build output
-    poller.push_output(
+    poller.push_output_then(
         Output::new(OUTPUT_ID)
             .set_command(IOCommand::Output(|val| {
                 if let Datum::Binary(inner) = val {
@@ -72,8 +72,8 @@ fn main() -> Result<(), Box<dyn Error>>{
             .init_log()
     );
 
-    // build input with PID controller
-    let mut input =
+    // build input + PID controller
+    poller.push_input_then(
         Input::new(0)
             .set_command(IOCommand::Input(|| Datum::float(sensor.read())))
             .init_log()

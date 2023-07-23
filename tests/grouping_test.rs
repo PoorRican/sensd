@@ -13,15 +13,15 @@ fn test_builder_pattern() {
 
     let mut group = Group::new("main");
     group
-        .push_input(
+        .push_input_then(
             Input::new(
                 0,
             ).set_command(command.clone()))
-        .push_input(
+        .push_input_then(
             Input::new(
                 1,
             ).set_command(command.clone()))
-        .push_output(
+        .push_output_then(
             Output::new(
                 2,
             ).set_command(IOCommand::Output(|_| Ok(())))
@@ -37,7 +37,7 @@ fn test_poll() {
 
     let mut group = Group::with_interval("main", Duration::nanoseconds(1));
     group
-        .push_input(
+        .push_input_then(
 
             Input::new(
                 0,
@@ -45,7 +45,7 @@ fn test_poll() {
                 command.clone()
             ).init_log()
 
-        ).push_input(
+        ).push_input_then(
 
             Input::new(
                 1,
@@ -120,11 +120,11 @@ fn test_directory_hierarchy() {
     group.set_root_ref(TMP_DIR);
 
     group
-        .push_input(input1)
-        .push_input(input2);
+        .push_input_then(input1)
+        .push_input_then(input2);
     group
-        .push_output(output1)
-        .push_output(output2);
+        .push_output_then(output1)
+        .push_output_then(output2);
 
     group.init_dir_ref();
 

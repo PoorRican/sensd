@@ -41,7 +41,7 @@ fn init(name: &str) -> Group {
 ///
 /// Use of `Group::add_devices()` is demonstrated.
 fn setup_devices(poller: &mut Group) {
-    poller.push_input(
+    poller.push_input_then(
         Input::new(
             OUTPUT_ID,
         ).set_command(

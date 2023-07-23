@@ -1,5 +1,5 @@
-use crate::errors::{DeviceError, ErrorType};
-use crate::helpers::check_results;
+use crate::errors::{ContainerError, DeviceError, ErrorType};
+use crate::helpers::{check_results, Def};
 use crate::io::{Device, DeviceContainer, DeviceGetters, IdType, Input, Output};
 use crate::settings::DATA_ROOT;
 use crate::storage::{Directory, Persistent, RootDirectory, RootPath};
@@ -49,8 +49,8 @@ use crate::name::Name;
 /// let output = Output::default();
 ///
 /// let mut group = Group::new("");
-/// group.push_input(input);
-/// group.push_output(output);
+/// group.push_input_then(input);
+/// group.push_output_then(output);
 /// ```
 ///
 /// ## Main Operation / Polling
@@ -211,7 +211,15 @@ impl Group {
         group
     }
 
-    /// Builder method to store [`Input`] in internal collection
+    pub fn push_input(&mut self, mut device: Input) -> Result<Def<Input>, ContainerError> {
+        let id = device.id();
+
+        device.set_parent_dir_ref(self.full_path());
+
+        self.inputs.insert(id, device.into_deferred())
+    }
+
+    /// Chaining method to store [`Input`] in internal collection
     ///
     /// [`Device::set_root()`] is called to pass settings to device.
     ///
@@ -221,7 +229,7 @@ impl Group {
     ///
     /// # Returns
     ///
-    /// Mutable reference to `self`
+    /// Mutable reference to `self` for method chaining
     ///
     /// # Example
     ///
@@ -229,31 +237,37 @@ impl Group {
     /// use sensd::io::Input;
     /// use sensd::storage::Group;
     ///
-    /// let input = Input::default();
-    ///
     /// let mut group = Group::new("");
-    /// group.push_input(input);
+    /// let val = group.push_input_then(Input::default());
     ///
+    /// assert_eq!(val.inputs.len(), 1);
     /// assert_eq!(group.inputs.len(), 1);
     /// ```
-    pub fn push_input(&mut self, mut device: Input) -> &mut Self {
+    pub fn push_input_then(&mut self, mut device: Input) -> &mut Self {
+        self.push_input(device)
+            .expect("Error adding input device to internal collection");
+        self
+    }
+
+    pub fn push_output(&mut self, mut device: Output) -> Result<Def<Output>, ContainerError> {
         let id = device.id();
 
         device.set_parent_dir_ref(self.full_path());
 
-        self.inputs.insert(id, device.into_deferred())
-            .unwrap();
-
-        self
+        self.outputs.insert(id, device.into_deferred())
     }
 
-    /// Store [`Output`] in internal collection
+    /// Chaining method to add a single [`Output`] to internal collection
     ///
     /// [`Device::set_root()`] is called to pass settings to device.
     ///
     /// # Parameters
     ///
-    /// - `device`: [`Output`] device guarded by [`crate::helpers::Def`]
+    /// - `device`: [`Output`] device to be added
+    ///
+    /// # Returns
+    ///
+    /// Mutable reference to `self` for method chaining
     ///
     /// # Example
     ///
@@ -261,21 +275,15 @@ impl Group {
     /// use sensd::io::Output;
     /// use sensd::storage::Group;
     ///
-    /// let output = Output::default();
-    ///
     /// let mut group = Group::new("");
-    /// group.push_output(output);
+    /// let val = group.push_output_then(Output::default());
     ///
+    /// assert_eq!(val.outputs.len(), 1);
     /// assert_eq!(group.outputs.len(), 1);
     /// ```
-    pub fn push_output(&mut self, mut device: Output) -> &mut Self {
-        let id = device.id();
-
-        device.set_parent_dir_ref(self.full_path());
-
-        self.outputs.insert(id, device.into_deferred())
-            .unwrap();
-
+    pub fn push_output_then(&mut self, mut device: Output) -> &mut Self {
+        self.push_output(device)
+            .expect("Error adding output device to internal collection");
         self
     }
 
@@ -514,7 +522,7 @@ mod tests {
         assert_eq!(0, group.inputs.len());
 
         for id in 0..15 {
-            group.push_input(Input::new(id));
+            group.push_input_then(Input::new(id));
 
             assert_eq!(
                 (id + 1) as usize,
@@ -524,7 +532,7 @@ mod tests {
     }
 
     #[test]
-    /// Test that [`Group::push_input()`] correctly changes dir of [`Input`]
+    /// Test that [`Group::push_input_then()`] correctly changes dir of [`Input`]
     fn push_input_changes_dir() {
         const TMP_DIR: &str = "/tmp/sensd/group_tests";
         const ID: u32 = 0;
@@ -537,7 +545,7 @@ mod tests {
 
         let mut group = Group::with_root("group", TMP_DIR);
 
-        group.push_input(input);
+        group.push_input_then(input);
 
         let input = group.inputs.get(&ID);
 
@@ -549,7 +557,7 @@ mod tests {
     }
 
     #[test]
-    /// Test that [`Group::push_output()`] correctly changes dir of [`Output`]
+    /// Test that [`Group::push_output_then()`] correctly changes dir of [`Output`]
     fn push_output_changes_dir() {
         const TMP_DIR: &str = "/tmp/sensd/group_tests";
         const ID: u32 = 0;
@@ -562,7 +570,7 @@ mod tests {
 
         let mut group = Group::with_root("group", TMP_DIR);
 
-        group.push_output(output);
+        group.push_output_then(output);
 
         let output = group.outputs.get(&ID);
 
@@ -575,10 +583,11 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn push_input_panics() {
+    /// Test that [`Group::push_input_then()`] panics upon duplicate insertion
+    fn push_input_then_panics_on_duplicate() {
         let mut group = Group::new("name");
-        group.push_input(Input::new(0));
-        group.push_input(Input::new(0));
+        group.push_input_then(Input::new(0));
+        group.push_input_then(Input::new(0));
     }
 
     #[test]
@@ -588,7 +597,7 @@ mod tests {
         assert_eq!(0, group.outputs.len());
 
         for id in 0..15 {
-            group.push_output(Output::new(id));
+            group.push_output_then(Output::new(id));
 
             assert_eq!(
                 (id + 1) as usize,
@@ -599,10 +608,11 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn push_output_panics() {
+    /// Test that [`Group::push_output_then()`] panics upon duplicate insertion
+    fn push_output_then_panics_on_duplicate() {
         let mut group = Group::new("name");
-        group.push_output(Output::new(0));
-        group.push_output(Output::new(0));
+        group.push_output_then(Output::new(0));
+        group.push_output_then(Output::new(0));
     }
 
     /// Test [`Group::full_path()`]

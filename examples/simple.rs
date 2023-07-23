@@ -89,7 +89,7 @@ fn main() {
                 ).into_boxed()
             );
 
-        poller.push_input(input);
+        poller.push_input_then(input);
     }
     // setup flow sensor
     {
@@ -114,7 +114,7 @@ fn main() {
                 ).into_boxed()
             );
 
-        poller.push_input(input);
+        poller.push_input_then(input);
     }
 
     println!("█▓▒░ Beginning polling ░▒▓█\n");
