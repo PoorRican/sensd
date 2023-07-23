@@ -1,4 +1,6 @@
 /// Interface for a named object
+///
+/// [`String`] has been chosen to be used because using `&str` involves a headache of passing lifetimes.
 pub trait Name {
     /// Getter for name field
     ///
