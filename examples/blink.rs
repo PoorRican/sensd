@@ -12,6 +12,7 @@ use sensd::action::IOCommand;
 use sensd::io::{IdType, Datum, Input, Device};
 use sensd::storage::{Group, Persistent};
 use std::ops::{DerefMut, Neg};
+use sensd::name::Name;
 
 /// █▓▒░ Event Loop Operating frequency
 ///
@@ -42,11 +43,10 @@ fn init(name: &str) -> Group {
 fn setup_devices(poller: &mut Group) {
     poller.push_input(
         Input::new(
-            "Mock Output",
             OUTPUT_ID,
         ).set_command(
             IOCommand::Output(|val| Ok(println!("\n{}\n", val)))
-        )
+        ).set_name("Mock Output")
     );
 }
 

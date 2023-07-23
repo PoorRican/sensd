@@ -20,15 +20,11 @@ use crate::storage::{Chronicle, Directory, Log};
 ///
 /// ```
 /// use sensd::io::{Device, DeviceGetters, Output, IOKind};
-/// use sensd::name::Name;
 /// let id = 777;
-/// let name = "our new output device";
 ///
-/// let device = Output::new(name, id);
+/// let device = Output::new(id);
 ///
-/// assert_eq!(device.name(), name);
 /// assert_eq!(device.id(), id);
-///
 /// assert_ne!(device, Output::default());
 /// ```
 ///
@@ -63,8 +59,12 @@ impl Name for Output {
         &self.metadata().name
     }
 
-    fn set_name<S>(&mut self, name: S) where S: Into<String> {
+    fn set_name<S>(mut self, name: S) -> Self
+    where
+        S: Into<String>
+    {
         self.metadata.name = name.into();
+        self
     }
 
 }
@@ -128,13 +128,10 @@ impl Device for Output {
     /// * `id`: arbitrary, numeric ID to differentiate from other devices
     ///
     /// returns: GenericOutput
-    fn new<N>(name: N, id: IdType) -> Self
-    where
-        Self: Sized,
-        N: Into<String>,
+    fn new(id: IdType) -> Self
     {
         let state = None;
-        let metadata: DeviceMetadata = DeviceMetadata::with_name(name, id, IODirection::Out);
+        let metadata: DeviceMetadata = DeviceMetadata::new(id, IODirection::Out);
 
         let command = None;
         let log = None;
@@ -310,13 +307,6 @@ mod tests {
     /// Dummy output command for testing.
     /// Accepts value and returns `Ok(())`
     const COMMAND: IOCommand = IOCommand::Output(move |_| Ok(()));
-
-    #[test]
-    /// Test that constructor accepts `name` as `&str` or `String`
-    fn new_name_parameter() {
-        Output::new("as &str", 0);
-        Output::new(String::from("as String"), 0);
-    }
 
     #[test]
     fn test_tx() {

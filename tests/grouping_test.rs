@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use chrono::Duration;
 use sensd::action::IOCommand;
 use sensd::io::{Device, Input, Output, Datum};
+use sensd::name::Name;
 use sensd::storage::{Chronicle, Group, Persistent, RootDirectory};
 
 #[test]
@@ -14,17 +15,14 @@ fn test_builder_pattern() {
     group
         .push_input(
             Input::new(
-                "test name",
                 0,
             ).set_command(command.clone()))
         .push_input(
             Input::new(
-                "second sensor",
                 1,
             ).set_command(command.clone()))
         .push_output(
             Output::new(
-                "output device",
                 2,
             ).set_command(IOCommand::Output(|_| Ok(())))
         );
@@ -42,7 +40,6 @@ fn test_poll() {
         .push_input(
 
             Input::new(
-                "test name",
                 0,
             ).set_command(
                 command.clone()
@@ -51,7 +48,6 @@ fn test_poll() {
         ).push_input(
 
             Input::new(
-                "second sensor",
                 1,
             ).set_command(
                 command.clone()
@@ -91,37 +87,29 @@ fn test_directory_hierarchy() {
     let in_command = IOCommand::Input(move || Datum::default());
 
     let input1 =
-        Input::new(
-            "i1",
-            0,
-        ).set_command(
-            in_command.clone()
-        ).init_log();
+        Input::new(0)
+            .set_name("i1")
+            .set_command(in_command.clone())
+            .init_log();
     let input2 =
-        Input::new(
-            "i2",
-            1,
-        ).set_command(
-            in_command.clone()
-        ).init_log();
+        Input::new(1)
+            .set_name("i2")
+            .set_command(in_command.clone())
+            .init_log();
 
     let out_command = IOCommand::Output(|_| Ok(()));
 
     let output1 =
-        Output::new(
-            "o1",
-            0,
-        ).set_command(
-            out_command.clone()
-        ).init_log();
+        Output::new(0)
+            .set_name("o1")
+            .set_command(out_command.clone())
+            .init_log();
 
     let output2 =
-        Output::new(
-            "o2",
-            1,
-        ).set_command(
-            out_command.clone()
-        ).init_log();
+        Output::new(1)
+            .set_name("o2")
+            .set_command(out_command.clone())
+            .init_log();
 
     // Build `Group` and create directories
     let mut group =

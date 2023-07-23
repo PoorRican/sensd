@@ -23,13 +23,11 @@ pub trait Device: Name + Chronicle + DeviceGetters + DeviceSetters + Persistent 
     ///
     /// # Parameters
     ///
-    /// - `name`: name of device.
     /// - `id`: device ID.
     /// - `kind`: kind of I/O device. Optional argument.
-    fn new<N>(name: N, id: IdType) -> Self
+    fn new(id: IdType) -> Self
     where
-        Self: Sized,
-        N: Into<String>;
+        Self: Sized;
 
     /// Builder method for `command` field
     ///

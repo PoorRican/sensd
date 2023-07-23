@@ -67,14 +67,12 @@ fn main() {
 
     // setup ph sensor
     {
-        let name = "test name";
         let id = 0;
         let command = IOCommand::Input(|| Datum::float(1.2));
 
         // build input device
         let mut input =
             Input::new(
-                name,
                 id,
             ).set_command(
                 command
@@ -95,13 +93,11 @@ fn main() {
     }
     // setup flow sensor
     {
-        let name = "second sensor";
         let id = 1;
         let command = IOCommand::Input(|| Datum::float(1.2));
 
         // build input device
         let mut input = Input::new(
-            name,
             id,
         )
             .set_command(command)

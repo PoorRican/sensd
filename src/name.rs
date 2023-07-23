@@ -14,7 +14,8 @@ pub trait Name {
     /// # Parameters
     ///
     /// - `name`: Desired name
-    fn set_name<S>(&mut self, name: S)
+    fn set_name<S>(self, name: S) -> Self
         where
+            Self: Sized,
             S: Into<String>;
 }

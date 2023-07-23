@@ -22,6 +22,7 @@ use sensd::io::{Device, IdType, Input, Output, Datum};
 use sensd::storage::{Group, Persistent};
 
 use std::ops::DerefMut;
+use sensd::name::Name;
 
 const INPUT_ID: IdType = 0;
 const OUTPUT_ID: IdType = 1;
@@ -100,23 +101,19 @@ fn main() {
     // build input
     poller.push_input(
         unsafe {
-            Input::new(
-                "mock temp sensor",
-                INPUT_ID,
-            ).set_command(
-                IOCommand::Input(|| EXTERNAL_VALUE)
-            ).init_log()
+            Input::new(INPUT_ID)
+                .set_name("mock temp sensor")
+                .set_command(IOCommand::Input(|| EXTERNAL_VALUE))
+                .init_log()
         }
     );
 
     // build output
     poller.push_output(
-        Output::new(
-            "test mock cooling device",
-            OUTPUT_ID,
-        ).set_command(
-            IOCommand::Output(|val| Ok(println!("\nSimulated HW Output: {}\n", val)))
-        ).init_log()
+        Output::new(OUTPUT_ID)
+            .set_name("test mock cooling device")
+            .set_command(IOCommand::Output(|val| Ok(println!("\nSimulated HW Output: {}\n", val))))
+            .init_log()
     );
 
     build_actions(&mut poller);

@@ -23,7 +23,44 @@ pub struct DeviceMetadata {
 }
 
 impl DeviceMetadata {
-    /// Creates a new instance of `DeviceInfo`
+    /// Default constructor for `DeviceMetadata`
+    ///
+    /// # Arguments
+    ///
+    /// - `id`: ID of the device (user provided)
+    /// - `kind`: IOKind representing device type
+    /// - `direction`: IODirection representing device type
+    ///
+    /// # Returns
+    ///
+    /// A new [`DeviceMetadata`] instance with given parameters
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use sensd::io::{IOKind, DeviceMetadata, IODirection, IdType};
+    ///
+    /// let id = 1;
+    /// let kind = IOKind::PH;
+    /// let direction = IODirection::default();
+    ///
+    /// let metadata = DeviceMetadata::new(id, direction);
+    ///
+    /// assert_eq!(metadata.name, "".to_string());
+    /// assert_eq!(metadata.id, id);
+    /// assert_eq!(metadata.kind, IOKind::default());
+    /// assert_eq!(metadata.direction, direction);
+    /// ```
+    pub fn new(id: IdType, direction: IODirection) -> Self
+    {
+        DeviceMetadata {
+            id,
+            direction,
+            ..Default::default()
+        }
+    }
+
+    /// Alternate constructor for  `DeviceInfo` with `name` parameter
     ///
     /// # Arguments
     ///
@@ -60,8 +97,8 @@ impl DeviceMetadata {
         DeviceMetadata {
             name: name.into(),
             id,
-            kind: IOKind::default(),
             direction,
+            ..Default::default()
         }
     }
 

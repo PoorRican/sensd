@@ -19,15 +19,11 @@ use crate::storage::{Chronicle, Directory, Log};
 ///
 /// ```
 /// use sensd::io::{Device, DeviceGetters, Input, IOKind};
-/// use sensd::name::Name;
 /// let id = 777;
-/// let name = "our new input sensor";
 ///
-/// let input = Input::new(name, id);
+/// let input = Input::new(id);
 ///
-/// assert_eq!(input.name(), name);
 /// assert_eq!(input.id(), id);
-///
 /// assert_ne!(input, Input::default());
 /// ```
 ///
@@ -70,12 +66,9 @@ impl Device for Input {
     ///
     /// Partially initialized [`Input`]. The builder method [`Device::set_command()`]
     /// needs to be called to assign an [`IOCommand`] to interact with hardware.
-    fn new<N>(name: N, id: IdType) -> Self
-    where
-        Self: Sized,
-        N: Into<String>,
+    fn new(id: IdType) -> Self
     {
-        let metadata: DeviceMetadata = DeviceMetadata::with_name(name.into(), id, IODirection::In);
+        let metadata: DeviceMetadata = DeviceMetadata::new(id, IODirection::In);
 
         let publisher = None;
         let command = None;
@@ -118,8 +111,11 @@ impl Name for Input {
         &self.metadata().name
     }
 
-    fn set_name<S>(&mut self, name: S) where S: Into<String> {
+    fn set_name<S>(mut self, name: S) -> Self
+        where S: Into<String>
+    {
         self.metadata.name = name.into();
+        self
     }
 }
 
@@ -335,13 +331,6 @@ mod tests {
 
     const DUMMY_OUTPUT: Datum = Datum::Float(Some(1.2));
     const COMMAND: IOCommand = IOCommand::Input(move || DUMMY_OUTPUT);
-
-    #[test]
-    /// Test that constructor accepts `name` as `&str` or `String`
-    fn new_name_parameter() {
-        Input::new("as &str", 0);
-        Input::new(String::from("as String"), 0);
-    }
 
     #[test]
     fn test_rx() {
