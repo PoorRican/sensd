@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::io::{IdTraits, Datum};
+use crate::io::{Datum, IdTraits};
 
 /// Dedicated object for storing a single record at a specific point in time.
 ///
@@ -58,10 +58,7 @@ impl IOEvent {
     /// assert_eq!(value, event.value);
     /// ```
     pub fn with_timestamp(timestamp: DateTime<Utc>, value: Datum) -> Self {
-        IOEvent {
-            timestamp,
-            value,
-        }
+        IOEvent { timestamp, value }
     }
 
     /// Constructor for [`IOEvent`]

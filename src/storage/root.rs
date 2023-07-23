@@ -16,7 +16,8 @@ impl RootPath {
         RootPath(Arc::new(PathBuf::new()))
     }
     pub fn join<P>(&self, path: P) -> PathBuf
-        where P: AsRef<Path>
+    where
+        P: AsRef<Path>,
     {
         self.0.join(path)
     }
@@ -37,7 +38,8 @@ impl Into<PathBuf> for RootPath {
 }
 
 impl<S> From<S> for RootPath
-    where S: AsRef<Path>
+where
+    S: AsRef<Path>,
 {
     fn from(value: S) -> Self {
         Self(Arc::new(PathBuf::from(value.as_ref())))
@@ -62,17 +64,17 @@ pub trait RootDirectory: Directory {
     ///
     /// Ownership of `Self`. This is to be used as a builder function using method chaining.
     fn set_root<P>(mut self, path: P) -> Self
-        where
-            Self: Sized,
-            P: AsRef<Path>
+    where
+        Self: Sized,
+        P: AsRef<Path>,
     {
         self.set_root_ref(path);
         self
     }
 
     fn set_root_ref<P>(&mut self, path: P) -> &mut Self
-        where
-            P: AsRef<Path>;
+    where
+        P: AsRef<Path>;
 
     /// Builder method that creates dedicated directory
     ///
@@ -87,8 +89,8 @@ pub trait RootDirectory: Directory {
     ///
     /// Ownership of `Self`, allowing method chaining.
     fn init_dir(self) -> Self
-        where
-            Self: Sized
+    where
+        Self: Sized,
     {
         self.init_dir_ref();
         self

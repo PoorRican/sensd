@@ -1,6 +1,6 @@
-use crate::io::{IOEvent, Output, Datum};
-use std::ops::DerefMut;
 use crate::helpers::Def;
+use crate::io::{Datum, IOEvent, Output};
+use std::ops::DerefMut;
 
 pub type BoxedAction = Box<dyn Action>;
 
@@ -46,13 +46,15 @@ pub trait Action {
     /// - If error occurs when writing to device
     /// - If output has no associated output
     fn write(&self, value: Datum) {
-        let output = self.output()
+        let output = self
+            .output()
             .expect("Action has no associated output device");
 
         let mut binding = output.try_lock().unwrap();
         let device = binding.deref_mut();
 
-        device.write(value)
+        device
+            .write(value)
             .expect("Unexpected error when writing to output device.");
     }
 

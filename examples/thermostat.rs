@@ -6,17 +6,17 @@ extern crate chrono;
 extern crate sensd;
 extern crate serde;
 
-use std::error::Error;
-use sensd::action::{Action, actions, IOCommand, Trigger};
+use sensd::action::{actions, Action, IOCommand, Trigger};
 use sensd::errors::ErrorType;
-use sensd::io::{Device, IdType, Input, Output, Datum};
+use sensd::io::{Datum, Device, IdType, Input, Output};
 use sensd::storage::{Group, Persistent};
+use std::error::Error;
 
-use std::ops::DerefMut;
-use std::thread;
 #[cfg(feature = "rppal")]
 use rppal::gpio::{Gpio, Level};
 use sensd::name::Name;
+use std::ops::DerefMut;
+use std::thread;
 
 const HEATER_PIN: u8 = 23;
 const SENSOR_PIN: u8 = 24;
@@ -33,46 +33,41 @@ const SETPOINT: f32 = 92.0;
 /// Refer to file notes about making this a mutable value
 const FREQUENCY: std::time::Duration = std::time::Duration::from_secs(5);
 
-
 #[cfg(not(feature = "rppal"))]
 fn main() {
     println!("This example needs to be run on an Raspberry Pi")
 }
 
 #[cfg(feature = "rppal")]
-fn main() -> Result<(), Box<dyn Error>>{
-
+fn main() -> Result<(), Box<dyn Error>> {
     // initialize HW pins
-    let mut heater = Gpio::new()?
-        .get(HEATER_PIN)?
-        .into_output();
-    let sensor = Gpio::new()?
-        .get(SENSOR_PIN)?
-        .into_input();
+    let mut heater = Gpio::new()?.get(HEATER_PIN)?.into_output();
+    let sensor = Gpio::new()?.get(SENSOR_PIN)?.into_input();
 
     let mut poller = Group::new("main");
-
 
     // build output
 
     // save referenced output device to add to `Action`
-    let output = poller.push_output(
-        Output::new(OUTPUT_ID)
-            .set_command(IOCommand::Output(|val| {
-                if let Datum::Binary(inner) = val {
-                    if let Some(value) = inner {
-                        let output = match value {
-                            true => Level::High,
-                            false => Level::Low
-                        };
-                        heater.write(output);
-                        return Ok(())
+    let output = poller
+        .push_output(
+            Output::new(OUTPUT_ID)
+                .set_command(IOCommand::Output(|val| {
+                    if let Datum::Binary(inner) = val {
+                        if let Some(value) = inner {
+                            let output = match value {
+                                true => Level::High,
+                                false => Level::Low,
+                            };
+                            heater.write(output);
+                            return Ok(());
+                        }
                     }
-                }
-                panic!("Incorrect value passed to output command")
-            }))
-            .init_log()
-    ).unwrap();
+                    panic!("Incorrect value passed to output command")
+                }))
+                .init_log(),
+        )
+        .unwrap();
 
     // build input + PID controller
     poller.push_input_then(
@@ -82,15 +77,15 @@ fn main() -> Result<(), Box<dyn Error>>{
             .init_publisher()
             .set_name("heater")
             .subscribe(
-                actions::PID::new(
-                    "heater PID",
-                    SETPOINT,
-                    1000.0)
+                actions::PID::new("heater PID", SETPOINT, 1000.0)
                     .set_output(output)
-                    .into_boxed()));
+                    .into_boxed(),
+            ),
+    );
 
     loop {
-        poller.poll()
+        poller
+            .poll()
             .and_then(poller.save().expect("Could not save"))?;
         thread::sleep(FREQUENCY);
     }

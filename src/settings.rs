@@ -1,6 +1,6 @@
+use crate::storage::RootPath;
 use dotenv::dotenv;
 use std::env::var;
-use crate::storage::RootPath;
 
 /// Default values
 const VERSION: &str = "0.1.0";
@@ -87,8 +87,8 @@ impl Settings {
     /// happen if not called before initialization of [`crate::storage::Group`]'s or
     /// [`crate::storage::Log`]'s.
     pub fn set_root<P>(&mut self, path: P)
-        where
-            P: Into<RootPath>
+    where
+        P: Into<RootPath>,
     {
         if self.root_path.strong_count() > 1 {
             panic!("Cannot change `root` while in use")
@@ -109,19 +109,13 @@ mod tests {
         let new_str = "new path";
         let expected = RootPath::from(new_str);
 
-        assert_eq!(false,
-                   settings.root_path()
-                       .eq(&expected));
+        assert_eq!(false, settings.root_path().eq(&expected));
 
         settings.set_root(new_str);
-        assert!(
-            settings.root_path()
-                .eq(&expected));
+        assert!(settings.root_path().eq(&expected));
 
         settings.set_root(new_str.to_string());
-        assert!(
-            settings.root_path()
-                .eq(&expected));
+        assert!(settings.root_path().eq(&expected));
     }
 
     #[test]

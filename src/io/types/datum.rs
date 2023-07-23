@@ -220,7 +220,8 @@ impl Display for Datum {
                         }
                     } else {
                         NONE
-                    }.to_string()
+                    }
+                    .to_string()
                 }
                 Self::PosInt8(val) => {
                     if let Some(inner) = val {
@@ -306,33 +307,20 @@ impl Add for Datum {
 
     fn add(self, other: Datum) -> Datum {
         match (self, other) {
-            (Datum::Binary(x), Datum::Binary(y)) => {
-                Datum::Binary(
-                    if let Some(x ) = x {
-                        if let Some(y) = y {
-                            Some(x || y)
-                        } else {
-                            None
-                        }
-                    } else {
-                        None
-                    })
-            }
-            (Datum::Int8(x), Datum::Int8(y)) => {
-                Datum::Int8(add_inner(x, y))
-            }
-            (Datum::PosInt8(x), Datum::PosInt8(y)) => {
-                Datum::PosInt8(add_inner(x, y))
-            }
-            (Datum::Int(x), Datum::Int(y)) => {
-                Datum::Int(add_inner(x, y))
-            }
-            (Datum::PosInt(x), Datum::PosInt(y)) => {
-                Datum::PosInt(add_inner(x, y))
-            }
-            (Datum::Float(x), Datum::Float(y)) => {
-                Datum::Float(add_inner(x, y))
-            }
+            (Datum::Binary(x), Datum::Binary(y)) => Datum::Binary(if let Some(x) = x {
+                if let Some(y) = y {
+                    Some(x || y)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }),
+            (Datum::Int8(x), Datum::Int8(y)) => Datum::Int8(add_inner(x, y)),
+            (Datum::PosInt8(x), Datum::PosInt8(y)) => Datum::PosInt8(add_inner(x, y)),
+            (Datum::Int(x), Datum::Int(y)) => Datum::Int(add_inner(x, y)),
+            (Datum::PosInt(x), Datum::PosInt(y)) => Datum::PosInt(add_inner(x, y)),
+            (Datum::Float(x), Datum::Float(y)) => Datum::Float(add_inner(x, y)),
             _ => panic!("Cannot add mismatched Datum types"),
         }
     }
@@ -394,12 +382,11 @@ impl Neg for Datum {
             Datum::Int(x) => Datum::Int(neg_inner(x)),
             Datum::Float(x) => Datum::Float(neg_inner(x)),
             Datum::Int8(x) => Datum::Int8(neg_inner(x)),
-            Datum::Binary(x) => Datum::Binary(
-                if let Some(inner) = x {
-                    Some(inner.not())
-                } else {
-                    None
-                }),
+            Datum::Binary(x) => Datum::Binary(if let Some(inner) = x {
+                Some(inner.not())
+            } else {
+                None
+            }),
             _ => panic!("Cannot negate unsigned types"),
         }
     }
@@ -432,11 +419,11 @@ impl PartialEq for Datum {
             (Datum::Float(x), Datum::Float(y)) => {
                 if let Some(x) = x {
                     if let Some(y) = y {
-                        return approx_eq!(f32, *x, *y, ulps = 2)
+                        return approx_eq!(f32, *x, *y, ulps = 2);
                     }
                 }
                 false
-            },
+            }
             (Datum::Int8(x), Datum::Int8(y)) => eq_inner(x, y),
             (Datum::PosInt8(x), Datum::PosInt8(y)) => eq_inner(x, y),
             (Datum::Int(x), Datum::Int(y)) => eq_inner(x, y),
@@ -445,7 +432,6 @@ impl PartialEq for Datum {
         }
     }
 }
-
 
 #[inline]
 /// Add two optional values of the same type
@@ -506,10 +492,10 @@ fn rem_inner<T: Rem + Rem<Output = T>>(l: Option<T>, r: Option<T>) -> Option<T> 
 /// Otherwise, if either parameter is `None`, then `true` is returned.
 fn eq_inner<T: PartialEq>(l: &Option<T>, r: &Option<T>) -> bool {
     if l.is_none() && r.is_none() {
-        return true
+        return true;
     } else if let Some(l) = l {
         if let Some(r) = r {
-            return l == r
+            return l == r;
         }
     }
     false
@@ -517,8 +503,8 @@ fn eq_inner<T: PartialEq>(l: &Option<T>, r: &Option<T>) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use crate::io::Datum;
     use crate::io::types::datum::{add_inner, div_inner, mul_inner, sub_inner};
+    use crate::io::Datum;
 
     #[test]
     fn test_add_inner() {
@@ -632,7 +618,6 @@ mod tests {
         assert_eq!(div_inner(None, y), None);
         assert_eq!(div_inner::<u32>(None, None), None);
     }
-
 
     #[test]
     fn test_datum_div() {

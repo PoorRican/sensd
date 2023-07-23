@@ -21,9 +21,9 @@ pub trait Document {
     ///
     /// Ownership of object with `dir` field set
     fn set_dir<P>(mut self, path: P) -> Self
-        where
-            Self: Sized,
-            P: AsRef<Path>
+    where
+        Self: Sized,
+        P: AsRef<Path>,
     {
         self.set_dir_ref(path);
         self
@@ -39,9 +39,9 @@ pub trait Document {
     ///
     /// Mutable reference to object with `dir` field set. Allows for method chaining.
     fn set_dir_ref<P>(&mut self, path: P) -> &mut Self
-        where
-            Self: Sized,
-            P: AsRef<Path>;
+    where
+        Self: Sized,
+        P: AsRef<Path>;
 
     /// Getter for developing filename
     ///
@@ -70,7 +70,6 @@ pub trait Document {
     /// - `true` if file exists regardless of permissions.
     /// - `false` if file does not exist
     fn exists(&self) -> bool {
-        self.full_path()
-            .exists()
+        self.full_path().exists()
     }
 }

@@ -4,9 +4,9 @@ use crate::io::{Device, DeviceContainer, DeviceGetters, IdType, Input, Output};
 use crate::settings::DATA_ROOT;
 use crate::storage::{Directory, Persistent, RootDirectory, RootPath};
 
+use crate::name::Name;
 use chrono::{DateTime, Duration, Utc};
 use std::path::{Path, PathBuf};
-use crate::name::Name;
 
 /// High-level container to manage multiple [`Device`] objects, logging, and
 /// actions.
@@ -147,7 +147,7 @@ impl Group {
     /// ```
     pub fn new<N>(name: N) -> Self
     where
-        N: Into<String>
+        N: Into<String>,
     {
         let interval = Duration::seconds(5);
         let last_execution = Utc::now() - interval;
@@ -190,9 +190,9 @@ impl Group {
     /// assert_eq!(RootPath::from(path), group.root_dir());
     /// ```
     pub fn with_root<S, P>(name: S, root: P) -> Self
-        where
-            S: Into<String>,
-            P: AsRef<Path>,
+    where
+        S: Into<String>,
+        P: AsRef<Path>,
     {
         let mut group = Self::new(name.into());
 
@@ -202,8 +202,8 @@ impl Group {
     }
 
     pub fn with_interval<N>(name: N, interval: Duration) -> Self
-        where
-            N: Into<String>,
+    where
+        N: Into<String>,
     {
         let mut group = Self::new(name.into());
         group.set_interval(interval);
@@ -369,7 +369,6 @@ impl Group {
     //
     // Getters
 
-
     #[inline]
     /// Getter for `interval`
     ///
@@ -421,14 +420,12 @@ impl Persistent for Group {
 
         for device in self.inputs.values() {
             let binding = device.try_lock().expect("Could not lock input");
-            results.push(
-                binding.save());
+            results.push(binding.save());
         }
 
         for device in self.outputs.values() {
             let binding = device.try_lock().expect("Could not lock output");
-            results.push(
-                binding.save());
+            results.push(binding.save());
         }
 
         check_results(&results)
@@ -457,14 +454,12 @@ impl Persistent for Group {
 
         for device in self.outputs.values() {
             let mut binding = device.try_lock().unwrap();
-            results.push(
-                binding.load());
+            results.push(binding.load());
         }
 
         for device in self.inputs.values() {
             let mut binding = device.try_lock().unwrap();
-            results.push(
-                binding.load());
+            results.push(binding.load());
         }
 
         check_results(&results)
@@ -487,8 +482,8 @@ impl Name for Group {
     ///
     /// - `name`: new name for group. Uses `Into<_>` to coerce into `String`.
     fn set_name<S>(mut self, name: S) -> Self
-        where
-            S: Into<String>
+    where
+        S: Into<String>,
     {
         self.name = name.into();
         self
@@ -501,9 +496,9 @@ impl Directory for Group {
     }
 
     fn set_parent_dir_ref<P>(&mut self, path: P) -> &mut Self
-        where
-            Self: Sized,
-            P: AsRef<Path>,
+    where
+        Self: Sized,
+        P: AsRef<Path>,
     {
         self.set_root_ref(path)
     }
@@ -533,8 +528,8 @@ impl RootDirectory for Group {
     ///
     /// - `root`: New path to global root dir
     fn set_root_ref<P>(&mut self, path: P) -> &mut Self
-        where
-            P: AsRef<Path>
+    where
+        P: AsRef<Path>,
     {
         let root = RootPath::from(path);
         self.root = root.clone();
@@ -568,10 +563,7 @@ mod tests {
     #[test]
     /// Test that alternate constructor sets root
     fn with_root() {
-
-        let group = Group::with_root(
-            "",
-            DIR_PATH);
+        let group = Group::with_root("", DIR_PATH);
         assert_eq!(RootPath::from(DIR_PATH), group.root_dir());
     }
 
@@ -579,9 +571,7 @@ mod tests {
     fn with_interval() {
         let interval = Duration::nanoseconds(30);
 
-        let group = Group::with_interval(
-            "",
-            interval);
+        let group = Group::with_interval("", interval);
         assert!(interval.eq(group.interval()))
     }
 
@@ -594,10 +584,7 @@ mod tests {
         for id in 0..15 {
             group.push_input_then(Input::new(id));
 
-            assert_eq!(
-                (id + 1) as usize,
-                group.inputs.len()
-            );
+            assert_eq!((id + 1) as usize, group.inputs.len());
         }
     }
 
@@ -607,9 +594,7 @@ mod tests {
         const TMP_DIR: &str = "/tmp/sensd/group_tests";
         const ID: u32 = 0;
 
-        let input =
-            Input::new(ID)
-                .set_name("input");
+        let input = Input::new(ID).set_name("input");
 
         assert!(input.parent_dir().is_none());
 
@@ -619,9 +604,7 @@ mod tests {
 
         let input = group.inputs.get(&ID);
 
-        let expected = PathBuf::from(TMP_DIR)
-            .join("group")
-            .join("input");
+        let expected = PathBuf::from(TMP_DIR).join("group").join("input");
         let binding = input.unwrap().try_lock().unwrap();
         assert_eq!(expected, binding.full_path())
     }
@@ -632,9 +615,7 @@ mod tests {
         const TMP_DIR: &str = "/tmp/sensd/group_tests";
         const ID: u32 = 0;
 
-        let output =
-            Output::new(ID)
-                .set_name("output");
+        let output = Output::new(ID).set_name("output");
 
         assert!(output.parent_dir().is_none());
 
@@ -644,9 +625,7 @@ mod tests {
 
         let output = group.outputs.get(&ID);
 
-        let expected = PathBuf::from(TMP_DIR)
-            .join("group")
-            .join("output");
+        let expected = PathBuf::from(TMP_DIR).join("group").join("output");
         let binding = output.unwrap().try_lock().unwrap();
         assert_eq!(expected, binding.full_path());
     }
@@ -669,10 +648,7 @@ mod tests {
         for id in 0..15 {
             group.push_output_then(Output::new(id));
 
-            assert_eq!(
-                (id + 1) as usize,
-                group.outputs.len()
-            );
+            assert_eq!((id + 1) as usize, group.outputs.len());
         }
     }
 
@@ -690,12 +666,14 @@ mod tests {
     fn test_dir() {
         const GROUP_NAME: &str = "main";
 
-
         let expected = Path::new(DIR_PATH).join(GROUP_NAME);
         let group = Group::with_root(GROUP_NAME, DIR_PATH);
 
         // assert directory path is correct
-        assert_eq!(expected.to_str().unwrap(), group.full_path().to_str().unwrap());
+        assert_eq!(
+            expected.to_str().unwrap(),
+            group.full_path().to_str().unwrap()
+        );
     }
 
     /// Test [`Group::init_dir()`]
@@ -704,9 +682,7 @@ mod tests {
         const GROUP_NAME: &str = "main";
 
         // init `Group` and settings
-        let group = Group::new(GROUP_NAME)
-            .set_root(DIR_PATH)
-            .init_dir();
+        let group = Group::new(GROUP_NAME).set_root(DIR_PATH).init_dir();
 
         assert!(group.full_path().exists());
 

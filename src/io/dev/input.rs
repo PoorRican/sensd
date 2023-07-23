@@ -1,12 +1,15 @@
-use std::fmt::Formatter;
-use std::path::{Path, PathBuf};
 use crate::action::{Action, Command, IOCommand, Publisher};
 use crate::errors::DeviceError;
 use crate::helpers::Def;
-use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, Datum, DeviceGetters, DeviceSetters};
 use crate::io::dev::device::set_log_dir;
+use crate::io::{
+    Datum, Device, DeviceGetters, DeviceMetadata, DeviceSetters, IODirection, IOEvent, IOKind,
+    IdType,
+};
 use crate::name::Name;
 use crate::storage::{Chronicle, Directory, Log};
+use std::fmt::Formatter;
+use std::path::{Path, PathBuf};
 
 #[derive(Default)]
 /// This is the generic implementation for any external input device.
@@ -66,8 +69,7 @@ impl Device for Input {
     ///
     /// Partially initialized [`Input`]. The builder method [`Device::set_command()`]
     /// needs to be called to assign an [`IOCommand`] to interact with hardware.
-    fn new(id: IdType) -> Self
-    {
+    fn new(id: IdType) -> Self {
         let metadata: DeviceMetadata = DeviceMetadata::new(id, IODirection::In);
 
         let publisher = None;
@@ -89,9 +91,10 @@ impl Device for Input {
 
     fn set_command(mut self, command: IOCommand) -> Self
     where
-        Self: Sized
+        Self: Sized,
     {
-        command.agrees(IODirection::In)
+        command
+            .agrees(IODirection::In)
             .expect("Command is not input");
         self.command = Some(command);
         self
@@ -99,7 +102,7 @@ impl Device for Input {
 
     fn set_kind(mut self, kind: IOKind) -> Self
     where
-        Self: Sized
+        Self: Sized,
     {
         self.metadata.kind = kind;
         self
@@ -112,7 +115,8 @@ impl Name for Input {
     }
 
     fn set_name<S>(mut self, name: S) -> Self
-        where S: Into<String>
+    where
+        S: Into<String>,
     {
         self.metadata.name = name.into();
         self
@@ -135,7 +139,10 @@ impl Directory for Input {
     /// # Returns
     ///
     /// Ownership of `Self` with `parent_dir` set to allow method chaining.
-    fn set_parent_dir_ref<P>(&mut self, path: P) -> &mut Self where P: AsRef<Path> {
+    fn set_parent_dir_ref<P>(&mut self, path: P) -> &mut Self
+    where
+        P: AsRef<Path>,
+    {
         let path = path.as_ref();
         self.dir = PathBuf::from(path).into();
 
@@ -191,11 +198,15 @@ impl Input {
             let result = command.execute(None)?;
             // return error if no value is read from device
             match result {
-                None => Err(DeviceError::ValueExpected {metadata: self.metadata.clone()})?,
+                None => Err(DeviceError::ValueExpected {
+                    metadata: self.metadata.clone(),
+                })?,
                 Some(inner) => inner,
             }
         } else {
-            Err(DeviceError::NoCommand {metadata: self.metadata.clone()})?
+            Err(DeviceError::NoCommand {
+                metadata: self.metadata.clone(),
+            })?
         };
 
         Ok(IOEvent::new(read_value))
@@ -365,8 +376,8 @@ impl PartialEq for Input {
 // Testing
 #[cfg(test)]
 mod tests {
-    use crate::action::{IOCommand};
-    use crate::io::{Device, Input, Datum};
+    use crate::action::IOCommand;
+    use crate::io::{Datum, Device, Input};
     use crate::storage::{Chronicle, Directory, Document};
 
     const DUMMY_OUTPUT: Datum = Datum::Float(Some(1.2));
@@ -426,16 +437,10 @@ mod tests {
     fn set_dir_changes_log_dir() {
         let mut input = Input::default().init_log();
 
-        assert!(input.log()
-            .unwrap().try_lock().unwrap()
-            .dir()
-            .is_none());
+        assert!(input.log().unwrap().try_lock().unwrap().dir().is_none());
 
         input = input.set_parent_dir("");
 
-        assert!(input.log()
-            .unwrap().try_lock().unwrap()
-            .dir()
-            .is_some());
+        assert!(input.log().unwrap().try_lock().unwrap().dir().is_some());
     }
 }

@@ -1,6 +1,6 @@
 use crate::action::Command;
 use crate::errors::DeviceError;
-use crate::io::{IODirection, Datum};
+use crate::io::{Datum, IODirection};
 
 /// Command design pattern for storing low-level I/O code
 ///
@@ -56,7 +56,7 @@ impl IOCommand {
     pub fn agrees(&self, direction: IODirection) -> Result<(), ()> {
         match direction == self.direction() {
             true => Ok(()),
-            false => Err(())
+            false => Err(()),
         }
     }
 }
@@ -91,7 +91,7 @@ impl Command<Datum, DeviceError> for IOCommand {
     /// A panic is thrown if no value is passed to [`IOCommand::Output`]
     fn execute<V>(&self, value: V) -> Result<Option<Datum>, DeviceError>
     where
-        V: Into<Option<Datum>>
+        V: Into<Option<Datum>>,
     {
         let value = value.into();
         match self {
@@ -122,7 +122,7 @@ fn unused_value() {
 #[cfg(test)]
 mod tests {
     use crate::action::{Command, IOCommand};
-    use crate::io::{IODirection, Datum};
+    use crate::io::{Datum, IODirection};
 
     #[test]
     #[should_panic]
@@ -141,21 +141,11 @@ mod tests {
     #[test]
     fn test_agrees() {
         let mut command = IOCommand::Output(|_| Ok(()));
-        assert_eq!((),
-                   command.agrees(IODirection::Out)
-                       .unwrap());
-        assert_eq!((),
-                   command.agrees(IODirection::In)
-                       .err()
-                       .unwrap());
+        assert_eq!((), command.agrees(IODirection::Out).unwrap());
+        assert_eq!((), command.agrees(IODirection::In).err().unwrap());
 
         command = IOCommand::Input(|| Datum::default());
-        assert_eq!((),
-                   command.agrees(IODirection::In)
-                       .unwrap());
-        assert_eq!((),
-                   command.agrees(IODirection::Out)
-                       .err()
-                       .unwrap());
+        assert_eq!((), command.agrees(IODirection::In).unwrap());
+        assert_eq!((), command.agrees(IODirection::Out).err().unwrap());
     }
 }

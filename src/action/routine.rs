@@ -1,10 +1,10 @@
-use std::ops::Not;
 use crate::action::{Command, IOCommand};
 use crate::errors::ErrorType;
 use crate::helpers::Def;
-use crate::io::{IOEvent, Datum};
+use crate::io::{Datum, IOEvent};
 use crate::storage::{Chronicle, Log};
 use chrono::{DateTime, Utc};
+use std::ops::Not;
 use std::sync::{Arc, Mutex, Weak};
 
 /// A [`Command`] that should be executed at a scheduled time *outside* of the normal event loop.
@@ -50,12 +50,7 @@ impl Routine {
     ///
     /// Initialized instance with scheduled time and downgraded reference
     /// to [`Log`]
-    pub fn new<L>(
-        timestamp: DateTime<Utc>,
-        value: Datum,
-        log: L,
-        command: IOCommand,
-    ) -> Self
+    pub fn new<L>(timestamp: DateTime<Utc>, value: Datum, log: L, command: IOCommand) -> Self
     where
         L: Into<Option<Def<Log>>>,
     {
@@ -117,7 +112,7 @@ impl Routine {
 impl Command<IOEvent, ErrorType> for Routine {
     fn execute<V>(&self, value: V) -> Result<Option<IOEvent>, ErrorType>
     where
-        V: Into<Option<Datum>>
+        V: Into<Option<Datum>>,
     {
         let value = value.into();
         match self.command.execute(value) {
@@ -145,7 +140,7 @@ impl Chronicle for Routine {
 mod functionality_tests {
     use crate::action::{IOCommand, Routine};
     use crate::helpers::Def;
-    use crate::io::{DeviceMetadata, Datum};
+    use crate::io::{Datum, DeviceMetadata};
     use crate::storage::Log;
     use chrono::{Duration, Utc};
 
@@ -201,7 +196,7 @@ mod meta_tests {
     use crate::{
         action::{IOCommand, Routine},
         helpers::Def,
-        io::{DeviceMetadata, Datum},
+        io::{Datum, DeviceMetadata},
         storage::Log,
     };
     #[test]

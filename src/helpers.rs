@@ -8,7 +8,8 @@ use crate::errors::ErrorType;
 ///
 /// If file or directory structure does not exist, then an attempt is made to create both.
 pub fn writable_or_create<P>(path: P) -> File
-where P: AsRef<Path>
+where
+    P: AsRef<Path>,
 {
     File::options()
         .write(true)

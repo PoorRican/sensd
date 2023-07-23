@@ -1,13 +1,16 @@
-use std::fmt::Formatter;
-use std::path::{Path, PathBuf};
-use chrono::{Duration, Utc};
 use crate::action::{Command, IOCommand, Routine};
 use crate::errors::{DeviceError, ErrorType};
 use crate::helpers::Def;
-use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, Datum, DeviceGetters, DeviceSetters};
 use crate::io::dev::device::set_log_dir;
+use crate::io::{
+    Datum, Device, DeviceGetters, DeviceMetadata, DeviceSetters, IODirection, IOEvent, IOKind,
+    IdType,
+};
 use crate::name::Name;
 use crate::storage::{Chronicle, Directory, Log};
+use chrono::{Duration, Utc};
+use std::fmt::Formatter;
+use std::path::{Path, PathBuf};
 
 #[derive(Default)]
 /// This is the generic implementation for any external output device.
@@ -61,12 +64,11 @@ impl Name for Output {
 
     fn set_name<S>(mut self, name: S) -> Self
     where
-        S: Into<String>
+        S: Into<String>,
     {
         self.metadata.name = name.into();
         self
     }
-
 }
 
 impl Directory for Output {
@@ -81,7 +83,11 @@ impl Directory for Output {
     /// # Parameters
     ///
     /// - `path`: New [`PathBuf`] to store
-    fn set_parent_dir_ref<P>(&mut self, path: P) -> &mut Self where Self: Sized, P: AsRef<Path> {
+    fn set_parent_dir_ref<P>(&mut self, path: P) -> &mut Self
+    where
+        Self: Sized,
+        P: AsRef<Path>,
+    {
         let path = path.as_ref();
         self.dir = Some(PathBuf::from(path.clone()));
 
@@ -128,8 +134,7 @@ impl Device for Output {
     /// * `id`: arbitrary, numeric ID to differentiate from other devices
     ///
     /// returns: GenericOutput
-    fn new(id: IdType) -> Self
-    {
+    fn new(id: IdType) -> Self {
         let state = None;
         let metadata: DeviceMetadata = DeviceMetadata::new(id, IODirection::Out);
 
@@ -150,15 +155,16 @@ impl Device for Output {
     where
         Self: Sized,
     {
-        command.agrees(IODirection::Out)
+        command
+            .agrees(IODirection::Out)
             .expect("Command is not output");
         self.command = Some(command);
         self
     }
 
     fn set_kind(mut self, kind: IOKind) -> Self
-        where
-            Self: Sized
+    where
+        Self: Sized,
     {
         self.metadata.kind = kind;
         self
@@ -186,7 +192,9 @@ impl Output {
         if let Some(command) = &self.command {
             command.execute(Some(value))?;
         } else {
-            Err(DeviceError::NoCommand {metadata: self.metadata.clone()})?;
+            Err(DeviceError::NoCommand {
+                metadata: self.metadata.clone(),
+            })?;
         };
 
         Ok(IOEvent::new(value))
@@ -235,7 +243,9 @@ impl Output {
     ///
     /// - [`Input::push_to_log()`] for adding [`IOEvent`] to [`Log`]
     pub fn write(&mut self, value: Datum) -> Result<IOEvent, ErrorType> {
-        let event = self.tx(value).expect("Low level device error while writing");
+        let event = self
+            .tx(value)
+            .expect("Low level device error while writing");
 
         // update cached state
         self.state = Some(event.value);
@@ -257,20 +267,19 @@ impl Output {
     /// [`Routine`] ready to be added to [`crate::action::SchedRoutineHandler`]
     pub fn create_routine(&self, value: Datum, duration: Duration) -> Routine {
         let timestamp = Utc::now() + duration;
-        let log = self.log.as_ref()
+        let log = self
+            .log
+            .as_ref()
             .expect("Output device does not have log")
             .to_owned()
             .clone();
-        let command = self.command.as_ref()
+        let command = self
+            .command
+            .as_ref()
             .expect("Output device does not have command")
             .to_owned()
             .clone();
-        Routine::new(
-            timestamp,
-            value,
-            log,
-            command,
-        )
+        Routine::new(timestamp, value, log, command)
     }
 }
 
@@ -301,7 +310,7 @@ impl PartialEq for Output {
 #[cfg(test)]
 mod tests {
     use crate::action::IOCommand;
-    use crate::io::{Device, DeviceGetters, Output, Datum};
+    use crate::io::{Datum, Device, DeviceGetters, Output};
     use crate::storage::{Chronicle, Directory, Document};
 
     /// Dummy output command for testing.
@@ -362,17 +371,11 @@ mod tests {
     fn set_dir() {
         let mut output = Output::default().init_log();
 
-        assert!(output.log()
-            .unwrap().try_lock().unwrap()
-            .dir()
-            .is_none());
+        assert!(output.log().unwrap().try_lock().unwrap().dir().is_none());
 
         output = output.set_parent_dir("");
 
-        assert!(output.log()
-            .unwrap().try_lock().unwrap()
-            .dir()
-            .is_some());
+        assert!(output.log().unwrap().try_lock().unwrap().dir().is_some());
     }
 
     #[test]
@@ -380,16 +383,10 @@ mod tests {
     fn set_dir_changes_log_dir() {
         let mut output = Output::default().init_log();
 
-        assert!(output.log()
-            .unwrap().try_lock().unwrap()
-            .dir()
-            .is_none());
+        assert!(output.log().unwrap().try_lock().unwrap().dir().is_none());
 
         output = output.set_parent_dir("");
 
-        assert!(output.log()
-            .unwrap().try_lock().unwrap()
-            .dir()
-            .is_some());
+        assert!(output.log().unwrap().try_lock().unwrap().dir().is_some());
     }
 }

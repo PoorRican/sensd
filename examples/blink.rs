@@ -9,10 +9,10 @@ extern crate sensd;
 extern crate serde;
 
 use sensd::action::IOCommand;
-use sensd::io::{IdType, Datum, Input, Device};
+use sensd::io::{Datum, Device, IdType, Input};
+use sensd::name::Name;
 use sensd::storage::{Group, Persistent};
 use std::ops::{DerefMut, Neg};
-use sensd::name::Name;
 
 /// █▓▒░ Event Loop Operating frequency
 ///
@@ -42,11 +42,9 @@ fn init(name: &str) -> Group {
 /// Use of `Group::add_devices()` is demonstrated.
 fn setup_devices(poller: &mut Group) {
     poller.push_input_then(
-        Input::new(
-            OUTPUT_ID,
-        ).set_command(
-            IOCommand::Output(|val| Ok(println!("\n{}\n", val)))
-        ).set_name("Mock Output")
+        Input::new(OUTPUT_ID)
+            .set_command(IOCommand::Output(|val| Ok(println!("\n{}\n", val))))
+            .set_name("Mock Output"),
     );
 }
 
@@ -67,14 +65,15 @@ fn main() {
     loop {
         {
             let mut binding = wrapped_device.try_lock().unwrap();
-            binding.deref_mut()
+            binding
+                .deref_mut()
                 .write(value)
                 .expect("Error while calling `::write()` on output device");
         }
 
         poller.save().expect("Error while saving");
 
-        value = value.neg();    // alternate output value
+        value = value.neg(); // alternate output value
 
         std::thread::sleep(FREQUENCY);
     }

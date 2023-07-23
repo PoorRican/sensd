@@ -8,10 +8,9 @@ use std::path::{Path, PathBuf};
 
 use crate::errors::{ContainerError, ErrorType, FilesystemError};
 use crate::helpers::writable_or_create;
-use crate::io::{DeviceMetadata, IdType, IOEvent};
+use crate::io::{DeviceMetadata, IOEvent, IdType};
 use crate::settings;
-use crate::storage::{EventCollection, Persistent, FILETYPE, Document};
-
+use crate::storage::{Document, EventCollection, Persistent, FILETYPE};
 
 /// A record of [`IOEvent`]s from a single device keyed by datetime
 ///
@@ -36,7 +35,6 @@ pub struct Log {
 }
 
 impl Log {
-
     /// Constructor for [`Log`]
     ///
     /// # Parameters
@@ -46,10 +44,8 @@ impl Log {
     /// # Returns
     ///
     /// Empty log with identity attributes belonging to given device.
-    pub fn with_metadata(metadata: &DeviceMetadata) -> Self
-    {
-        Self::default()
-            .set_metadata(metadata.clone())
+    pub fn with_metadata(metadata: &DeviceMetadata) -> Self {
+        Self::default().set_metadata(metadata.clone())
     }
 
     /// Getter for device metadata
@@ -73,9 +69,7 @@ impl Log {
     ///
     /// If there is no associated device, a panic is thrown.
     pub fn name(&self) -> &String {
-       &self.metadata()
-            .expect("No associated device metadata")
-            .name
+        &self.metadata().expect("No associated device metadata").name
     }
 
     /// Getter for `id`
@@ -88,9 +82,7 @@ impl Log {
     ///
     /// If there is no associated device, a panic is thrown.
     pub fn id(&self) -> &IdType {
-        &self.metadata()
-            .expect("No associated device metadata")
-            .id
+        &self.metadata().expect("No associated device metadata").id
     }
 
     /// Setter for `metadata`
@@ -128,12 +120,11 @@ impl Log {
     ///
     /// - `Ok`: with a reference to inserted log is inserted when [`IOEvent.timestamp`] does not exist in log
     /// - `Err`: with an [`ErrorKind::ContainerError`] error if timestamp already exists in log
-    pub fn push(
-        &mut self,
-        event: IOEvent,
-    ) -> Result<&mut IOEvent, ContainerError> {
+    pub fn push(&mut self, event: IOEvent) -> Result<&mut IOEvent, ContainerError> {
         match self.log.entry(event.timestamp) {
-            Entry::Occupied(_) => Err(ContainerError::KeyExists { key: event.timestamp.to_string()}),
+            Entry::Occupied(_) => Err(ContainerError::KeyExists {
+                key: event.timestamp.to_string(),
+            }),
             Entry::Vacant(entry) => Ok(entry.insert(event)),
         }
     }
@@ -185,8 +176,7 @@ impl Persistent for Log {
             Ok(_) => println!("Saved"),
             Err(e) => {
                 let msg = e.to_string();
-                return Err(
-                    Box::new(FilesystemError::SerializationError {msg}));
+                return Err(Box::new(FilesystemError::SerializationError { msg }));
             }
         }
         Ok(())
@@ -222,9 +212,7 @@ impl Persistent for Log {
                 Ok(data) => data,
                 Err(e) => {
                     let msg = e.to_string();
-                    return Err(
-                        Box::new(FilesystemError::SerializationError {msg})
-                    )
+                    return Err(Box::new(FilesystemError::SerializationError { msg }));
                 }
             };
             self.log = buff.log;
@@ -242,8 +230,9 @@ impl Document for Log {
     }
 
     fn set_dir_ref<P>(&mut self, path: P) -> &mut Self
-        where Self: Sized,
-              P: AsRef<Path>
+    where
+        Self: Sized,
+        P: AsRef<Path>,
     {
         self.dir = Some(PathBuf::from(path.as_ref()));
 
@@ -273,15 +262,15 @@ impl Document for Log {
 // Testing
 #[cfg(test)]
 mod tests {
-    use crate::io::{Datum, IOEvent, DeviceMetadata, IODirection};
+    use crate::io::{Datum, DeviceMetadata, IODirection, IOEvent};
     use crate::storage::{Document, Log, Persistent};
     use std::path::Path;
     use std::time::Duration;
     use std::{fs, thread};
 
     fn generate_log<'meta, M>(count: usize, metadata: M) -> Log
-        where
-            M: Into<Option<&'meta DeviceMetadata>>
+    where
+        M: Into<Option<&'meta DeviceMetadata>>,
     {
         let mut log;
         match metadata.into() {
@@ -303,11 +292,7 @@ mod tests {
         const COUNT: usize = 10;
         const TMP_DIR: &str = "/tmp/device/";
 
-        let metadata = DeviceMetadata::with_name(
-            "test",
-            32,
-            IODirection::In,
-        );
+        let metadata = DeviceMetadata::with_name("test", 32, IODirection::In);
 
         /* NOTE: More complex `IOEvent` objects *could* be checked, but we are trusting `serde`.
         These tests only count the number of `IOEvent`'s added. */
@@ -315,9 +300,7 @@ mod tests {
         let filename;
         // test save
         {
-            let log =
-                generate_log(COUNT, &metadata)
-                    .set_dir(TMP_DIR);
+            let log = generate_log(COUNT, &metadata).set_dir(TMP_DIR);
 
             log.save().unwrap();
 
@@ -330,8 +313,7 @@ mod tests {
         // test load
         // build back up then load
         {
-            let mut log = Log::with_metadata(&metadata)
-                .set_dir(TMP_DIR);
+            let mut log = Log::with_metadata(&metadata).set_dir(TMP_DIR);
 
             log.load().unwrap();
 

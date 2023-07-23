@@ -1,4 +1,4 @@
-use crate::io::{IdType, IOKind, IODirection};
+use crate::io::{IODirection, IOKind, IdType};
 use serde::{Deserialize, Serialize};
 use std::fmt::Formatter;
 
@@ -51,8 +51,7 @@ impl DeviceMetadata {
     /// assert_eq!(metadata.kind, IOKind::default());
     /// assert_eq!(metadata.direction, direction);
     /// ```
-    pub fn new(id: IdType, direction: IODirection) -> Self
-    {
+    pub fn new(id: IdType, direction: IODirection) -> Self {
         DeviceMetadata {
             id,
             direction,
@@ -138,9 +137,7 @@ mod tests {
     #[test]
     fn test_kind_setter() {
         let expected = IOKind::EC;
-        let meta =
-            DeviceMetadata::with_name("", 0, IODirection::default())
-                .kind(expected);
+        let meta = DeviceMetadata::with_name("", 0, IODirection::default()).kind(expected);
         assert_eq!(expected, meta.kind);
     }
 }

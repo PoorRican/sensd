@@ -1,7 +1,7 @@
-use crate::action::{Action, BoxedAction};
-use crate::io::{IOEvent, Output, Datum};
 use crate::action::trigger::Trigger;
+use crate::action::{Action, BoxedAction};
 use crate::helpers::Def;
+use crate::io::{Datum, IOEvent, Output};
 
 /// Bang-bang (on-off) controller
 ///
@@ -59,7 +59,7 @@ impl Threshold {
     // TODO: there should be an option to inverse polarity
     pub fn new<N>(name: N, threshold: Datum, trigger: Trigger) -> Self
     where
-        N: Into<String>
+        N: Into<String>,
     {
         // TODO: add a type check to ensure that `output` accepts a binary value
 
@@ -104,7 +104,7 @@ impl Threshold {
     /// ```
     pub fn with_output<N>(name: N, threshold: Datum, trigger: Trigger, output: Def<Output>) -> Self
     where
-        N: Into<String>
+        N: Into<String>,
     {
         Self::new(name.into(), threshold, trigger).set_output(output)
     }
@@ -178,8 +178,8 @@ impl Action for Threshold {
                 self.notify(msg.as_str());
 
                 self.on_unchecked();
-            },
-            false => { self.off_unchecked() },
+            }
+            false => self.off_unchecked(),
         };
     }
 
@@ -231,7 +231,7 @@ impl Action for Threshold {
 mod tests {
     use crate::action::actions::Threshold;
     use crate::action::Trigger;
-    use crate::io::{Device, Output, Datum};
+    use crate::io::{Datum, Device, Output};
 
     #[test]
     /// Ensure that `name` can be given to `new()` constructor as `String` or `&str`

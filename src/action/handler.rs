@@ -59,7 +59,7 @@ mod tests {
     use crate::{
         action::{IOCommand, Routine, SchedRoutineHandler},
         helpers::Def,
-        io::{DeviceMetadata, Datum},
+        io::{Datum, DeviceMetadata},
         storage::Log,
     };
 

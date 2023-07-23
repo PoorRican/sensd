@@ -1,5 +1,5 @@
-use std::path::{Path, PathBuf};
 use crate::name::Name;
+use std::path::{Path, PathBuf};
 
 /// Interface for an object with a dedicated directory
 ///
@@ -24,17 +24,17 @@ pub trait Directory: Name {
     ///
     /// - `path`: `PathBuf` returned from [`Directory::full_path()`] of parent object..
     fn set_parent_dir<P>(mut self, path: P) -> Self
-        where
-            Self: Sized,
-            P: AsRef<Path>
+    where
+        Self: Sized,
+        P: AsRef<Path>,
     {
         self.set_parent_dir_ref(path);
         self
     }
 
     fn set_parent_dir_ref<P>(&mut self, path: P) -> &mut Self
-        where
-            P: AsRef<Path>;
+    where
+        P: AsRef<Path>;
 
     /// Generate or get directory name
     ///

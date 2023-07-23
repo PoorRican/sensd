@@ -16,9 +16,9 @@ pub type LogContainer = Vec<Def<Log>>;
 
 #[cfg(test)]
 mod test_event_collection {
-    use chrono::{Duration, Utc};
-    use crate::io::{IOEvent, Datum};
+    use crate::io::{Datum, IOEvent};
     use crate::storage::EventCollection;
+    use chrono::{Duration, Utc};
 
     fn generate_log(count: usize) -> EventCollection {
         let mut log = EventCollection::default();

@@ -1,5 +1,5 @@
-use std::fmt::{Display, Formatter};
 use crate::io::Datum;
+use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Clone)]
 /// Discrete variants that abstract comparison of external and threshold values.
@@ -52,22 +52,14 @@ mod tests {
     use crate::action::Trigger;
     use crate::io::Datum;
 
-
     #[test]
     fn lte() {
         let trigger = Trigger::LTE;
-        let (bigger, smaller) = (
-            Datum::int(2),
-            Datum::int(1),
-        );
+        let (bigger, smaller) = (Datum::int(2), Datum::int(1));
 
-        assert_eq!(true,
-                   trigger.exceeded(smaller,  bigger)
-        );
+        assert_eq!(true, trigger.exceeded(smaller, bigger));
 
-        assert_eq!(false,
-                   trigger.exceeded(bigger, smaller)
-        );
+        assert_eq!(false, trigger.exceeded(bigger, smaller));
 
         assert!(trigger.exceeded(bigger, bigger));
         assert!(trigger.exceeded(smaller, smaller));
@@ -76,20 +68,11 @@ mod tests {
     #[test]
     fn gte() {
         let trigger = Trigger::GTE;
-        let (bigger, smaller) = (
-            Datum::int(2),
-            Datum::int(1),
-        );
+        let (bigger, smaller) = (Datum::int(2), Datum::int(1));
 
+        assert_eq!(true, trigger.exceeded(bigger, smaller));
 
-
-        assert_eq!(true,
-                   trigger.exceeded(bigger, smaller)
-        );
-
-        assert_eq!(false,
-                   trigger.exceeded(smaller,  bigger, )
-        );
+        assert_eq!(false, trigger.exceeded(smaller, bigger,));
 
         assert!(trigger.exceeded(bigger, bigger));
         assert!(trigger.exceeded(smaller, smaller));
@@ -97,36 +80,20 @@ mod tests {
     #[test]
     fn lt() {
         let trigger = Trigger::LT;
-        let (bigger, smaller) = (
-            Datum::int(2),
-            Datum::int(1),
-        );
+        let (bigger, smaller) = (Datum::int(2), Datum::int(1));
 
-        assert_eq!(true,
-            trigger.exceeded(smaller,  bigger)
-        );
+        assert_eq!(true, trigger.exceeded(smaller, bigger));
 
-        assert_eq!(false,
-                   trigger.exceeded(bigger, smaller)
-        );
+        assert_eq!(false, trigger.exceeded(bigger, smaller));
     }
 
     #[test]
     fn gt() {
         let trigger = Trigger::GT;
-        let (bigger, smaller) = (
-            Datum::int(2),
-            Datum::int(1),
-        );
+        let (bigger, smaller) = (Datum::int(2), Datum::int(1));
 
+        assert_eq!(true, trigger.exceeded(bigger, smaller));
 
-
-        assert_eq!(true,
-                   trigger.exceeded(bigger, smaller)
-        );
-
-        assert_eq!(false,
-                   trigger.exceeded(smaller,  bigger, )
-        );
+        assert_eq!(false, trigger.exceeded(smaller, bigger,));
     }
 }

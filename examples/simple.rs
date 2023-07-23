@@ -23,7 +23,7 @@ extern crate serde;
 
 use sensd::action::{actions, IOCommand, Trigger};
 use sensd::errors::ErrorType;
-use sensd::io::{Datum, Input, Device};
+use sensd::io::{Datum, Device, Input};
 use sensd::storage::{Group, Persistent};
 
 /// █▓▒░ Event Loop Operating frequency
@@ -70,17 +70,15 @@ fn main() {
         let id = 0;
         let command = IOCommand::Input(|| Datum::float(1.2));
 
-        let input =
-            Input::new(id)
-                .set_command(command)
-                .init_log()
-                .init_publisher()
-                .subscribe(
-                    actions::Threshold::new(
-                        format!("Subscriber for Input:{}", id),
-                        Datum::float(1.0),
-                        Trigger::GT
-                    ));
+        let input = Input::new(id)
+            .set_command(command)
+            .init_log()
+            .init_publisher()
+            .subscribe(actions::Threshold::new(
+                format!("Subscriber for Input:{}", id),
+                Datum::float(1.0),
+                Trigger::GT,
+            ));
 
         poller.push_input_then(input);
     }
@@ -90,17 +88,15 @@ fn main() {
         let id = 1;
         let command = IOCommand::Input(|| Datum::float(1.2));
 
-        let input =
-            Input::new(id)
-                .set_command(command)
-                .init_log()
-                .init_publisher()
-                .subscribe(
-                    actions::Threshold::new(
-                        format!("Subscriber for Input:{}", id),
-                        Datum::float(1.0),
-                        Trigger::GT,
-                    ));
+        let input = Input::new(id)
+            .set_command(command)
+            .init_log()
+            .init_publisher()
+            .subscribe(actions::Threshold::new(
+                format!("Subscriber for Input:{}", id),
+                Datum::float(1.0),
+                Trigger::GT,
+            ));
 
         poller.push_input_then(input);
     }

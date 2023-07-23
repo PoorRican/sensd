@@ -1,11 +1,11 @@
-use crate::errors::{ContainerError};
+use crate::errors::ContainerError;
 use crate::helpers::Def;
 use crate::io::{Device, IdTraits};
+use crate::storage::{Directory, RootPath};
 use std::collections::hash_map::{Entry, Iter, Values, ValuesMut};
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::ops::DerefMut;
-use crate::storage::{RootPath, Directory};
 
 /// Generic mapped container for storing [`Device`] objects
 #[derive(Default)]
@@ -30,7 +30,9 @@ where
 
     pub fn insert(&mut self, id: K, device: Def<D>) -> Result<Def<D>, ContainerError> {
         match self.0.entry(id) {
-            Entry::Occupied(_) => Err(ContainerError::KeyExists {key: id.to_string()}),
+            Entry::Occupied(_) => Err(ContainerError::KeyExists {
+                key: id.to_string(),
+            }),
             Entry::Vacant(entry) => Ok(entry.insert(device).clone()),
         }
     }
@@ -59,9 +61,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::ops::Deref;
-    use crate::io::{Device, DeviceContainer, Output, Input};
+    use crate::io::{Device, DeviceContainer, Input, Output};
     use crate::storage::{Chronicle, Directory, Document};
+    use std::ops::Deref;
 
     #[test]
     fn insert_output() {
@@ -73,30 +75,17 @@ mod tests {
         for id in 0..ITERATIONS {
             let output = Output::new(id).into_deferred();
 
-            assert!(
-                container.insert(id, output)
-                    .is_ok()
-            );
-            assert_eq!(
-                (id + 1) as usize,
-                container.len()
-            );
+            assert!(container.insert(id, output).is_ok());
+            assert_eq!((id + 1) as usize, container.len());
         }
 
         for id in 0..ITERATIONS {
             let output = Output::new(id).into_deferred();
 
-            assert!(
-                container.insert(id, output)
-                    .is_err()
-            );
-            assert_eq!(
-                ITERATIONS as usize,
-                container.len()
-            );
+            assert!(container.insert(id, output).is_err());
+            assert_eq!(ITERATIONS as usize, container.len());
         }
     }
-
 
     #[test]
     fn insert_input() {
@@ -108,27 +97,15 @@ mod tests {
         for id in 0..ITERATIONS {
             let input = Input::new(id).into_deferred();
 
-            assert!(
-                container.insert(id, input)
-                    .is_ok()
-            );
-            assert_eq!(
-                (id + 1) as usize,
-                container.len()
-            );
+            assert!(container.insert(id, input).is_ok());
+            assert_eq!((id + 1) as usize, container.len());
         }
 
         for id in 0..ITERATIONS {
             let input = Input::new(id).into_deferred();
 
-            assert!(
-                container.insert(id, input)
-                    .is_err()
-            );
-            assert_eq!(
-                ITERATIONS as usize,
-                container.len()
-            );
+            assert!(container.insert(id, input).is_err());
+            assert_eq!(ITERATIONS as usize, container.len());
         }
     }
 
@@ -137,25 +114,29 @@ mod tests {
     fn set_root() {
         const PATH: &str = "New Root";
 
-        let input = Input::new(0)
-            .init_log();
-        assert!(
-            input.log().unwrap()
-                .try_lock().unwrap().deref()
-                .dir().is_none());
+        let input = Input::new(0).init_log();
+        assert!(input
+            .log()
+            .unwrap()
+            .try_lock()
+            .unwrap()
+            .deref()
+            .dir()
+            .is_none());
 
         let mut container = DeviceContainer::default();
         container.insert(0, input.into_deferred()).unwrap();
 
-        let mut input = container.get(&0).unwrap()
-                .try_lock().unwrap();
+        let mut input = container.get(&0).unwrap().try_lock().unwrap();
         input.set_parent_dir_ref(PATH);
 
-        assert!(
-            input
-                .log()
-                .unwrap().try_lock().unwrap().deref()
-                .dir().is_some());
+        assert!(input
+            .log()
+            .unwrap()
+            .try_lock()
+            .unwrap()
+            .deref()
+            .dir()
+            .is_some());
     }
-
 }

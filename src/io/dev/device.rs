@@ -8,14 +8,14 @@
 //!
 //! - [`DeviceMetadata`] for user defined metadata and field descriptions
 
-use std::path::{Path};
 use crate::action::IOCommand;
+use crate::errors::ErrorType;
 use crate::helpers::Def;
-use crate::io::{DeviceMetadata, IODirection, IOKind, IdType, Datum};
+use crate::io::{Datum, DeviceMetadata, IODirection, IOKind, IdType};
+use crate::name::Name;
 use crate::storage::Document;
 use crate::storage::{Chronicle, Log, Persistent};
-use crate::errors::ErrorType;
-use crate::name::Name;
+use std::path::Path;
 
 /// Common constructors and builder methods for all device types
 pub trait Device: Name + Chronicle + DeviceGetters + DeviceSetters + Persistent {
@@ -73,7 +73,7 @@ pub trait Device: Name + Chronicle + DeviceGetters + DeviceSetters + Persistent 
 
     fn into_deferred(self) -> Def<Self>
     where
-        Self: Sized
+        Self: Sized,
     {
         Def::new(self)
     }
@@ -131,30 +131,28 @@ impl<T: Device> Persistent for T {
     fn save(&self) -> Result<(), ErrorType> {
         match self.log() {
             Some(log) => log.try_lock().unwrap().save(),
-            None => Ok(())
+            None => Ok(()),
         }
     }
 
     fn load(&mut self) -> Result<(), ErrorType> {
         match self.log() {
             Some(log) => log.try_lock().unwrap().load(),
-            None => Ok(())
+            None => Ok(()),
         }
     }
 }
 
 /// Helper for setting log directory
 pub fn set_log_dir<S>(log: Option<Def<Log>>, path: S)
-    where
-        S: AsRef<Path>
+where
+    S: AsRef<Path>,
 {
     match log {
         Some(inner) => {
-            let mut log =
-                inner.try_lock()
-                    .expect("Log is poisoned");
+            let mut log = inner.try_lock().expect("Log is poisoned");
             log.set_dir_ref(path);
-        },
-        None => ()
+        }
+        None => (),
     }
 }

@@ -2,7 +2,7 @@ use std::path::PathBuf;
 // TODO: these tests need to be added to "src/storage/grouping.rs"
 use chrono::Duration;
 use sensd::action::IOCommand;
-use sensd::io::{Device, Input, Output, Datum};
+use sensd::io::{Datum, Device, Input, Output};
 use sensd::name::Name;
 use sensd::storage::{Chronicle, Group, Persistent, RootDirectory};
 
@@ -13,19 +13,9 @@ fn test_builder_pattern() {
 
     let mut group = Group::new("main");
     group
-        .push_input_then(
-            Input::new(
-                0,
-            ).set_command(command.clone()))
-        .push_input_then(
-            Input::new(
-                1,
-            ).set_command(command.clone()))
-        .push_output_then(
-            Output::new(
-                2,
-            ).set_command(IOCommand::Output(|_| Ok(())))
-        );
+        .push_input_then(Input::new(0).set_command(command.clone()))
+        .push_input_then(Input::new(1).set_command(command.clone()))
+        .push_output_then(Output::new(2).set_command(IOCommand::Output(|_| Ok(()))));
 
     assert_eq!(group.inputs.len(), 2);
     assert_eq!(group.outputs.len(), 1);
@@ -37,23 +27,8 @@ fn test_poll() {
 
     let mut group = Group::with_interval("main", Duration::nanoseconds(1));
     group
-        .push_input_then(
-
-            Input::new(
-                0,
-            ).set_command(
-                command.clone()
-            ).init_log()
-
-        ).push_input_then(
-
-            Input::new(
-                1,
-            ).set_command(
-                command.clone()
-            ).init_log()
-
-        );
+        .push_input_then(Input::new(0).set_command(command.clone()).init_log())
+        .push_input_then(Input::new(1).set_command(command.clone()).init_log());
 
     // check that all logs are empty
     const COUNT: usize = 15;
@@ -86,53 +61,41 @@ fn test_directory_hierarchy() {
 
     let in_command = IOCommand::Input(move || Datum::default());
 
-    let input1 =
-        Input::new(0)
-            .set_name("i1")
-            .set_command(in_command.clone())
-            .init_log();
-    let input2 =
-        Input::new(1)
-            .set_name("i2")
-            .set_command(in_command.clone())
-            .init_log();
+    let input1 = Input::new(0)
+        .set_name("i1")
+        .set_command(in_command.clone())
+        .init_log();
+    let input2 = Input::new(1)
+        .set_name("i2")
+        .set_command(in_command.clone())
+        .init_log();
 
     let out_command = IOCommand::Output(|_| Ok(()));
 
-    let output1 =
-        Output::new(0)
-            .set_name("o1")
-            .set_command(out_command.clone())
-            .init_log();
+    let output1 = Output::new(0)
+        .set_name("o1")
+        .set_command(out_command.clone())
+        .init_log();
 
-    let output2 =
-        Output::new(1)
-            .set_name("o2")
-            .set_command(out_command.clone())
-            .init_log();
+    let output2 = Output::new(1)
+        .set_name("o2")
+        .set_command(out_command.clone())
+        .init_log();
 
     // Build `Group` and create directories
-    let mut group =
-        Group::with_interval(
-            "group",
-            Duration::nanoseconds(INTERVAL));
+    let mut group = Group::with_interval("group", Duration::nanoseconds(INTERVAL));
 
     group.set_root_ref(TMP_DIR);
 
-    group
-        .push_input_then(input1)
-        .push_input_then(input2);
-    group
-        .push_output_then(output1)
-        .push_output_then(output2);
+    group.push_input_then(input1).push_input_then(input2);
+    group.push_output_then(output1).push_output_then(output2);
 
     group.init_dir_ref();
 
     // Ensure that log exists
     for _ in 0..15 {
         group.poll().unwrap();
-        std::thread::sleep(
-            std::time::Duration::from_nanos(INTERVAL as u64));
+        std::thread::sleep(std::time::Duration::from_nanos(INTERVAL as u64));
     }
     group.save().expect("Could not save `Group`");
 

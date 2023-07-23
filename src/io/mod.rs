@@ -1,8 +1,8 @@
 //! Encapsulate IO for devices
+mod dev;
 mod event;
 mod metadata;
 mod types;
-mod dev;
 
 pub use dev::*;
 pub use event::IOEvent;

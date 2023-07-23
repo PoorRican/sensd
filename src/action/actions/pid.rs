@@ -1,8 +1,8 @@
-use chrono::Duration;
-use ext_pid::Pid;
 use crate::action::{Action, BoxedAction, SchedRoutineHandler};
 use crate::helpers::Def;
-use crate::io::{Output, IOEvent, Datum};
+use crate::io::{Datum, IOEvent, Output};
+use chrono::Duration;
+use ext_pid::Pid;
 
 /// Action implementing a PID controller to control a single output
 ///
@@ -129,14 +129,13 @@ impl PID {
     /// assert!(action.output().is_none());
     /// ```
     pub fn new<N, V>(name: N, setpoint: V, output_limit: V) -> Self
-        where
-            N: Into<String>,
-            V: Into<f32> + Copy
+    where
+        N: Into<String>,
+        V: Into<f32> + Copy,
     {
         Self {
             name: name.into(),
-            pid: Pid::new(setpoint.into(),
-                          output_limit.into()),
+            pid: Pid::new(setpoint.into(), output_limit.into()),
             output: None,
             handler: None,
         }
@@ -173,7 +172,7 @@ impl PID {
     /// building by method chaining is encouraged.
     pub fn set_p<V>(mut self, gain: V, limit: V) -> Self
     where
-        V: Into<f32> + Copy
+        V: Into<f32> + Copy,
     {
         self.pid.p(gain.into(), limit.into());
         self
@@ -192,7 +191,7 @@ impl PID {
     /// fashion is enabled by this function.
     pub fn set_p_ref<V>(&mut self, gain: V, limit: V) -> &mut Self
     where
-        V: Into<f32> + Copy
+        V: Into<f32> + Copy,
     {
         self.pid.p(gain, limit);
         self
@@ -229,7 +228,7 @@ impl PID {
     /// building by method chaining is encouraged.
     pub fn set_i<V>(mut self, gain: V, limit: V) -> Self
     where
-        V: Into<f32> + Copy
+        V: Into<f32> + Copy,
     {
         self.pid.i(gain, limit);
         self
@@ -248,7 +247,7 @@ impl PID {
     /// fashion is enabled by this function.
     pub fn set_i_ref<V>(&mut self, gain: V, limit: V) -> &mut Self
     where
-        V: Into<f32> + Copy
+        V: Into<f32> + Copy,
     {
         self.pid.i(gain, limit);
         self
@@ -285,7 +284,7 @@ impl PID {
     /// building by method chaining is encouraged.
     pub fn set_d<V>(mut self, gain: V, limit: V) -> Self
     where
-        V: Into<f32> + Copy
+        V: Into<f32> + Copy,
     {
         self.pid.d(gain, limit);
         self
@@ -304,7 +303,7 @@ impl PID {
     /// Calling this method in a singular fashion is enabled by this function.
     pub fn set_d_ref<V>(&mut self, gain: V, limit: V) -> &mut Self
     where
-        V: Into<f32> + Copy
+        V: Into<f32> + Copy,
     {
         self.pid.d(gain, limit);
         self
@@ -358,7 +357,7 @@ impl PID {
     /// ```
     pub fn set_setpoint<V>(&mut self, setpoint: V) -> &mut Self
     where
-        V: Into<f32> + Copy
+        V: Into<f32> + Copy,
     {
         self.pid.setpoint(setpoint.into());
         self
@@ -414,7 +413,7 @@ impl PID {
     /// ```
     pub fn set_output_limit<V>(&mut self, output_limit: V) -> &mut Self
     where
-        V: Into<f32> + Copy
+        V: Into<f32> + Copy,
     {
         self.pid.output_limit = output_limit.into();
         self
@@ -434,16 +433,12 @@ impl PID {
     /// or generics.
     fn calculate<V>(&mut self, measurement: V) -> Duration
     where
-        V: Into<f32> + Copy
+        V: Into<f32> + Copy,
     {
         let measurement = measurement.into();
-        let output = self.pid.next_control_output(
-            measurement.into()).output;
+        let output = self.pid.next_control_output(measurement.into()).output;
 
-
-        Duration::seconds(output.trunc() as i64) +
-        Duration::milliseconds(output.fract() as i64)
-
+        Duration::seconds(output.trunc() as i64) + Duration::milliseconds(output.fract() as i64)
     }
 
     /// Builder function to set `handler` parameter
@@ -492,8 +487,7 @@ impl Action for PID {
         if let Datum::Float(value) = measurement {
             let value = value.expect("No value contained in measurement");
 
-            let duration =
-                self.calculate(value);
+            let duration = self.calculate(value);
 
             if duration > Duration::milliseconds(0) {
                 if self.handler.is_none() {
@@ -502,13 +496,19 @@ impl Action for PID {
 
                 self.write(Datum::binary(true));
 
-                let output = self.output.as_ref()
+                let output = self
+                    .output
+                    .as_ref()
                     .expect("Output has not been set!")
-                    .try_lock().unwrap();
-                let routine = output.create_routine(
-                    Datum::binary(false),
-                    duration);
-                self.handler.as_ref().unwrap().try_lock().unwrap().push(routine);
+                    .try_lock()
+                    .unwrap();
+                let routine = output.create_routine(Datum::binary(false), duration);
+                self.handler
+                    .as_ref()
+                    .unwrap()
+                    .try_lock()
+                    .unwrap()
+                    .push(routine);
             }
         }
     }
