@@ -78,13 +78,13 @@ fn main() -> Result<(), Box<dyn Error>>{
             .set_command(IOCommand::Input(|| Datum::float(sensor.read())))
             .init_log()
             .init_publisher()
-            .set_name("heater");
-    let mut publisher = input.publisher_mut().unwrap();
-    publisher.subscribe(
-        actions::PID::new("heater PID", SETPOINT, 1000.0).into_boxed()
-    );
-    drop(publisher);
-    poller.push_input(input);
+            .set_name("heater")
+            .subscribe(
+                actions::PID::new(
+                    "heater PID",
+                    SETPOINT,
+                    1000.0)
+                    .into_boxed()));
 
     loop {
         poller.poll()

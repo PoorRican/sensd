@@ -1,6 +1,6 @@
 use std::fmt::Formatter;
 use std::path::{Path, PathBuf};
-use crate::action::{Command, IOCommand, Publisher};
+use crate::action::{Action, Command, IOCommand, Publisher};
 use crate::errors::DeviceError;
 use crate::helpers::Def;
 use crate::io::{Device, DeviceMetadata, IODirection, IOEvent, IOKind, IdType, Datum, DeviceGetters, DeviceSetters};
@@ -268,9 +268,7 @@ impl Input {
     }
 
     /// Create and set publisher or silently fail
-    pub fn init_publisher(mut self) -> Self
-    where
-        Self: Sized {
+    pub fn init_publisher(mut self) -> Self {
         match self.publisher {
             None => {
                 self.publisher = Some(Publisher::default());
@@ -282,12 +280,17 @@ impl Input {
         self
     }
 
-    pub fn publisher_mut(&mut self) -> &mut Option<Publisher> {
-        &mut self.publisher
+    /// Get mutable reference to internal [`Publisher`] instance
+    ///
+    /// # See Also
+    ///
+    /// [`Input::subscribe()`] for subscribing actions to an [`Input`]
+    pub fn publisher_mut(&mut self) -> Option<&mut Publisher> {
+        self.publisher.as_mut()
     }
 
-    pub fn publisher(&self) -> &Option<Publisher> {
-        &self.publisher
+    pub fn publisher(&self) -> Option<&Publisher> {
+        self.publisher.as_ref()
     }
 
     pub fn has_publisher(&self) -> bool {
@@ -295,6 +298,43 @@ impl Input {
             Some(_) => true,
             None => false,
         }
+    }
+
+    /// Helper function for subscribing controllers to internal [`Publisher`] instance
+    ///
+    /// # Parameters
+    ///
+    /// `action`: Any implementation of [`Action`]
+    ///
+    /// # Returns
+    ///
+    /// Returns ownership to `self`
+    ///
+    /// # Example
+    ///
+    /// For adding a simple threshold
+    /// ```
+    /// use sensd::action::actions::Threshold;
+    /// use sensd::action::{Action, Trigger};
+    /// use sensd::io::{Datum, Device, Input, Output};
+    ///
+    /// let output = Output::default().into_deferred();
+    /// let input =
+    ///     Input::default()
+    ///         .init_publisher()
+    ///         .subscribe(Threshold::new(
+    ///             "test threshold",
+    ///             Datum::int(80),
+    ///             Trigger::GT
+    ///         ).set_output(output));
+    /// assert!(input.has_publisher());
+    /// assert_eq!(input.publisher().unwrap().subscribers().len(), 1)
+    /// ```
+    pub fn subscribe<A: Action>(mut self, action: A) -> Self {
+        if let Some(mut publisher) = self.publisher_mut() {
+            publisher.subscribe(action.into_boxed())
+        }
+        self
     }
 }
 

@@ -65,54 +65,42 @@ fn poll(poller: &mut Group) -> Result<(), ErrorType> {
 fn main() {
     let mut poller = init("main");
 
-    // setup ph sensor
+    // setup ph sensor + action
     {
         let id = 0;
         let command = IOCommand::Input(|| Datum::float(1.2));
 
-        // build input device
         let mut input =
-            Input::new(
-                id,
-            ).set_command(
-                command
-            ).init_log(
-            ).init_publisher();
-
-        // setup publisher/action
-        input.publisher_mut().as_mut().unwrap()
-            .subscribe(
-                actions::Threshold::new(
-                    format!("Subscriber for Input:{}", id),
-                    Datum::float(1.0),
-                    Trigger::GT,
-                ).into_boxed()
-            );
+            Input::new(id)
+                .set_command(command)
+                .init_log()
+                .init_publisher()
+                .subscribe(
+                    actions::Threshold::new(
+                        format!("Subscriber for Input:{}", id),
+                        Datum::float(1.0),
+                        Trigger::GT
+                    ));
 
         poller.push_input_then(input);
     }
-    // setup flow sensor
+
+    // setup flow sensor + action
     {
         let id = 1;
         let command = IOCommand::Input(|| Datum::float(1.2));
 
-        // build input device
-        let mut input = Input::new(
-            id,
-        )
-            .set_command(command)
-            .init_log()
-            .init_publisher();
-
-        // setup publisher/action
-        input.publisher_mut().as_mut().unwrap()
-            .subscribe(
-                actions::Threshold::new(
-                    format!("Subscriber for Input:{}", id),
-                    Datum::float(1.0),
-                    Trigger::GT,
-                ).into_boxed()
-            );
+        let mut input =
+            Input::new(id)
+                .set_command(command)
+                .init_log()
+                .init_publisher()
+                .subscribe(
+                    actions::Threshold::new(
+                        format!("Subscriber for Input:{}", id),
+                        Datum::float(1.0),
+                        Trigger::GT,
+                    ));
 
         poller.push_input_then(input);
     }
