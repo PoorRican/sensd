@@ -211,6 +211,42 @@ impl Group {
         group
     }
 
+    /// Helper function to add given [`Input`] to internal function
+    ///
+    ///
+    /// [`Device::set_root()`] is called to pass settings to device.
+    ///
+    ///
+    /// # Parameters
+    ///
+    /// - `device`: [`Input`] device to be added
+    ///
+    /// # Returns
+    ///
+    /// Mutable reference to deferred [`Input`] that was just added
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use sensd::io::Input;
+    /// use sensd::name::Name;
+    /// use sensd::storage::Group;
+    ///
+    /// let name = "custom name";
+    ///
+    /// let mut group = Group::new("");
+    ///
+    /// // `input` is now `Def<Input>`
+    /// let input = group.push_input(
+    ///     Input::default().set_name(name)
+    /// ).unwrap();
+    ///
+    /// assert_eq!(group.inputs.len(), 1);
+    ///
+    /// // unwrap `Def`
+    /// let binding = input.try_lock().unwrap();
+    /// assert_eq!(binding.name(), name);
+    /// ```
     pub fn push_input(&mut self, mut device: Input) -> Result<Def<Input>, ContainerError> {
         let id = device.id();
 
@@ -220,8 +256,6 @@ impl Group {
     }
 
     /// Chaining method to store [`Input`] in internal collection
-    ///
-    /// [`Device::set_root()`] is called to pass settings to device.
     ///
     /// # Parameters
     ///
@@ -249,6 +283,42 @@ impl Group {
         self
     }
 
+    /// Helper function to add given [`Output`] to internal function
+    ///
+    ///
+    /// [`Device::set_root()`] is called to pass settings to device.
+    ///
+    ///
+    /// # Parameters
+    ///
+    /// - `device`: [`Output`] device to be added
+    ///
+    /// # Returns
+    ///
+    /// Mutable reference to deferred [`Output`] that was just added
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use sensd::io::Output;
+    /// use sensd::name::Name;
+    /// use sensd::storage::Group;
+    ///
+    /// let name = "custom name";
+    ///
+    /// let mut group = Group::new("");
+    ///
+    /// // `input` is now `Def<Input>`
+    /// let output = group.push_output(
+    ///     Output::default().set_name(name)
+    /// ).unwrap();
+    ///
+    /// assert_eq!(group.outputs.len(), 1);
+    ///
+    /// // unwrap `Def`
+    /// let binding = output.try_lock().unwrap();
+    /// assert_eq!(binding.name(), name);
+    /// ```
     pub fn push_output(&mut self, mut device: Output) -> Result<Def<Output>, ContainerError> {
         let id = device.id();
 
