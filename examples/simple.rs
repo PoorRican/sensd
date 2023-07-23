@@ -21,7 +21,7 @@ extern crate chrono;
 extern crate sensd;
 extern crate serde;
 
-use sensd::action::{Action, actions, IOCommand, Trigger};
+use sensd::action::{actions, IOCommand, Trigger};
 use sensd::errors::ErrorType;
 use sensd::io::{Datum, Input, Device};
 use sensd::storage::{Group, Persistent};
@@ -70,7 +70,7 @@ fn main() {
         let id = 0;
         let command = IOCommand::Input(|| Datum::float(1.2));
 
-        let mut input =
+        let input =
             Input::new(id)
                 .set_command(command)
                 .init_log()
@@ -90,7 +90,7 @@ fn main() {
         let id = 1;
         let command = IOCommand::Input(|| Datum::float(1.2));
 
-        let mut input =
+        let input =
             Input::new(id)
                 .set_command(command)
                 .init_log()

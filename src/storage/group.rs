@@ -277,7 +277,7 @@ impl Group {
     /// assert_eq!(val.inputs.len(), 1);
     /// assert_eq!(group.inputs.len(), 1);
     /// ```
-    pub fn push_input_then(&mut self, mut device: Input) -> &mut Self {
+    pub fn push_input_then(&mut self, device: Input) -> &mut Self {
         self.push_input(device)
             .expect("Error adding input device to internal collection");
         self
@@ -351,7 +351,7 @@ impl Group {
     /// assert_eq!(val.outputs.len(), 1);
     /// assert_eq!(group.outputs.len(), 1);
     /// ```
-    pub fn push_output_then(&mut self, mut device: Output) -> &mut Self {
+    pub fn push_output_then(&mut self, device: Output) -> &mut Self {
         self.push_output(device)
             .expect("Error adding output device to internal collection");
         self

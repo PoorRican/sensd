@@ -331,7 +331,7 @@ impl Input {
     /// assert_eq!(input.publisher().unwrap().subscribers().len(), 1)
     /// ```
     pub fn subscribe<A: Action>(mut self, action: A) -> Self {
-        if let Some(mut publisher) = self.publisher_mut() {
+        if let Some(publisher) = self.publisher_mut() {
             publisher.subscribe(action.into_boxed())
         }
         self
