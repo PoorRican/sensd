@@ -1,58 +1,75 @@
-# sensd - _The Ultimate Sensor Logging and Control System_
+# sensd
 
+> Ignite your hardware
 
-## █▓▒░ Purpose
+`sensd` is a comprehensive Rust library designed to facilitate the management of sensor data.
+It provides a robust framework for handling, publishing, and triggering actions based on sensor
+data. 
 
-`sensd` aims to be a multipurpose robust framework for sensor logging and a control system for mission-critical
-and high reliability environments. Originally designed for the needs of an aquaponics system, `sensd` is being made
-highly adaptable by implementing generic architectural design patterns. The goal is to create a library suitable for a
-wide range of applications, from wild-life tracking and bioreactors to access control and beyond using pre-packaged
-generic I/O devices and triggers. With a focus on reliability, safety, and ease of use, `sensd` aims to empower scientists, 
-engineers, and makers to build monitoring and control systems by reducing boilerplate code.
+Originally designed with a specific focus on building environmental control systems for scientific applications, `sensd` is a
+robust framework for managing sensor data makes it ideal for handling the complex and precise requirements of such systems,
+where accurate data collection, processing, and response are crucial. However, the modular and flexible design of `sensd` extends
+its utility beyond just scientific applications. Its ability to handle, publish, and trigger actions based on sensor data,
+coupled with its custom error handling and helper functions, makes it a versatile tool for any application that deals with
+complex sensor data. Whether it's for home automation, industrial monitoring, or environmental sensing, `sensd` provides a
+comprehensive solution for sensor data management.
 
+## Why Sensd?
 
-## █▓▒░ Features
+- **Dynamic**: `sensd` is built with Rust, a language known for its performance and safety. It's designed to handle complex sensor
+  data logging and control system tasks with ease.
 
-- Straight-forward, simple initialization and configuration.
-- Data logging capabilities to store and retrieve information for later analysis.
-- Generic I/O devices for classification of various device types such as switches, motors, manifold valves, etc.
-- Robust error handling for safe and reliable operation.
-- Hardware agnostic.
+- **Versatile**: `sensd` can manage a wide range of sensor types and data formats. Whether you're working with temperature sensors,
+  motion detectors, or custom hardware, `sensd` is will become your go-to solution.
 
+- **User-Friendly**: `sensd` provides a simple, intuitive API. Even if you're new to Rust or sensor data management, you'll find
+  the library easy to navigate.
 
-## █▓▒░ Hardware
+- **Well-Documented**: Every function and module in Sensd is thoroughly documented. You'll never be left guessing about what a piece
+  of code does.
 
-The library is built with version 1.66.1 of the Rust programming language, but should be reverse compatible 
-with recent versions. A Unix based host is required (ie: Raspberry Pi). While the library has been designed
-to decrease low-overhead, `no_std` has not implemented (yet) for compiling on bare-metal MCU's such as Atmel chips.
+## Getting Started
 
+To start using Sensd, simply add it to your `Cargo.toml`:
 
-## █▓▒░ Getting Started
+```toml
+[dependencies]
+sensd = "0.1.0"
+```
 
-Since this library is still in early development, it has not yet been uploaded to [crates.io](https://crates.io).
+Then, import it in your Rust file:
 
-The binaries in the `/examples` directory are designed to be comprehensive to demonstrate potential use cases and are
-highly documented. For further documentation, please refer to the docs.
+```rust
+extern crate sensd;
+```
 
+Check out the `examples` directory for some simple use cases to get you started.
 
-## █▓▒░ Contributing
+## Contribute
 
-The goal of this project is to become a standard for scientific and industrial applications. Therefore, contributions
-to the library are more than welcomed.
+Sensd is an open-source project, and we welcome contributions of all kinds: new features, bug fixes, documentation, and more. Check out
+our contribution guidelines to get started.
 
-Remember that contributions can be in the form of bug reports, feature requests, and not just code contributions. Bug
-reports and feature requests add fortitude and reliability to the library as whole and benefits the community.
-To get started, simply fork the repository and make your changes. I simply ask, that before submitting a pull request,
-please make sure to run the test suite and update the documentation as necessary.
+## License
 
-Remember, communication is essential for any collaborative project. Let's bring the most loved programming language
-to the scientific community!
+Sensd is licensed under the MIT license. See the LICENSE file for details.
 
+---
 
-## █▓▒░ Features Forthcoming
+This software was brought to you by “The Poor BioMaker Consortium”
 
-The following features are planned for the next major releases (in order of priority):
-- PID controller
-- Partitioning of logs (both by size and date)
-- Incorporate `no_std` feature flag
-- Async operation
+🧪🧬🔬 Are you a biohacker exploring the endless frontiers of biology? Are you a microbe wrangler, cultivating and controlling microscopic
+life? Or maybe you're a keyboard cowboy, masterfully cracking code that brings life to the lifeless? Then you are the kind of pioneer we
+want!
+
+The Poor BioMaker Consortium is designed by people like you - a suite of libraries built to empower the fringe synthetic biology, whether
+you're a seasoned scientist or an amateur bio enthusiast. Our mission is to make synthetic biology tools accessible and effective for all who
+dare to dabble.
+
+Join us in this unique initiative! We encourage you to not only use our resources but also to contribute. With your help, we can enhance these
+tools, expand our library, and make synthetic biology an open playing field for everyone.
+
+Whether you have a bug to report, a feature to request, or a whole new library to contribute, your input makes us stronger. So, saddle up,
+partner! Let's change the world one line of code, one microbe, one biohack at a time.
+
+🔬🧬🧪 Join The Poor BioMaker Consortium today!
